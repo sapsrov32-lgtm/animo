@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "import:anilist": "node --env-file=.env.local scripts/import-anilist.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
