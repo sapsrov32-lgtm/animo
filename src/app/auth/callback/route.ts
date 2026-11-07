@@ -8,9 +8,21 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error');
   const errorDescription = searchParams.get('error_description');
 
+  // Определяем публичный origin с учетом reverse-proxy на Vercel
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  const isLocalEnv = process.env.NODE_ENV === 'development';
+
+  let siteOrigin = origin;
+  if (!isLocalEnv && forwardedHost) {
+    siteOrigin = `${forwardedProto}://${forwardedHost}`;
+  } else if (!isLocalEnv && process.env.NEXT_PUBLIC_SITE_URL) {
+    siteOrigin = process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '');
+  }
+
   if (error || errorDescription) {
     console.error('OAuth callback error:', error, errorDescription);
-    const redirectUrl = new URL('/login', origin);
+    const redirectUrl = new URL('/login', siteOrigin);
     redirectUrl.searchParams.set(
       'error',
       'Не удалось войти через Google. Попробуйте снова или используйте вход по email.'
@@ -19,7 +31,9 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
-    let response = NextResponse.redirect(new URL(next, origin));
+    const targetPath = next.startsWith('/') ? next : `/${next}`;
+    const redirectUrl = new URL(targetPath, siteOrigin);
+    let response = NextResponse.redirect(redirectUrl);
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +45,7 @@ export async function GET(request: NextRequest) {
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-            response = NextResponse.redirect(new URL(next, origin));
+            response = NextResponse.redirect(redirectUrl);
             cookiesToSet.forEach(({ name, value, options }) =>
               response.cookies.set(name, value, options)
             );
@@ -47,16 +61,16 @@ export async function GET(request: NextRequest) {
     }
 
     console.error('Exchange code error:', exchangeError.message);
-    const redirectUrl = new URL('/login', origin);
-    redirectUrl.searchParams.set(
+    const errUrl = new URL('/login', siteOrigin);
+    errUrl.searchParams.set(
       'error',
       `Ошибка подтверждения входа Google: ${exchangeError.message}`
     );
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(errUrl);
   }
 
   // Fallback if no code provided
-  const redirectUrl = new URL('/login', origin);
-  redirectUrl.searchParams.set('error', 'Код подтверждения не получен от Google.');
-  return NextResponse.redirect(redirectUrl);
+  const fallbackUrl = new URL('/login', siteOrigin);
+  fallbackUrl.searchParams.set('error', 'Код подтверждения не получен от Google.');
+  return NextResponse.redirect(fallbackUrl);
 }

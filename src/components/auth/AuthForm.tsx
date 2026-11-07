@@ -36,7 +36,15 @@ export function AuthForm() {
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/auth/callback${
+      // Динамически определяем URL сайта:
+      // 1. В браузере берется window.location.origin (на Vercel это будет https://ваш-домен.vercel.app, а локально http://localhost:3000)
+      // 2. В качестве запасного варианта используется NEXT_PUBLIC_SITE_URL
+      const origin =
+        typeof window !== 'undefined' && window.location.origin
+          ? window.location.origin
+          : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000');
+
+      const redirectUrl = `${origin.replace(/\/$/, '')}/auth/callback${
         redirectPath && redirectPath !== '/' ? `?next=${encodeURIComponent(redirectPath)}` : ''
       }`;
 
