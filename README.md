@@ -10,7 +10,7 @@
 ## Переменные окружения (.env.local)
 Создайте файл `.env.local` на основе `.env.example`:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://ctpesdissrutihmgghsn.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://itzondclmkvspgrjwmqj.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=ваш_anon_ключ
 SUPABASE_SERVICE_ROLE_KEY=ваш_service_role_ключ  # Только для локальных скриптов миграции/импорта
 ```
