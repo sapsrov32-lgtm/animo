@@ -390,6 +390,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
             {/* Online Video Player */}
             <AnimePlayer
               shikimoriId={anime.shikimori_id}
+              anilistId={anime.anilist_id}
               titleRu={anime.title_ru}
               titleEn={anime.title_en}
               posterUrl={anime.poster_url}

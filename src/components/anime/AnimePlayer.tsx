@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 
 interface AnimePlayerProps {
   shikimoriId?: number | null;
+  anilistId?: number | null;
   titleRu?: string | null;
   titleEn?: string | null;
   posterUrl?: string | null;
@@ -12,33 +13,39 @@ interface AnimePlayerProps {
 
 export function AnimePlayer({
   shikimoriId,
+  anilistId,
   titleRu,
   titleEn,
   posterUrl,
   bannerUrl,
 }: AnimePlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [activePlayer, setActivePlayer] = useState<'kodik' | 'shikivideo'>('kodik');
+  const [activePlayer, setActivePlayer] = useState<'kodik' | 'animeembed'>('kodik');
   const [isCinemaMode, setIsCinemaMode] = useState(false);
 
-  // Формирование ссылки для iframe
+  // Формирование ссылки для iframe с актуальными рабочими доменами
   const getPlayerUrl = () => {
     if (activePlayer === 'kodik') {
+      // Рабочее зеркало Kodik
       if (shikimoriId) {
-        return `https://kodik.cc/find-player?shikimoriID=${shikimoriId}`;
+        return `https://kodikplayer.com/find-player?shikimoriID=${shikimoriId}`;
       }
       const title = titleRu || titleEn || '';
-      return `https://kodik.cc/find-player?title=${encodeURIComponent(title)}`;
+      return `https://kodikplayer.com/find-player?title=${encodeURIComponent(title)}`;
     }
 
-    if (activePlayer === 'shikivideo') {
-      if (shikimoriId) {
-        return `https://shiki-video.org/embed/${shikimoriId}`;
+    if (activePlayer === 'animeembed') {
+      // Плеер AnimeEmbed (по AniList ID или Shikimori/MAL ID)
+      if (anilistId) {
+        return `https://animeembed.com/embed/ani/${anilistId}/1`;
       }
-      return `https://kodik.cc/find-player?title=${encodeURIComponent(titleRu || titleEn || '')}`;
+      if (shikimoriId) {
+        return `https://animeembed.com/embed/mal/${shikimoriId}/1`;
+      }
+      return `https://kodikplayer.com/find-player?title=${encodeURIComponent(titleRu || titleEn || '')}`;
     }
 
-    return `https://kodik.cc/find-player?shikimoriID=${shikimoriId || ''}`;
+    return `https://kodikplayer.com/find-player?shikimoriID=${shikimoriId || ''}`;
   };
 
   const bgImage = bannerUrl || posterUrl;
@@ -65,7 +72,7 @@ export function AnimePlayer({
               Смотреть онлайн
             </h2>
             <p className="font-body-xs text-xs text-outline">
-              Озвучка, субтитры и выбор серии доступны прямо в плеере
+              Озвучка (AniLibria, SHIZA, Дубликат и др.) и субтитры
             </p>
           </div>
         </div>
@@ -87,14 +94,14 @@ export function AnimePlayer({
               </button>
               <button
                 type="button"
-                onClick={() => setActivePlayer('shikivideo')}
+                onClick={() => setActivePlayer('animeembed')}
                 className={`px-3 py-1 rounded-lg transition-all font-medium ${
-                  activePlayer === 'shikivideo'
+                  activePlayer === 'animeembed'
                     ? 'bg-primary text-on-primary shadow-sm'
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
-                Плеер 2 (Shikimori)
+                Плеер 2 (AnimeEmbed)
               </button>
             </div>
 
@@ -157,7 +164,7 @@ export function AnimePlayer({
                     HD Качество
                   </span>
                   <span>•</span>
-                  <span>AniLibria, SHIZA, Дубликат</span>
+                  <span>Выбор озвучки и серий</span>
                   <span>•</span>
                   <span>Субтитры</span>
                 </div>
@@ -180,7 +187,7 @@ export function AnimePlayer({
 
       {/* Helpful tips bar */}
       <div className="flex flex-wrap items-center justify-between text-xs text-outline px-1">
-        <span>Если серия не загружается, переключитесь на «Плеер 2» вверху.</span>
+        <span>Если серия долго загружается, переключитесь на «Плеер 2» вверху.</span>
         <span>Плеер адаптирован под мобильные устройства и полноэкранный режим.</span>
       </div>
     </section>
