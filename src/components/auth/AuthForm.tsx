@@ -95,8 +95,8 @@ export function AuthForm() {
         return;
       }
 
-      router.push(redirectPath);
-      router.refresh();
+      // Полная перезагрузка для гарантированного применения cookie сессии во всех компонентах
+      window.location.href = redirectPath || '/';
     } catch (err: any) {
       setError(err?.message || 'Произошла ошибка при входе');
     } finally {
@@ -146,19 +146,31 @@ export function AuthForm() {
         return;
       }
 
-      // Check if session exists (e.g. email confirmation disabled or instant)
+      // Если сессия создана сразу
       if (data.session) {
-        // Redirect to homepage on immediate session creation
-        router.push('/');
-        router.refresh();
-      } else {
-        // Confirmation required: clear all fields and display ONLY confirmation prompt
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-        setUsername('');
-        setConfirmationSent(true);
+        window.location.href = redirectPath || '/';
+        return;
       }
+
+      // Попытка войти, если почта подтверждается сразу
+      if (data.user) {
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInData?.session) {
+          window.location.href = redirectPath || '/';
+          return;
+        }
+      }
+
+      // Если требуется подтверждение по почте: очищаем поля и показываем уведомление
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setUsername('');
+      setConfirmationSent(true);
     } catch (err: any) {
       setError(err?.message || 'Произошла ошибка при регистрации');
     } finally {

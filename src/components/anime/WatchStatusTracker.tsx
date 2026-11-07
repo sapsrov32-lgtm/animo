@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { WatchStatus } from '@/types';
 import { setAnimeWatchStatus, setAnimeScore, setAnimeProgress } from '@/app/actions/tracker';
+import { createClient } from '@/lib/supabase/client';
 
 interface WatchStatusTrackerProps {
   animeId: string;
@@ -27,9 +28,48 @@ export function WatchStatusTracker({
   const [score, setScore] = useState<number | null>(initialScore);
   const [progress, setProgress] = useState<number>(initialProgress);
   const [isSaving, setIsSaving] = useState(false);
+  const [userLoggedIn, setUserLoggedIn] = useState(isLoggedIn);
+
+  // Синхронизация сессии на клиенте (устраняет ложные запросы авторизации)
+  useEffect(() => {
+    setUserLoggedIn(isLoggedIn);
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data?.user) {
+        setUserLoggedIn(true);
+        // Если при SSR статус не был подгружен, подгружаем актуальный статус пользователя
+        if (!initialStatus && !initialScore) {
+          const { data: record } = await supabase
+            .from('user_anime')
+            .select('status, score, progress')
+            .eq('user_id', data.user.id)
+            .eq('anime_id', animeId)
+            .maybeSingle();
+
+          if (record) {
+            setStatus(record.status as WatchStatus);
+            setScore(record.score);
+            setProgress(record.progress || 0);
+          }
+        }
+      }
+    });
+  }, [animeId, isLoggedIn, initialStatus, initialScore]);
+
+  const ensureAuthenticated = useCallback(async (): Promise<boolean> => {
+    if (userLoggedIn) return true;
+    const supabase = createClient();
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      setUserLoggedIn(true);
+      return true;
+    }
+    return false;
+  }, [userLoggedIn]);
 
   const handleStatusChange = async (newStatus: WatchStatus) => {
-    if (!isLoggedIn) {
+    const authed = await ensureAuthenticated();
+    if (!authed) {
       router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
@@ -37,26 +77,51 @@ export function WatchStatusTracker({
     const targetStatus = status === newStatus ? null : newStatus;
     const prevStatus = status;
 
-    // Optimistic update
+    // Оптимистичное обновление UI сразу же
     setStatus(targetStatus);
     setIsSaving(true);
 
     try {
       const res = await setAnimeWatchStatus(animeId, targetStatus, score, progress);
       if (res?.error) {
-        setStatus(prevStatus);
-        console.error('Failed to update anime status:', res.error);
+        // Запасной вариант: прямое сохранение через клиент Supabase при задержке cookie
+        const supabase = createClient();
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          if (targetStatus === null) {
+            await supabase
+              .from('user_anime')
+              .delete()
+              .eq('user_id', userData.user.id)
+              .eq('anime_id', animeId);
+          } else {
+            await supabase.from('user_anime').upsert(
+              {
+                user_id: userData.user.id,
+                anime_id: animeId,
+                status: targetStatus,
+                score,
+                progress,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'user_id,anime_id' }
+            );
+          }
+        } else {
+          setStatus(prevStatus);
+        }
       }
     } catch (err) {
+      console.error('Error setting status:', err);
       setStatus(prevStatus);
-      console.error(err);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleScoreChange = async (newScore: number) => {
-    if (!isLoggedIn) {
+    const authed = await ensureAuthenticated();
+    if (!authed) {
       router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
@@ -64,7 +129,7 @@ export function WatchStatusTracker({
     const targetScore = score === newScore ? null : newScore;
     const prevScore = score;
 
-    // Optimistic update
+    // Оптимистичное обновление
     setScore(targetScore);
     if (!status) {
       setStatus('done');
@@ -74,7 +139,23 @@ export function WatchStatusTracker({
     try {
       const res = await setAnimeScore(animeId, targetScore);
       if (res?.error) {
-        setScore(prevScore);
+        // Прямое сохранение через клиент Supabase при необходимости
+        const supabase = createClient();
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          await supabase.from('user_anime').upsert(
+            {
+              user_id: userData.user.id,
+              anime_id: animeId,
+              status: status || 'done',
+              score: targetScore,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id,anime_id' }
+          );
+        } else {
+          setScore(prevScore);
+        }
       }
     } catch (err) {
       setScore(prevScore);
@@ -85,7 +166,8 @@ export function WatchStatusTracker({
   };
 
   const handleProgressChange = async (delta: number) => {
-    if (!isLoggedIn) {
+    const authed = await ensureAuthenticated();
+    if (!authed) {
       router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
@@ -98,7 +180,21 @@ export function WatchStatusTracker({
     try {
       const res = await setAnimeProgress(animeId, nextProgress);
       if (res?.error) {
-        setProgress(prevProgress);
+        const supabase = createClient();
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          await supabase.from('user_anime').upsert(
+            {
+              user_id: userData.user.id,
+              anime_id: animeId,
+              progress: nextProgress,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id,anime_id' }
+          );
+        } else {
+          setProgress(prevProgress);
+        }
       }
     } catch (err) {
       setProgress(prevProgress);
