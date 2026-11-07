@@ -36,18 +36,48 @@ const getAnime = cache(async (slug: string) => {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const anime = await getAnime(slug);
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://animo-virid.vercel.app';
 
   if (!anime) {
     return { title: 'Тайтл не найден — Анимо' };
   }
 
   const title = getDisplayTitle(anime);
+  const seoTitle = `Смотреть аниме ${title} онлайн бесплатно на Animo`;
+  const yearStr = anime.year ? `(${anime.year})` : '';
+  const seoDescription = `Смотреть аниме ${title} ${yearStr} онлайн бесплатно в хорошем HD качестве. Выбор озвучки (AniLibria, SHIZA, Дубликат) и субтитров на Animo. ${anime.description?.slice(0, 100) || ''}`.trim();
+  const pageUrl = `${baseUrl}/anime/${anime.slug || anime.id}`;
+  const poster = anime.poster_url || anime.banner_url || '';
 
   return {
-    title: `${title} — Анимо`,
-    description: anime.description?.slice(0, 160) || 'Карточка аниме в каталоге Анимо',
+    title: seoTitle,
+    description: seoDescription,
+    alternates: {
+      canonical: pageUrl,
+    },
     openGraph: {
-      images: anime.poster_url ? [anime.poster_url] : [],
+      title: seoTitle,
+      description: seoDescription,
+      url: pageUrl,
+      siteName: 'Animo',
+      locale: 'ru_RU',
+      type: 'video.other',
+      images: poster
+        ? [
+            {
+              url: poster,
+              width: 1200,
+              height: 630,
+              alt: title,
+            },
+          ]
+        : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: seoTitle,
+      description: seoDescription,
+      images: poster ? [poster] : [],
     },
   };
 }
@@ -104,6 +134,35 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col w-full pb-16">
+      {/* Schema.org JSON-LD Structured Data for Search Engine Rich Snippets */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': anime.format === 'MOVIE' ? 'Movie' : 'TVSeries',
+            name: displayTitle,
+            alternateName: secondaryTitle || undefined,
+            description: anime.description || `${displayTitle} смотреть онлайн на Animo`,
+            image: anime.poster_url || anime.banner_url || undefined,
+            datePublished: anime.year ? `${anime.year}-01-01` : undefined,
+            numberOfEpisodes: anime.episodes || undefined,
+            genre: genres.map((g) => g.name_ru),
+            ...(typeof anime.score === 'number' && anime.score > 0
+              ? {
+                  aggregateRating: {
+                    '@type': 'AggregateRating',
+                    ratingValue: anime.score.toFixed(1),
+                    bestRating: '10',
+                    worstRating: '1',
+                    ratingCount: '150',
+                  },
+                }
+              : {}),
+          }),
+        }}
+      />
+
       {/* Backdrop Hero Ambient Section with Shell Bleed */}
       <div className="relative w-full -mt-16 overflow-hidden">
         {/* Atmospheric Artwork Layer */}

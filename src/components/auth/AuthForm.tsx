@@ -42,7 +42,7 @@ export function AuthForm() {
       const origin =
         typeof window !== 'undefined' && window.location.origin
           ? window.location.origin
-          : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000');
+          : (process.env.NEXT_PUBLIC_SITE_URL || 'https://animo-virid.vercel.app');
 
       const redirectUrl = `${origin.replace(/\/$/, '')}/auth/callback${
         redirectPath && redirectPath !== '/' ? `?next=${encodeURIComponent(redirectPath)}` : ''
