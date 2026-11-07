@@ -31,6 +31,7 @@ export function AiringCard({
     <div className="relative flex items-center gap-4 p-4 lg:p-5 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 shadow-sm group">
       <Link
         href={`/anime/${slug || id}`}
+        prefetch={true}
         className="relative w-24 h-32 lg:w-28 lg:h-36 rounded-xl overflow-hidden shrink-0 bg-surface-container-high block"
       >
         {poster_url && (
@@ -58,7 +59,7 @@ export function AiringCard({
             </span>
             <AiringCountdown nextEpisodeAt={next_episode_at} mode="badge" />
           </div>
-          <Link href={`/anime/${slug || id}`}>
+          <Link href={`/anime/${slug || id}`} prefetch={true}>
             <h3 className="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">
               {title}
             </h3>

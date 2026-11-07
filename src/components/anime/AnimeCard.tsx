@@ -69,6 +69,7 @@ export function AnimeCard({
     <div className="group relative flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 hover:-translate-y-1 shadow-md">
       <Link
         href={`/anime/${anime.slug || anime.id}`}
+        prefetch={true}
         className="relative w-full aspect-[2/3] overflow-hidden bg-surface-container-high block"
       >
         {anime.poster_url ? (
@@ -135,7 +136,7 @@ export function AnimeCard({
           <span className="text-[11px] font-label-sm text-outline tracking-wider block truncate">
             {secondaryTitle || anime.studio || (anime.year ? `${anime.year} г.` : 'Аниме')}
           </span>
-          <Link href={`/anime/${anime.slug || anime.id}`}>
+          <Link href={`/anime/${anime.slug || anime.id}`} prefetch={true}>
             <h3 className="font-title-card text-title-card text-on-surface group-hover:text-primary-fixed transition-colors line-clamp-1">
               {displayTitle}
             </h3>

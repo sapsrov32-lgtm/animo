@@ -23,6 +23,7 @@ export function MobileNav() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
               className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
                 isActive
                   ? 'text-primary'

@@ -122,6 +122,7 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
             {/* Primary CTA Button */}
             <Link
               href={`/anime/${anime.slug || anime.id}`}
+              prefetch={true}
               className="group flex items-center gap-2 px-6 h-11 rounded-full bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary font-label-md text-label-md shadow-[0_0_24px_rgba(160,120,255,0.45)] hover:shadow-[0_0_32px_rgba(160,120,255,0.7)] hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <span>Подробнее о тайтле</span>

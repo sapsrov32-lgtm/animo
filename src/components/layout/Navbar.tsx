@@ -84,6 +84,7 @@ export function Navbar({ user, profile }: NavbarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 className={`px-space-md py-1.5 rounded-full font-label-md text-label-md transition-all ${
                   isActive
                     ? 'bg-surface-container-high text-on-surface shadow-[0_0_12px_rgba(208,188,255,0.2)]'
