@@ -44,6 +44,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    google: '_Df27HQ-MaBOKD6FOHWRrXmAALWVxTEuERQGFuit694',
+  },
 };
 
 export default async function RootLayout({
@@ -77,6 +80,7 @@ export default async function RootLayout({
   return (
     <html lang="ru" className="dark">
       <head>
+        <meta name="google-site-verification" content="_Df27HQ-MaBOKD6FOHWRrXmAALWVxTEuERQGFuit694" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
