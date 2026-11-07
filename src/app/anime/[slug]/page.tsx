@@ -50,7 +50,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const poster = anime.poster_url || anime.banner_url || '';
 
   return {
-    title: seoTitle,
+    title: {
+      absolute: seoTitle,
+    },
     description: seoDescription,
     alternates: {
       canonical: pageUrl,
