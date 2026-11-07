@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@500;600;700&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-secondary": "#640039", "surface-container-high": "#2a2931", "on-error-container": "#ffdad6", "secondary-container": "#aa0266", "surface-bright": "#3a3840", "inverse-on-surface": "#312f37", "surface-container-lowest": "#0e0d14", "on-tertiary-container": "#002f38", "on-primary-fixed-variant": "#5516be", "primary-container": "#a078ff", "surface-container": "#201f26", "on-secondary-fixed": "#3e0022", "outline": "#958ea0", "on-secondary-container": "#ffbad3", "on-surface-variant": "#cbc3d7", "background": "#14121a", "on-secondary-fixed-variant": "#8c0053", "secondary-fixed": "#ffd9e4", "on-background": "#e5e1eb", "on-primary-container": "#340080", "surface-container-highest": "#35343c", "on-surface": "#e5e1eb", "surface-tint": "#d0bcff", "surface-variant": "#35343c", "tertiary": "#4cd7f6", "secondary-fixed-dim": "#ffb0cd", "inverse-primary": "#6d3bd7", "surface": "#14121a", "on-primary-fixed": "#23005c", "tertiary-container": "#009eb9", "primary-fixed-dim": "#d0bcff", "on-tertiary-fixed": "#001f26", "on-tertiary": "#003640", "primary-fixed": "#e9ddff", "surface-container-low": "#1c1b22", "error": "#ffb4ab", "on-tertiary-fixed-variant": "#004e5c", "secondary": "#ffb0cd", "tertiary-fixed-dim": "#4cd7f6", "tertiary-fixed": "#acedff", "error-container": "#93000a", "inverse-surface": "#e5e1eb", "outline-variant": "#494454", "surface-dim": "#14121a", "on-primary": "#3c0091", "on-error": "#690005", "primary": "#d0bcff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-xs": "0.25rem", "margin-tablet": "2rem", "space-md": "1rem", "space-xl": "2.5rem", "margin-desktop": "3.5rem", "gutter-desktop": "1.5rem", "margin": "1rem", "gutter": "1.25rem", "space-lg": "1.5rem", "space-sm": "0.5rem" }, "fontFamily": { "display-hero-mobile": [ "Sora" ], "label-md": [ "Plus Jakarta Sans" ], "body-sm": [ "Inter" ], "display-hero": [ "Sora" ], "headline-sm": [ "Sora" ], "title-card": [ "Plus Jakarta Sans" ], "body-md": [ "Inter" ], "headline-md": [ "Sora" ], "label-sm": [ "Plus Jakarta Sans" ], "body-lg": [ "Inter" ], "headline-lg-mobile": [ "Sora" ], "badge-score": [ "Sora" ], "headline-lg": [ "Sora" ] }, "fontSize": { "display-hero-mobile": [ "32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" } ], "label-md": [ "13px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600" } ], "body-sm": [ "12px", { "lineHeight": "18px", "fontWeight": "400" } ], "display-hero": [ "48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "headline-sm": [ "18px", { "lineHeight": "24px", "fontWeight": "600" } ], "title-card": [ "15px", { "lineHeight": "20px", "fontWeight": "600" } ], "body-md": [ "14px", { "lineHeight": "22px", "fontWeight": "400" } ], "headline-md": [ "22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "label-sm": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "700" } ], "body-lg": [ "16px", { "lineHeight": "26px", "fontWeight": "400" } ], "headline-lg-mobile": [ "24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "badge-score": [ "13px", { "lineHeight": "16px", "fontWeight": "700" } ], "headline-lg": [ "32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "600" } ] } } } };</script></head><body class="bg-surface text-on-surface font-body-md text-body-md antialiased min-h-screen selection:bg-secondary-container selection:text-on-secondary-container"><header class="fixed top-0 inset-x-0 z-50 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/30"><div class="h-16 max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md shrink-0"><a class="flex items-center gap-space-sm group" data-path="katalog" href="#"><div class="relative flex items-center justify-center"><div class="absolute -inset-1 rounded-full bg-secondary/30 blur-sm group-hover:bg-secondary/60 transition-all"></div><span class="relative flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-high border border-secondary/40 text-secondary"><span class="material-symbols-outlined text-[18px]">filter_vintage</span></span></div><span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface group-hover:text-secondary-fixed transition-colors">АНИМО</span></a></div><nav class="hidden xl:flex items-center gap-space-xs p-space-xs rounded-full bg-surface-container-low/70 border border-outline-variant/20" data-active-classes="bg-surface-container-high text-on-surface shadow-[0_0_12px_rgba(208,188,255,0.2)]"><a aria-current="page" class="px-space-md py-1.5 rounded-full font-label-md transition-all bg-surface-container-high text-on-surface shadow-[0_0_12px_rgba(208,188,255,0.2)]" data-path="katalog" href="#">Каталог</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="kalendar" href="#">Календарь</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="chto-posmotret" href="#">Что посмотреть</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="moyo-anime" href="#">Моё аниме</a></nav><div class="flex items-center gap-space-sm sm:gap-space-md"><div class="hidden md:flex items-center relative w-64 lg:w-72"><span class="material-symbols-outlined absolute left-3 text-outline text-[18px] pointer-events-none">search</span><input class="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container-low/90 border border-outline-variant/30 text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all" placeholder="Найти аниме, жанр, студию... (⌘K)" type="text"/></div><button aria-label="Уведомления" class="relative flex items-center justify-center w-10 h-10 rounded-full bg-surface-container-low border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(255,176,205,0.8)]"></span></button><div class="flex items-center gap-space-xs pl-space-xs"><div class="relative flex items-center shrink-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover border border-secondary/40" src="https://lh3.googleusercontent.com/aida/ALJJyrDrcGBRWEQPm3I8plZrP_7d1SxifqJPmJOTQh__kv2vpOZ0CfObxWbKwPOxPQU2PD1TMN0t-QiE36zRVJuxAKJd8xIKHupcUkacPKwbfguGr7KoMX7RfX0Ww_PFB9Xu2EZLGQJXsAn2wSIO2Y_NT09BbYR8n2LE4-IzNVm5JnwSF6YwDpOWf3-cQy2p3zthb8iVu77Kf3Trp-de1-MdpaTr1LIT8E5579vGD-WDSFU"/><span class="absolute -bottom-1 -right-1.5 px-1 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-sm text-[9px] leading-none border border-secondary/30">Lv. 42</span></div></div></div></div></header><main class="w-full pt-16 bg-surface"><div class="flex flex-col w-full">
+<!-- SECTION 1: CINEMATIC HERO BANNER -->
+<section class="relative w-full overflow-hidden bg-surface-container-lowest -mt-16 pt-24 pb-16 lg:pb-24">
+<!-- Ambient Atmospheric Glows -->
+<div class="absolute -top-32 left-1/4 w-[600px] h-[500px] bg-primary/10 rounded-full blur-[140px] pointer-events-none"></div>
+<div class="absolute top-1/3 -right-20 w-[550px] h-[550px] bg-secondary/10 rounded-full blur-[160px] pointer-events-none"></div>
+<!-- Backdrop Visual Frame -->
+<div class="absolute inset-0 z-0 opacity-40 mix-blend-luminosity">
+<div class="w-full h-full bg-cover bg-center" data-alt="Futuristic cinematic anime cityscape silhouette shrouded in twilight and soft mist, glowing neon violet and magenta sky reflections, ultra-detailed cyberpunk high-rises, rain atmosphere, high contrast moody dark anime backdrop" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAU5shJfo6Z_czU0CtgsuvpFREQWpHpbHLtgSDiXgrXf4kDmOtL5Yr9M9simtfH4ooO148SlLwK5ZRlk5oLfABpbnf3uSiyujw5yaUer0r5FpWbHrWyzDywoorB5c-_SEbGtFiaPr0cYIvwyXreD-DhDoi9LPh_uSTMxTX6kNu0NLL7X23uHeLl_ajtVqgPneGnrOFsXDXIkSrV0UujZLD9Q4_b9HyDuKElSSiBMA')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/80 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-surface-container-lowest via-surface-container-lowest/60 to-transparent"></div>
+</div>
+<!-- Hero Content Container -->
+<div class="relative z-10 max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+<div class="max-w-3xl flex flex-col gap-space-md">
+<!-- Meta Pills & Badges -->
+<div class="flex flex-wrap items-center gap-space-xs sm:gap-space-sm pt-4">
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/30 text-secondary border-0 shadow-[0_0_16px_rgba(255,176,205,0.2)]">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-badge-score text-badge-score">8.94</span>
+<span class="text-secondary/60 text-xs px-1">•</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">TOP #4 Сезона</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high/70 text-on-surface-variant font-label-md text-label-md">
+<span>ТВ Сериал</span>
+<span class="text-outline text-xs">•</span>
+<span>24 мин</span>
+<span class="text-outline text-xs">•</span>
+<span class="text-primary-fixed">MAPPA</span>
+<span class="text-outline text-xs">•</span>
+<span>Осень 2024</span>
+</div>
+</div>
+<!-- Titles: Japanese Callout & Russian Main -->
+<div class="flex flex-col gap-1">
+<span class="font-title-card text-title-card text-secondary/80 tracking-widest uppercase">『過去の残響：日食年代記』</span>
+<h1 class="font-display-hero text-display-hero text-on-surface tracking-tight leading-[1.08] drop-shadow-md">
+            Эхо Прошлого: Хроники Затмения
+          </h1>
+</div>
+<!-- Genres Chips -->
+<div class="flex flex-wrap gap-2">
+<span class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-default">Киберпанк</span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-default">Психология</span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-default">Детектив</span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-default">Фантастика</span>
+</div>
+<!-- Synopsis Narrative -->
+<p class="font-body-lg text-body-lg text-on-surface-variant/90 max-w-2xl leading-relaxed">
+          В мегаполисе будущего, погруженном в вечные сумерки, детектив Казуки расследует цепочку необъяснимых исчезновений памяти. Единственная улика связывает события с запрещенным артефактом эпохи первого Синтеза.
+        </p>
+<!-- CTA & Status Tracker Cluster -->
+<div class="flex flex-wrap items-center gap-space-sm pt-2">
+<!-- Primary CTA Button -->
+<button class="group flex items-center gap-2 px-6 h-11 rounded-full bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary font-label-md text-label-md shadow-[0_0_24px_rgba(160,120,255,0.45)] hover:shadow-[0_0_32px_rgba(160,120,255,0.7)] hover:scale-[1.02] active:scale-[0.98] transition-all" type="button">
+<span>Подробнее о тайтле</span>
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+</button>
+<!-- Tracking Dropdown Interactive Trigger -->
+<div class="relative group/track">
+<button class="flex items-center gap-2 px-5 h-11 rounded-full bg-surface-container-high/90 hover:bg-surface-bright text-on-surface font-label-md text-label-md shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span>Добавить в список</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</button>
+<!-- Quick Selection Floating Dropdown -->
+<div class="absolute left-0 top-full mt-2 w-48 p-1.5 rounded-xl bg-surface-container-highest shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover/track:opacity-100 group-hover/track:translate-y-0 group-hover/track:pointer-events-auto transition-all z-30">
+<button class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors">
+<span class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                  В планах
+                </span>
+<span class="text-xs text-outline">0/24</span>
+</button>
+<button class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors">
+<span class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                  Смотрю
+                </span>
+<span class="text-xs text-outline">+1 эп.</span>
+</button>
+<button class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors">
+<span class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                  Просмотрено
+                </span>
+<span class="material-symbols-outlined text-xs text-primary">done</span>
+</button>
+</div>
+</div>
+<!-- Watchlist Count Counter Pill -->
+<div class="hidden sm:flex items-center gap-2 px-4 h-11 rounded-full bg-surface-container-lowest/60 text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">people</span>
+<span>34 812 следят за релизом</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 2: POPULAR NOW (HORIZONTAL CAROUSEL) -->
+<section class="w-full py-10 lg:py-14 bg-surface">
+<div class="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+<!-- Section Header with Meta Action -->
+<div class="flex items-end justify-between mb-6 pb-2">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 text-secondary font-label-sm text-label-sm uppercase tracking-widest">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            Тренды сообщества
+          </div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Популярное сейчас</h2>
+</div>
+<div class="flex items-center gap-3">
+<a class="hidden sm:inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:text-primary-fixed transition-colors" href="#">
+<span>Смотреть все</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+<div class="flex items-center gap-1">
+<button aria-label="Предыдущий тайтл" class="w-9 h-9 rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors shadow-sm" id="carousel-prev">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button aria-label="Следующий тайтл" class="w-9 h-9 rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors shadow-sm" id="carousel-next">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Carousel Cards Grid / Flex Scroll -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-5 overflow-x-auto scroll-smooth pb-4" id="popular-cards-container">
+<!-- CARD 1 -->
+<div class="group relative flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 hover:-translate-y-1 shadow-md">
+<div class="relative w-full aspect-[2/3] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Anime poster art featuring a fierce wind runner standing on snow-covered mountain peaks with ice mist and aurora borealis, violet and cool cyan lighting, stylized painterly high fantasy" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0kS-m6Cxraw43lA0ctp669m10Ut9dAdSaNhOXx4be8YGnh9z5RzxI91l8rHOODtSh0v468QgQJUylDH_FSEievQl9BrLcupgolDV3o3vn72u3dnAfpDFWoYUFhtPp9z8lAw76porNY7ADSVfi_IRpP720rU6Qp-bm2mSTIrsmOEy11K9OTbaXWgCr3slT4VA-vCSqzw2YiKAD84wKddpTevtg2lG90mXF8_Dsrw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<!-- Badges top row -->
+<div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/90 text-on-secondary-container font-label-sm text-[10px] uppercase tracking-wide">
+                #1 В трендах
+              </span>
+<span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                8.87
+              </span>
+</div>
+<!-- Quick Add Hover Overlay -->
+<button aria-label="Сохранить в список" class="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-surface-container-highest/90 hover:bg-primary-container hover:text-on-primary-container text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+</button>
+</div>
+<div class="p-3.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<span class="text-[11px] font-label-sm text-outline tracking-wider block truncate">北風の物語 • Онгоинг</span>
+<h3 class="font-title-card text-title-card text-on-surface group-hover:text-primary-fixed transition-colors line-clamp-1">
+                Сага о Северных Ветрах
+              </h3>
+</div>
+<div class="flex items-center justify-between text-outline font-body-sm text-body-sm pt-1">
+<span>Эпос, Приключения</span>
+<span class="text-tertiary font-label-sm text-[11px]">18 эп.</span>
+</div>
+</div>
+</div>
+<!-- CARD 2 -->
+<div class="group relative flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 hover:-translate-y-1 shadow-md">
+<div class="relative w-full aspect-[2/3] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Anime visual art of floating sky islands with crystalline waterfalls falling into vast purple clouds, fantasy airship silhouette in golden dusk, vivid atmospheric anime scene" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdXGdZP4JHyO6pLiUIcNef3qDhM2W3x4rff6yVuSHb5ydJkGIZdhpi2UFvBORH8CXNAtG-DNKOPXF5VX8-P2OWr-dOns5pgZUlBtLQ9gIefUX6wLzmCtPa7ZnzuKJVvCl0Uwzxi28-ShRypVYzEwsFMXfhqUfRLl5CzUE63QOOo0n_CZfylWgVBIvrix3_mn5WOI5T53K35NFf4MexsICP0MbW2rfCdvj3nFpsBg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest/80 backdrop-blur-md text-on-surface-variant font-label-sm text-[10px] uppercase">
+                12 / 24 эп.
+              </span>
+<span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                8.76
+              </span>
+</div>
+<button aria-label="Сохранить в список" class="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-surface-container-highest/90 hover:bg-primary-container hover:text-on-primary-container text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+</button>
+</div>
+<div class="p-3.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<span class="text-[11px] font-label-sm text-outline tracking-wider block truncate">天島の地平線 • Сезон 2</span>
+<h3 class="font-title-card text-title-card text-on-surface group-hover:text-primary-fixed transition-colors line-clamp-1">
+                Горизонт Небесных Островов
+              </h3>
+</div>
+<div class="flex items-center justify-between text-outline font-body-sm text-body-sm pt-1">
+<span>Фэнтези, Магия</span>
+<span class="text-secondary font-label-sm text-[11px]">Онгоинг</span>
+</div>
+</div>
+</div>
+<!-- CARD 3 -->
+<div class="group relative flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 hover:-translate-y-1 shadow-md">
+<div class="relative w-full aspect-[2/3] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Anime artwork of a young female musician in a rainy neon Tokyo alley carrying a glowing guitar case, reflections on wet pavement, lo-fi aesthetic, deep indigo and neon violet" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuKeWOiuzr1ZmZxP4wZ3TnLCuihYb9B-Ri6au77J2uCewXZT8AtCF76WFcBSSb0CT9V3WHqxb6zySfp6_DBms9Tzwq6katm8AJDYfb9s9roytfh7QrgFfgavYGf8ESudPsHJnhTsNawVAR2Ewy5Ey2Pqlp-RN00JYjRq47u-_vpbg-etJuOMDiF-PgZjnvtkJ_iuLr3qSRz9juIwK_qHPiKTS1MR-hPHcoI3emnw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest/80 backdrop-blur-md text-on-surface-variant font-label-sm text-[10px] uppercase">
+                Завершен
+              </span>
+<span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                8.65
+              </span>
+</div>
+<button aria-label="Сохранить в список" class="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-surface-container-highest/90 hover:bg-primary-container hover:text-on-primary-container text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+</button>
+</div>
+<div class="p-3.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<span class="text-[11px] font-label-sm text-outline tracking-wider block truncate">東京ナイトビート • 12 эп.</span>
+<h3 class="font-title-card text-title-card text-on-surface group-hover:text-primary-fixed transition-colors line-clamp-1">
+                Ритм Ночного Токио
+              </h3>
+</div>
+<div class="flex items-center justify-between text-outline font-body-sm text-body-sm pt-1">
+<span>Музыка, Срез жизни</span>
+<span class="text-outline font-label-sm text-[11px]">Финал</span>
+</div>
+</div>
+</div>
+<!-- CARD 4 -->
+<div class="group relative flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 hover:-translate-y-1 shadow-md">
+<div class="relative w-full aspect-[2/3] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Dark fantasy anime samurai swordsman in deep purple demonic armor, black blade emitting dark aura and sakura petals, glowing crimson eyes, dramatic dynamic battle stance" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEtYKDjmofMXyvwU4FpZLyPs797K0FCxHOkwFfK4ywSjzpR45_95KiV-vqAiQTklus1Un41OUv2oNYc7mWmfW3yXcAIO_RiGFcmi-m-abSrenFZPDnD8WkbCAf3QVf6wGSnuRuEiJ0e6azAIlMbWAcV7Pj2lCJcue01IHh4wJ9yZVuFcT5RdX_-dNCNZuEBYiUZISuVv4Xuco34a8ZI8gNrvNQThiF4uUNuB0ewA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/80 text-on-secondary-container font-label-sm text-[10px] uppercase">
+                8 / 12 эп.
+              </span>
+<span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                8.91
+              </span>
+</div>
+<button aria-label="Сохранить в список" class="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-surface-container-highest/90 hover:bg-primary-container hover:text-on-primary-container text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+</button>
+</div>
+<div class="p-3.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<span class="text-[11px] font-label-sm text-outline tracking-wider block truncate">深淵の刃 • Студия Ufotable</span>
+<h3 class="font-title-card text-title-card text-on-surface group-hover:text-primary-fixed transition-colors line-clamp-1">
+                Клинок Бездны: Перерождение
+              </h3>
+</div>
+<div class="flex items-center justify-between text-outline font-body-sm text-body-sm pt-1">
+<span>Экшен, Сверхъестественное</span>
+<span class="text-tertiary font-label-sm text-[11px]">Онгоинг</span>
+</div>
+</div>
+</div>
+<!-- CARD 5 -->
+<div class="group relative flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 hover:-translate-y-1 shadow-md">
+<div class="relative w-full aspect-[2/3] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Anime illustration of a high-tech underground laboratory filled with neon holographic neural graphs and sleeping pods, mysterious sci-fi thriller atmosphere, deep teal and violet lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKTf6eUua8ZOfcFZeS2Syej1ud6pZxtGLCwOQy9CqasGdG0x8fvT_4W-HNDBZTm1g8cCQLs8j8p01hfua_nwf27fPpIfi5ONPvWrpb-HjbbIXw59RFCUXF0e3MkRvBcUWjMEWLTOIqCWMEw30_sZIqgEvLBvrWocfu6Hu4yswlQC3qWe6DeNBzfwT3Ak9ZSPubs4YkmGoBaoRsW7yA5q880HYf16_tiaFSfl1kcA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest/80 backdrop-blur-md text-on-surface-variant font-label-sm text-[10px] uppercase">
+                Онгоинг
+              </span>
+<span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                8.54
+              </span>
+</div>
+<button aria-label="Сохранить в список" class="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-surface-container-highest/90 hover:bg-primary-container hover:text-on-primary-container text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+</button>
+</div>
+<div class="p-3.5 flex flex-col flex-1 justify-between gap-2">
+<div>
+<span class="text-[11px] font-label-sm text-outline tracking-wider block truncate">夢の研究所 • Bones</span>
+<h3 class="font-title-card text-title-card text-on-surface group-hover:text-primary-fixed transition-colors line-clamp-1">
+                Лаборатория Снов
+              </h3>
+</div>
+<div class="flex items-center justify-between text-outline font-body-sm text-body-sm pt-1">
+<span>Sci-Fi, Триллер</span>
+<span class="text-tertiary font-label-sm text-[11px]">Онгоинг</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 3: AIRING TODAY (INTERACTIVE SCHEDULE & TIMERS) -->
+<section class="w-full py-12 lg:py-16 bg-surface-container-lowest">
+<div class="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+<!-- Schedule Filter & Top Bar -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 pb-3">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center justify-center w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-wider">Прямое вещание в Японии</span>
+</div>
+<div class="flex items-center gap-3">
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Выходит сегодня</h2>
+<span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md">
+              Вторник, 22 Октября
+            </span>
+</div>
+</div>
+<!-- Filter Segmented Control -->
+<div class="inline-flex p-1 rounded-xl bg-surface-container-low">
+<button class="px-4 py-1.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md shadow-sm transition-colors">
+            Все релизы (14)
+          </button>
+<button class="px-4 py-1.5 rounded-lg text-outline hover:text-on-surface font-label-md text-label-md transition-colors">
+            Из моего списка (4)
+          </button>
+</div>
+</div>
+<!-- Schedule Cards 2x2 Bento Matrix -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+<!-- AIRING CARD A -->
+<div class="relative flex items-center gap-4 p-4 lg:p-5 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 shadow-sm group">
+<div class="relative w-24 h-32 lg:w-28 lg:h-36 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Anime hero close-up with focused dark purple eyes, demon marks glowing on temples, dark fantasy action anime character portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBbh7SHnv27kYhl0fayO0l2y5sTf306zXw97S3nzubS4jNT5KFKB5xcZSQJqbj__cgyfSeC2r2ifFKJgLIwY25H5Jd1EVUCWyt9PbxWK0Ok4aYyMlX7uo3ryF5b1bdbMjXlMCnC8i8YZ4VXPo5nmnkg6mxdRrrk1kC8ur__Xok1PgDAdA24yJV0ZuxtF55cdKclqYP_afSlRiVjC2xnaO2pBHTGkpXacu3Z9Xudg"/>
+<div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/90 font-label-sm text-[10px] text-tertiary">
+              Эп. 9
+            </div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0 h-full py-0.5">
+<div>
+<div class="flex items-center justify-between gap-2 mb-1">
+<span class="font-label-sm text-label-sm text-outline">Студия Ufotable</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">timer</span>
+                  через 02 ч 14 мин
+                </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">
+                Клинок Бездны: Перерождение
+              </h3>
+<p class="font-body-sm text-body-sm text-outline mt-0.5 truncate">
+                Эпизод 9: «Тени на дне пропасти»
+              </p>
+</div>
+<div class="flex items-center justify-between pt-3">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-[11px] text-on-surface-variant">Субтитры</span>
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-[11px] text-on-surface-variant">Озвучка</span>
+</div>
+<button aria-label="Напомнить о релизе" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">notifications_active</span>
+<span class="hidden sm:inline">Напомнить</span>
+</button>
+</div>
+</div>
+</div>
+<!-- AIRING CARD B -->
+<div class="relative flex items-center gap-4 p-4 lg:p-5 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 shadow-sm group">
+<div class="relative w-24 h-32 lg:w-28 lg:h-36 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Anime heroine singing on rooftop stage under neon night city skyline with microphone, purple atmospheric glow, music youth anime" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhjnT6GpmQ5dQU0FYf1TlFJV-Ag2jLWJrDbaMoJEEUGyzpe1oEjuqWkfGzrNtz5ELz6sl0mybbYd09c0Ot3jejBsn1Fhy8zjjR9ogjaU6UelxkT1kaDoEGwmXoIOKWJEBZnIpFhheWv3fEgjqyQMnkEQTXfscsrAaPZFrWBNZyWs71iHo7BDAS4JwO257rXRre3Rr57rzMtluB4Ip6d98p9ZGJpSNj7QvoQTTzZA"/>
+<div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/90 font-label-sm text-[10px] text-tertiary">
+              Эп. 4
+            </div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0 h-full py-0.5">
+<div>
+<div class="flex items-center justify-between gap-2 mb-1">
+<span class="font-label-sm text-label-sm text-outline">Студия CloverWorks</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">timer</span>
+                  через 05 ч 40 мин
+                </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">
+                Ритм Ночного Токио
+              </h3>
+<p class="font-body-sm text-body-sm text-outline mt-0.5 truncate">
+                Эпизод 4: «Случайный аккорд в дождливый вечер»
+              </p>
+</div>
+<div class="flex items-center justify-between pt-3">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-[11px] text-on-surface-variant">Оригинал JAP</span>
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-[11px] text-on-surface-variant">Субтитры</span>
+</div>
+<button aria-label="Напомнить о релизе" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">notifications_none</span>
+<span class="hidden sm:inline">Напомнить</span>
+</button>
+</div>
+</div>
+</div>
+<!-- AIRING CARD C -->
+<div class="relative flex items-center gap-4 p-4 lg:p-5 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 shadow-sm group">
+<div class="relative w-24 h-32 lg:w-28 lg:h-36 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Anime fantasy archer drawn bow aiming through pine tree branches covered in frost, cold epic battle anime landscape" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6uIyKT0J33CgWUeWKC-0ejLkMC8-pJ8FA7qfKRPsuVkE3JWMDmOD7m42ksxtGA1XGVisGt-0Vh_mhRukFjiKiKbQV8aJelN90vTf-k5JChJcw-6P2Ll5WR5feavxvQGEn4Om3pgOwx1JIlKANo2Hi91w2ZiJOtz9g2TG374BBkeVMqiSRKlQ__H7JTmMKncnXB7Ch6EcPWFWUYbWGhDr9yo4WWVFasqyIscpRrQ"/>
+<div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/90 font-label-sm text-[10px] text-tertiary">
+              Эп. 18
+            </div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0 h-full py-0.5">
+<div>
+<div class="flex items-center justify-between gap-2 mb-1">
+<span class="font-label-sm text-label-sm text-outline">Студия MAPPA</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">timer</span>
+                  через 08 ч 15 мин
+                </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">
+                Сага о Северных Ветрах
+              </h3>
+<p class="font-body-sm text-body-sm text-outline mt-0.5 truncate">
+                Эпизод 18: «Пепел древних крепостей»
+              </p>
+</div>
+<div class="flex items-center justify-between pt-3">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-[11px] text-on-surface-variant">Все озвучки</span>
+</div>
+<button aria-label="Напомнить о релизе" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">notifications_none</span>
+<span class="hidden sm:inline">Напомнить</span>
+</button>
+</div>
+</div>
+</div>
+<!-- AIRING CARD D -->
+<div class="relative flex items-center gap-4 p-4 lg:p-5 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 shadow-sm group">
+<div class="relative w-24 h-32 lg:w-28 lg:h-36 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Anime student in mystical library surrounded by floating glowing ancient glyphs and alchemy vials, deep purple and amber aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9a8LbONV6YIepaZahXCddyi6t0giFLQER_LJkaRXOee9bS0yqaFUrCOTtTgCWXNht1RkIXgq1xfP7zYo2HGFX1o4VKFtigTsJm9J9VEyV1rrywp4Lhr9BK_Wmusz7FaYMA2HD2skhzGLkHUc3xJDOikPu2tU8dgs3kbgAVtiGvD3coPIpWWkL-hgpHpHSKb3gzztd050DAXG6uHh8JRWivsi7E0_hJjK1r0NGiw"/>
+<div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/90 font-label-sm text-[10px] text-tertiary">
+              Эп. 3
+            </div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0 h-full py-0.5">
+<div>
+<div class="flex items-center justify-between gap-2 mb-1">
+<span class="font-label-sm text-label-sm text-outline">Студия Bones</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">timer</span>
+                  через 11 ч 30 мин
+                </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors">
+                Академия Алхимии и Тени
+              </h3>
+<p class="font-body-sm text-body-sm text-outline mt-0.5 truncate">
+                Эпизод 3: «Первая запретная трансмутация»
+              </p>
+</div>
+<div class="flex items-center justify-between pt-3">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-[11px] text-on-surface-variant">Субтитры</span>
+</div>
+<button aria-label="Напомнить о релизе" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">notifications_none</span>
+<span class="hidden sm:inline">Напомнить</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 4: SMART MOOD DISCOVERY BANNER (WHAT TO WATCH) -->
+<section class="w-full py-12 lg:py-16 bg-surface">
+<div class="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+<div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-lowest p-8 md:p-12 shadow-2xl">
+<!-- Visual Accent Circles -->
+<div class="absolute -right-20 -top-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -left-20 -bottom-20 w-80 h-80 bg-secondary/15 rounded-full blur-3xl pointer-events-none"></div>
+<div class="relative z-10 max-w-3xl flex flex-col gap-space-md">
+<div class="inline-flex items-center gap-2 text-secondary font-label-md text-label-md uppercase tracking-wider">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span>Персональный навигатор «Анимо»</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+            Не знаешь, что посмотреть сегодня вечером?
+          </h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+            Умный алгоритм рекомендаций анализирует твою библиотеку, совпадение тропов и подбирает тайтлы под текущее настроение буквально за 3 клика.
+          </p>
+<!-- Interactive Mood Chips -->
+<div class="flex flex-wrap gap-2.5 pt-2">
+<button class="px-4 py-2 rounded-full bg-surface-container-lowest/80 hover:bg-primary-container hover:text-on-primary-container text-on-surface font-label-md text-label-md transition-all active:scale-95 shadow-sm">
+              🔥 Адреналин и драйв
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container-lowest/80 hover:bg-primary-container hover:text-on-primary-container text-on-surface font-label-md text-label-md transition-all active:scale-95 shadow-sm">
+              🌙 Меланхоличный уют
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container-lowest/80 hover:bg-primary-container hover:text-on-primary-container text-on-surface font-label-md text-label-md transition-all active:scale-95 shadow-sm">
+              🧠 Сложный майндгейм
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container-lowest/80 hover:bg-secondary-container hover:text-on-secondary-container text-on-surface font-label-md text-label-md transition-all active:scale-95 shadow-sm">
+              🌸 Тёплая романтика
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container-lowest/80 hover:bg-primary-container hover:text-on-primary-container text-on-surface font-label-md text-label-md transition-all active:scale-95 shadow-sm">
+              🍜 Легкий отдых
+            </button>
+</div>
+<!-- Master Action -->
+<div class="pt-4 flex flex-wrap items-center gap-4">
+<button class="flex items-center gap-2.5 px-8 h-12 rounded-full bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary font-label-md text-label-md shadow-[0_0_28px_rgba(160,120,255,0.4)] hover:shadow-[0_0_36px_rgba(160,120,255,0.65)] hover:scale-[1.02] active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+<span>Подобрать по настроению</span>
+</button>
+<span class="font-body-sm text-body-sm text-outline">Без спойлеров • Учитываются исключенные жанры</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 5: SEASONAL NEW RELEASES (FALL 2024 WITH TABS) -->
+<section class="w-full py-10 lg:py-16 bg-surface-container-lowest">
+<div class="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+<!-- Section Tabs Navigation -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+<div>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider block mb-1">Сезонный гид</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Новинки сезона • Осень 2024</h2>
+</div>
+<div class="flex items-center gap-1 overflow-x-auto pb-1">
+<button class="px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md shadow-sm">
+            Все (64)
+          </button>
+<button class="px-4 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors">
+            Сёнэн
+          </button>
+<button class="px-4 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors">
+            Сэйнэн
+          </button>
+<button class="px-4 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors">
+            Романтика
+          </button>
+<button class="px-4 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors">
+            Фэнтези
+          </button>
+</div>
+</div>
+<!-- 4-Card Rich Catalog Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+<!-- CARD 1 -->
+<div class="group flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 shadow-md">
+<div class="relative aspect-[3/4] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Cybernetic anime investigator standing in pouring rain under holographic neon signs reflecting on wet asphalt, moody dark cyberpunk style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0v1-NPhhYd_pmudUkTR4pTWP1U3d7PF0FlZVw7xPSrpG6HlAqgZtDlH4iN70roY3idLQRgVdBM0FTF1jPDqqD0GGkKimczg8vZZLa-Ct0NMn26ZZuivkjPhULUWTTwFBpDNGTUWAaMSt0blwwtL9AHbx_qgpXv-JrhZf8QHI0T_RM7t7mNQ5m4tPB_luZ9C_P8zRflsWTn_qRc4xtxZoKNW3_Vw2bi0crasWxdQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<div class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-on-surface font-label-sm text-[11px]">
+              MAPPA
+            </div>
+<div class="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+              8.94
+            </div>
+</div>
+<div class="p-4 flex flex-col flex-1 justify-between gap-3">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                Эхо Прошлого
+              </h3>
+<p class="font-body-sm text-body-sm text-outline mt-1 line-clamp-2">
+                Запутанный детектив в мрачном мире аугментаций и стертых воспоминаний.
+              </p>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-sm text-[11px] text-tertiary">24 эпизода</span>
+<button class="px-3 py-1 rounded-lg bg-surface-container-highest hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md transition-colors">
+                + В список
+              </button>
+</div>
+</div>
+</div>
+<!-- CARD 2 -->
+<div class="group flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 shadow-md">
+<div class="relative aspect-[3/4] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Anime sorcerer apprentice unleashing violet lightning magic glyphs inside a grand mystical academy rotunda, high quality anime visual" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCk2glB9yVkx09y1OTlLSLYFko-TOQ7dL29adEjkyLO9lXQpdJSg-Ve3e6hXkK4WR2NWicHvmDX2s1nT65lCSYDS6gmcUiz-bq_ILpP0lR5MDOTAG_UzdYV2NxxE_o1nREQcujIh6H-FYojoEnQgygUc4a1Vl9NzptR_8G6iMW0a8YMw8wIMYYleqcEbRVdYaE_qm2q4fDzrwmnc-NFOh4dZ1YhelaJvIs8iyndpA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<div class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-on-surface font-label-sm text-[11px]">
+              Bones
+            </div>
+<div class="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+              8.42
+            </div>
+</div>
+<div class="p-4 flex flex-col flex-1 justify-between gap-3">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                Академия Алхимии и Тени
+              </h3>
+<p class="font-body-sm text-body-sm text-outline mt-1 line-clamp-2">
+                Секреты забытых орденов и тайные магические дуэли в глубинах древнего архива.
+              </p>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-sm text-[11px] text-tertiary">12 эпизодов</span>
+<button class="px-3 py-1 rounded-lg bg-surface-container-highest hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md transition-colors">
+                + В список
+              </button>
+</div>
+</div>
+</div>
+<!-- CARD 3 -->
+<div class="group flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 shadow-md">
+<div class="relative aspect-[3/4] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Romantic anime scene of two students standing on a train platform during dusk sunset with cherry blossom sakura petals blowing in the wind" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGDBIMDjNQS8HsvAwzVHl8h0oje1gpJgj7I8yPXhqW2AcX0BKVZt1BQADCblnth5KC5_sveVt77H5uWcBZGvu7liybdnL_ZXEQ0C4Skx9TnFrdtg-SsBKtxi2TkpZJK1bJTP9moZHfHx7m__pGyCfwSKlDqri9tUIu5LDXcM9mLjFHaLp7zlaRCcN34f57eXet274x2OQ0YfU47OZfS6k7iyB-htP0SvwjcmbQcw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<div class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-on-surface font-label-sm text-[11px]">
+              CloverWorks
+            </div>
+<div class="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+              8.68
+            </div>
+</div>
+<div class="p-4 flex flex-col flex-1 justify-between gap-3">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                Далёкий Голос Весны
+              </h3>
+<p class="font-body-sm text-body-sm text-outline mt-1 line-clamp-2">
+                Трогательная история первой любви и переписки через старые пленочные аудиокассеты.
+              </p>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-sm text-[11px] text-tertiary">12 эпизодов</span>
+<button class="px-3 py-1 rounded-lg bg-surface-container-highest hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md transition-colors">
+                + В список
+              </button>
+</div>
+</div>
+</div>
+<!-- CARD 4 -->
+<div class="group flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 shadow-md">
+<div class="relative aspect-[3/4] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Mechanical sci-fi robot mecha standing tall in an abandoned overgrown city, green moss on steel plates, purple twilight sky, thoughtful anime art" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy_5WCFAOAr-W06Sua0mDkohtWZAFj1gMw1QXxoap7CdM37xem-ZxiZasTbQyNF7gSjSHZjnwKeOUWXvuSWCZ-aiCu3YDX2MZPaX0FbPTjnHXcayXu7K5HFa9gnlE1Z1n3qur_qRzBbVgBrgKi_O7pJm68wjwvmC5lla-HZKRU55yt1TZoA947uUGQL2vXE4xqKAzxvpYW3qeQFboEV4NnFm4PyS5ytmLokO2c1Q"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent"></div>
+<div class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-on-surface font-label-sm text-[11px]">
+              Production I.G
+            </div>
+<div class="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+              8.35
+            </div>
+</div>
+<div class="p-4 flex flex-col flex-1 justify-between gap-3">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                Стальной Страж Руин
+              </h3>
+<p class="font-body-sm text-body-sm text-outline mt-1 line-clamp-2">
+                Одинокий исследователь и древний дроид исследуют затонувшие архивы Земли.
+              </p>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-sm text-[11px] text-tertiary">13 эпизодов</span>
+<button class="px-3 py-1 rounded-lg bg-surface-container-highest hover:bg-primary hover:text-on-primary text-on-surface font-label-md text-label-md transition-colors">
+                + В список
+              </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 6: TRACKER & YEAR STATS SHOWCASE ("МОЙ ГОД В АНИМЕ") -->
+<section class="w-full py-12 lg:py-20 bg-surface">
+<div class="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+<div class="flex flex-col lg:flex-row items-stretch gap-8">
+<!-- Left: Contextual Narrative -->
+<div class="lg:w-1/3 flex flex-col justify-between">
+<div class="flex flex-col gap-2">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">
+              Личная аналитика
+            </span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+              Твой профиль и статистика «Анимо»
+            </h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mt-2">
+              Отслеживай серии в один тап, формируй честные личные рейтинги и получай кинематографичные персональные итоги года без рекламы и навязчивого шума.
+            </p>
+</div>
+<div class="pt-6">
+<div class="p-4 rounded-2xl bg-surface-container-low flex items-center gap-4 mb-4">
+<div class="w-12 h-12 rounded-xl bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[24px]">local_fire_department</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-on-surface block">18 дней подряд</span>
+<span class="font-body-sm text-body-sm text-outline">Текущая серия активности в трекере</span>
+</div>
+</div>
+<a class="inline-flex items-center gap-2 font-label-md text-label-md text-primary hover:text-primary-fixed transition-colors" href="#">
+<span>Открыть полную аналитику профиля</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Right: Glassmorphic Interactive Dashboard Widget -->
+<div class="lg:w-2/3 rounded-3xl bg-surface-container-low p-6 lg:p-8 shadow-xl flex flex-col justify-between">
+<div class="flex items-center justify-between pb-6 mb-6">
+<div class="flex items-center gap-3">
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="font-title-card text-title-card text-on-surface">Мой год в аниме 2024</span>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
+              Актуально на октябрь
+            </span>
+</div>
+<!-- Key Metrics Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+<div class="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
+<span class="text-outline font-label-sm text-label-sm">Эпизодов</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">842</span>
+<span class="text-[11px] text-tertiary">~14.6 дней жизни</span>
+</div>
+<div class="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
+<span class="text-outline font-label-sm text-label-sm">Завершено</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold">48</span>
+<span class="text-[11px] text-outline">Тайтлов</span>
+</div>
+<div class="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
+<span class="text-outline font-label-sm text-label-sm">Средний балл</span>
+<span class="font-headline-md text-headline-md text-secondary font-bold">8.2</span>
+<span class="text-[11px] text-outline">Из 10</span>
+</div>
+<div class="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
+<span class="text-outline font-label-sm text-label-sm">Топ-жанр</span>
+<span class="font-title-card text-title-card text-on-surface truncate">Психология</span>
+<span class="text-[11px] text-primary">34% времени</span>
+</div>
+</div>
+<!-- Inline Visual Data Chart (SVG Activity Streaks & Volume) -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>Сезонный темп просмотра (эпизодов по месяцам)</span>
+<span>Пик: Август (112 эп.)</span>
+</div>
+<div class="w-full h-24 pt-2">
+<svg class="w-full h-full overflow-visible text-primary" viewbox="0 0 500 80">
+<!-- Bar grid -->
+<rect class="fill-surface-container hover:fill-surface-container-highest transition-colors" height="35" rx="4" width="28" x="10" y="45"></rect>
+<rect class="fill-surface-container hover:fill-surface-container-highest transition-colors" height="45" rx="4" width="28" x="52" y="35"></rect>
+<rect class="fill-surface-container hover:fill-surface-container-highest transition-colors" height="52" rx="4" width="28" x="94" y="28"></rect>
+<rect class="fill-surface-container hover:fill-surface-container-highest transition-colors" height="40" rx="4" width="28" x="136" y="40"></rect>
+<rect class="fill-surface-container-highest hover:fill-primary/60 transition-colors" height="60" rx="4" width="28" x="178" y="20"></rect>
+<rect class="fill-surface-container hover:fill-surface-container-highest transition-colors" height="50" rx="4" width="28" x="220" y="30"></rect>
+<rect class="fill-surface-container-highest hover:fill-primary/60 transition-colors" height="65" rx="4" width="28" x="262" y="15"></rect>
+<!-- August Peak Bar -->
+<rect class="fill-primary-container shadow-lg" height="78" rx="4" width="28" x="304" y="2"></rect>
+<rect class="fill-surface-container-highest hover:fill-primary/60 transition-colors" height="58" rx="4" width="28" x="346" y="22"></rect>
+<rect class="fill-secondary shadow-sm" height="68" rx="4" width="28" x="388" y="12"></rect>
+<rect class="fill-surface-container opacity-60" height="42" rx="4" width="28" x="430" y="38"></rect>
+<rect class="fill-surface-container-high opacity-30" height="10" rx="4" width="28" x="472" y="70"></rect>
+</svg>
+</div>
+<div class="flex justify-between text-[11px] text-outline pt-1 font-label-sm">
+<span>Янв</span>
+<span>Фев</span>
+<span>Мар</span>
+<span>Апр</span>
+<span>Май</span>
+<span>Июн</span>
+<span>Июл</span>
+<span class="text-primary-fixed font-bold">Авг</span>
+<span>Сен</span>
+<span class="text-secondary font-bold">Окт</span>
+<span>Ноя</span>
+<span>Дек</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 7: PLATFORM CLARIFICATION / COMPLIANCE BANNER -->
+<section class="w-full py-8 bg-surface-container-lowest">
+<div class="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
+<div class="p-5 rounded-2xl bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-outline shrink-0">
+<span class="material-symbols-outlined text-[20px]">format_image_left</span>
+</div>
+<p class="font-body-sm text-body-sm text-outline max-w-2xl">
+            «Анимо» — независимая база данных, каталог и система персонального трекинга аниме. Сервис не предоставляет услуги просмотра видео и не хранит медиафайлы.
+          </p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<span class="font-label-sm text-label-sm text-outline">Чистый интерфейс без рекламы</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Client-side Interactive Carousel Micro-Interaction -->
+<script>
+  (function() {
+    const container = document.getElementById('popular-cards-container');
+    const prevBtn = document.getElementById('carousel-prev');
+    const nextBtn = document.getElementById('carousel-next');
+
+    if (container && prevBtn && nextBtn) {
+      prevBtn.addEventListener('click', () => {
+        container.scrollBy({ left: -320, behavior: 'smooth' });
+      });
+      nextBtn.addEventListener('click', () => {
+        container.scrollBy({ left: 320, behavior: 'smooth' });
+      });
+    }
+  })();
+</script></main><footer class="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-space-xl mt-space-xl"><div class="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop"><div class="flex flex-col lg:flex-row lg:items-start justify-between gap-space-xl pb-space-xl border-b border-outline-variant/20"><div class="max-w-md"><div class="flex items-center gap-space-sm mb-space-sm"><span class="flex items-center justify-center w-7 h-7 rounded-full bg-surface-container-high border border-secondary/40 text-secondary"><span class="material-symbols-outlined text-[16px]">filter_vintage</span></span><span class="font-headline-sm text-headline-sm font-bold text-on-surface">АНИМО</span></div><p class="font-body-md text-body-md text-on-surface-variant mb-space-sm">АНИМО — кинематографичный каталог и трекер аниме без пиратства и рекламы.</p><p class="font-body-sm text-body-sm text-outline">Платформа является информационным каталогом и трекером личной коллекции. Просмотр и воспроизведение видео отсутствуют.</p></div><div class="flex flex-wrap gap-x-space-xl gap-y-space-md"><div class="flex flex-col gap-space-xs"><span class="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-1">Навигация</span><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="katalog-ongoingov" href="#">Каталог онгоингов</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="top-100" href="#">Топ 100</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="kalendar" href="#">Календарь релизов</a></div><div class="flex flex-col gap-space-xs"><span class="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-1">Ресурсы</span><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="statistika" href="#">Статистика</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="api-dokumentaciya" href="#">API</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="soobshchestvo" href="#">Сообщество</a></div><div class="flex flex-col gap-space-xs"><span class="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-1">Правила</span><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="konfidencialnost" href="#">Конфиденциальность</a></div></div></div><div class="pt-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm text-outline font-body-sm text-body-sm"><span>© 2025 АНИМО. Все права защищены.</span><span>Сделано с любовью к японской анимации.</span></div></div></footer></body></html>

@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@500;600;700&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-secondary": "#640039", "surface-container-high": "#2a2931", "on-error-container": "#ffdad6", "secondary-container": "#aa0266", "surface-bright": "#3a3840", "inverse-on-surface": "#312f37", "surface-container-lowest": "#0e0d14", "on-tertiary-container": "#002f38", "on-primary-fixed-variant": "#5516be", "primary-container": "#a078ff", "surface-container": "#201f26", "on-secondary-fixed": "#3e0022", "outline": "#958ea0", "on-secondary-container": "#ffbad3", "on-surface-variant": "#cbc3d7", "background": "#14121a", "on-secondary-fixed-variant": "#8c0053", "secondary-fixed": "#ffd9e4", "on-background": "#e5e1eb", "on-primary-container": "#340080", "surface-container-highest": "#35343c", "on-surface": "#e5e1eb", "surface-tint": "#d0bcff", "surface-variant": "#35343c", "tertiary": "#4cd7f6", "secondary-fixed-dim": "#ffb0cd", "inverse-primary": "#6d3bd7", "surface": "#14121a", "on-primary-fixed": "#23005c", "tertiary-container": "#009eb9", "primary-fixed-dim": "#d0bcff", "on-tertiary-fixed": "#001f26", "on-tertiary": "#003640", "primary-fixed": "#e9ddff", "surface-container-low": "#1c1b22", "error": "#ffb4ab", "on-tertiary-fixed-variant": "#004e5c", "secondary": "#ffb0cd", "tertiary-fixed-dim": "#4cd7f6", "tertiary-fixed": "#acedff", "error-container": "#93000a", "inverse-surface": "#e5e1eb", "outline-variant": "#494454", "surface-dim": "#14121a", "on-primary": "#3c0091", "on-error": "#690005", "primary": "#d0bcff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-xs": "0.25rem", "margin-tablet": "2rem", "space-md": "1rem", "space-xl": "2.5rem", "margin-desktop": "3.5rem", "gutter-desktop": "1.5rem", "margin": "1rem", "gutter": "1.25rem", "space-lg": "1.5rem", "space-sm": "0.5rem" }, "fontFamily": { "display-hero-mobile": [ "Sora" ], "label-md": [ "Plus Jakarta Sans" ], "body-sm": [ "Inter" ], "display-hero": [ "Sora" ], "headline-sm": [ "Sora" ], "title-card": [ "Plus Jakarta Sans" ], "body-md": [ "Inter" ], "headline-md": [ "Sora" ], "label-sm": [ "Plus Jakarta Sans" ], "body-lg": [ "Inter" ], "headline-lg-mobile": [ "Sora" ], "badge-score": [ "Sora" ], "headline-lg": [ "Sora" ] }, "fontSize": { "display-hero-mobile": [ "32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" } ], "label-md": [ "13px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600" } ], "body-sm": [ "12px", { "lineHeight": "18px", "fontWeight": "400" } ], "display-hero": [ "48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "headline-sm": [ "18px", { "lineHeight": "24px", "fontWeight": "600" } ], "title-card": [ "15px", { "lineHeight": "20px", "fontWeight": "600" } ], "body-md": [ "14px", { "lineHeight": "22px", "fontWeight": "400" } ], "headline-md": [ "22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "label-sm": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "700" } ], "body-lg": [ "16px", { "lineHeight": "26px", "fontWeight": "400" } ], "headline-lg-mobile": [ "24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "badge-score": [ "13px", { "lineHeight": "16px", "fontWeight": "700" } ], "headline-lg": [ "32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "600" } ] } } } };</script></head><body class="bg-surface text-on-surface font-body-md text-body-md antialiased min-h-screen selection:bg-secondary-container selection:text-on-secondary-container"><header class="fixed top-0 inset-x-0 z-50 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/30"><div class="h-16 max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md shrink-0"><a class="flex items-center gap-space-sm group" data-path="katalog" href="#"><div class="relative flex items-center justify-center"><div class="absolute -inset-1 rounded-full bg-secondary/30 blur-sm group-hover:bg-secondary/60 transition-all"></div><span class="relative flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-high border border-secondary/40 text-secondary"><span class="material-symbols-outlined text-[18px]">filter_vintage</span></span></div><span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface group-hover:text-secondary-fixed transition-colors">АНИМО</span></a></div><nav class="hidden xl:flex items-center gap-space-xs p-space-xs rounded-full bg-surface-container-low/70 border border-outline-variant/20" data-active-classes="bg-surface-container-high text-on-surface shadow-[0_0_12px_rgba(208,188,255,0.2)]"><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="katalog" href="#">Каталог</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md bg-surface-container-high text-on-surface shadow-[0_0_12px_rgba(208,188,255,0.2)] transition-all" data-path="kalendar" href="#">Календарь</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="chto-posmotret" href="#">Что посмотреть</a><a class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="moyo-anime" href="#">Моё аниме</a></nav><div class="flex items-center gap-space-sm sm:gap-space-md"><div class="hidden md:flex items-center relative w-64 lg:w-72"><span class="material-symbols-outlined absolute left-3 text-outline text-[18px] pointer-events-none">search</span><input class="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container-low/90 border border-outline-variant/30 text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all" placeholder="Найти аниме, жанр, студию... (⌘K)" type="text"/></div><button aria-label="Уведомления" class="relative flex items-center justify-center w-10 h-10 rounded-full bg-surface-container-low border border-outline-variant/30 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(255,176,205,0.8)]"></span></button><div class="flex items-center gap-space-xs pl-space-xs"><div class="relative flex items-center shrink-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover border border-secondary/40" src="https://lh3.googleusercontent.com/aida/ALJJyrDrcGBRWEQPm3I8plZrP_7d1SxifqJPmJOTQh__kv2vpOZ0CfObxWbKwPOxPQU2PD1TMN0t-QiE36zRVJuxAKJd8xIKHupcUkacPKwbfguGr7KoMX7RfX0Ww_PFB9Xu2EZLGQJXsAn2wSIO2Y_NT09BbYR8n2LE4-IzNVm5JnwSF6YwDpOWf3-cQy2p3zthb8iVu77Kf3Trp-de1-MdpaTr1LIT8E5579vGD-WDSFU"/><span class="absolute -bottom-1 -right-1.5 px-1 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-sm text-[9px] leading-none border border-secondary/30">Lv. 42</span></div></div></div></div></header><main class="w-full pt-16 bg-surface"><div class="flex flex-col w-full">
+<!-- Subtle decorative ambient glows (relative-contained) -->
+<div class="relative w-full overflow-hidden">
+<div class="absolute -top-32 left-1/4 w-[560px] h-[560px] bg-primary/10 rounded-full blur-[140px] pointer-events-none"></div>
+<div class="absolute top-96 right-10 w-[420px] h-[420px] bg-secondary-container/15 rounded-full blur-[160px] pointer-events-none"></div>
+<div class="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-lg flex flex-col gap-space-xl">
+<!-- Breadcrumbs & Calendar Head Section -->
+<section class="flex flex-col gap-space-md">
+<!-- Breadcrumb -->
+<nav class="flex items-center gap-space-xs text-outline font-body-sm text-body-sm">
+<a class="hover:text-primary transition-colors" href="#">Главная</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface">Календарь релизов</span>
+</nav>
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-space-lg">
+<div class="flex flex-col gap-space-xs max-w-3xl">
+<div class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-high w-fit">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Сезон Осень 2025 · Прямой телеэфир</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Календарь выхода серий</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">
+              Точное расписание трансляций онгоингов в Японии с пересчётом на ваше местное время (UTC+3, Москва). Данные синхронизируются с японскими телесетями каждые 15 минут.
+            </p>
+</div>
+<!-- Quick stats badges -->
+<div class="flex flex-wrap items-center gap-space-sm shrink-0">
+<div class="flex items-center gap-space-sm px-space-md py-2.5 rounded-xl bg-surface-container-low shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">today</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">Сегодня в эфире</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">14 серий</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm px-space-md py-2.5 rounded-xl bg-surface-container-low shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-tertiary/15 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">calendar_view_week</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">На этой неделе</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">96 премьер</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm px-space-md py-2.5 rounded-xl bg-secondary-container/20 shadow-sm">
+<div class="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">bookmark_added</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary-fixed">В вашем списке</span>
+<span class="font-headline-sm text-headline-sm text-secondary font-bold">6 ожидаемых</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Master View and Search Controls Bar -->
+<div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-space-md p-space-sm rounded-2xl bg-surface-container-low shadow-sm">
+<div class="flex flex-wrap items-center gap-space-xs">
+<!-- View toggles -->
+<div class="flex items-center p-1 rounded-xl bg-surface-container-high">
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">view_day</span>
+<span>По дням недели</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">calendar_month</span>
+<span>Сетка месяца</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">timeline</span>
+<span>Таймлайн</span>
+</button>
+</div>
+<div class="h-6 w-[1px] bg-surface-container-highest mx-1 hidden sm:block"></div>
+<!-- Filter toggle: All vs Watchlist -->
+<div class="flex items-center p-1 rounded-xl bg-surface-container-high">
+<button class="px-space-md py-1.5 rounded-lg text-on-surface font-label-md text-label-md bg-surface-container-highest" type="button">Все релизы</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+<span>Только из «Моё аниме»</span>
+<span class="px-1.5 py-0.2 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-[10px]">6</span>
+</button>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm">
+<!-- Timezone selector button -->
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all font-body-sm text-body-sm" type="button">
+<span class="material-symbols-outlined text-primary text-[18px]">schedule</span>
+<span class="text-outline">Часовой пояс:</span>
+<span class="font-semibold text-on-surface">Москва (UTC+3)</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</button>
+<!-- Search input -->
+<div class="relative flex-1 sm:w-64">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
+<input class="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container-high text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-bright transition-all" placeholder="Поиск тайтла в расписании..." type="text"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Weekdays Selector Strip (Sticky Desktop Navigation) -->
+<section class="sticky top-16 z-30 py-space-xs bg-surface/90 backdrop-blur-xl">
+<div class="grid grid-cols-7 gap-space-xs sm:gap-space-sm p-space-xs rounded-2xl bg-surface-container-low shadow-md overflow-x-auto">
+<!-- Monday -->
+<button class="flex flex-col items-center justify-between p- space-xs sm:p-space-sm rounded-xl bg-surface-container-high/60 hover:bg-surface-container-high text-left transition-all group" type="button">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-sm text-label-sm text-outline group-hover:text-on-surface">Пн</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface my-1">21</span>
+<div class="flex items-center gap-1">
+<span class="font-body-sm text-body-sm text-outline">12 серий</span>
+</div>
+</button>
+<!-- Tuesday (Active Day) -->
+<button class="relative flex flex-col items-center justify-between p-space-xs sm:p-space-sm rounded-xl bg-gradient-to-br from-primary-container via-surface-container-highest to-surface-container-high shadow-lg text-left overflow-hidden ring-0" type="button">
+<div class="absolute inset-0 bg-primary/10 pointer-events-none"></div>
+<div class="flex items-center justify-between w-full relative z-10">
+<div class="flex items-center gap-1">
+<span class="font-label-sm text-label-sm font-bold text-primary">Вт</span>
+<span class="px-1 py-0.2 rounded bg-secondary-container text-on-secondary-container font-label-sm text-[9px] uppercase tracking-wider font-bold">Сегодня</span>
+</div>
+<span class="w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(255,176,205,0.9)] animate-pulse"></span>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface my-1 relative z-10">22</span>
+<div class="flex items-center gap-1 relative z-10">
+<span class="font-label-sm text-label-sm text-primary font-bold">14 тайтлов</span>
+</div>
+</button>
+<!-- Wednesday -->
+<button class="flex flex-col items-center justify-between p-space-xs sm:p-space-sm rounded-xl bg-surface-container-high/60 hover:bg-surface-container-high text-left transition-all group" type="button">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-sm text-label-sm text-outline group-hover:text-on-surface">Ср</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface my-1">23</span>
+<span class="font-body-sm text-body-sm text-outline">16 серий</span>
+</button>
+<!-- Thursday -->
+<button class="flex flex-col items-center justify-between p-space-xs sm:p-space-sm rounded-xl bg-surface-container-high/60 hover:bg-surface-container-high text-left transition-all group" type="button">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-sm text-label-sm text-outline group-hover:text-on-surface">Чт</span>
+<span class="w-1.5 h-1.5 rounded-full bg-transparent"></span>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface my-1">24</span>
+<span class="font-body-sm text-body-sm text-outline">11 серий</span>
+</button>
+<!-- Friday -->
+<button class="flex flex-col items-center justify-between p-space-xs sm:p-space-sm rounded-xl bg-surface-container-high/60 hover:bg-surface-container-high text-left transition-all group" type="button">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-sm text-label-sm text-outline group-hover:text-on-surface">Пт</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface my-1">25</span>
+<span class="font-body-sm text-body-sm text-outline">15 серий</span>
+</button>
+<!-- Saturday -->
+<button class="flex flex-col items-center justify-between p-space-xs sm:p-space-sm rounded-xl bg-surface-container-high/60 hover:bg-surface-container-high text-left transition-all group" type="button">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-sm text-label-sm text-tertiary group-hover:text-tertiary-fixed font-bold">Сб</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface my-1">26</span>
+<span class="font-body-sm text-body-sm text-outline">18 серий</span>
+</button>
+<!-- Sunday -->
+<button class="flex flex-col items-center justify-between p-space-xs sm:p-space-sm rounded-xl bg-surface-container-high/60 hover:bg-surface-container-high text-left transition-all group" type="button">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-sm text-label-sm text-secondary group-hover:text-secondary-fixed font-bold">Вс</span>
+<span class="w-1.5 h-1.5 rounded-full bg-transparent"></span>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface my-1">27</span>
+<span class="font-body-sm text-body-sm text-outline">10 серий</span>
+</button>
+</div>
+</section>
+<!-- Filter Tags & Quick Sort Toolbar -->
+<section class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex flex-wrap items-center gap-space-xs">
+<button class="px-space-md py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-md text-label-md" type="button">Все форматы</button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright font-label-md text-label-md transition-all" type="button">ТВ-Сериалы</button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright font-label-md text-label-md transition-all" type="button">Спешлы / OVA</button>
+<div class="h-4 w-[1px] bg-surface-container-highest mx-1 hidden md:block"></div>
+<!-- Studio dropdown chip -->
+<button class="flex items-center gap-1 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+<span>Студии</span>
+<span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+<!-- Genres dropdown chip -->
+<button class="flex items-center gap-1 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+<span>Жанры</span>
+<span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-[15px] text-tertiary">closed_caption</span>
+<span>Только с субтитрами</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs shrink-0 self-end sm:self-auto">
+<span class="font-body-sm text-body-sm text-outline">Сортировка:</span>
+<button class="flex items-center gap-1 px-space-sm py-1 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-bright transition-all" type="button">
+<span>По времени выхода</span>
+<span class="material-symbols-outlined text-[16px]">south</span>
+</button>
+</div>
+</section>
+<!-- Main Layout: 2-Column Desktop Grid (Timeline 70% | Sidebar Widgets 30%) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
+<!-- Left / Primary Content Column: Detailed Schedule List -->
+<main class="lg:col-span-8 flex flex-col gap-space-xl">
+<!-- Time Block 1: Утро / День (10:00 - 16:00) -->
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs border-b border-surface-container-highest">
+<div class="flex items-center gap-space-sm">
+<span class="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-container-high text-outline">
+<span class="material-symbols-outlined text-[18px]">wb_sunny</span>
+</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Утренний и дневной блок</h2>
+<span class="font-body-sm text-body-sm text-outline">10:00 — 16:00 JST</span>
+</div>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">2 релиза</span>
+</div>
+<!-- Schedule Card 1 (Aired earlier today) -->
+<article class="group relative flex flex-col sm:flex-row items-stretch gap-space-md p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md">
+<!-- Poster Thumbnail 2:3 -->
+<div class="relative w-full sm:w-28 sm:h-40 h-48 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Anime fantasy dark sword warrior standing in mystical abyss ruins, glowing purple runes, highly detailed key visual art, deep violet palette" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaaOvWTAAsOC2i4i4BQcHOU11RgW8datGFw5iCRtPbtxgaynrRON_Lf2JzfilX6oU4WN75gcTwzUstYKrtW7mzLr5wE4YSxwWTj3OT6sHEggPmN6PUYsNhtUo7XIDjMP8775UJBOc5YLtvBArWxD1Z0B2Iro43MxtQFq7lMMvPBuNU769Ernp_ruZzAyEMjD5FAz2QJXtjvJKiqUOJhD9qe6P1M2Z3B5YPV8iHqg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent to-transparent sm:hidden"></div>
+<div class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-md font-label-sm text-[10px] text-on-surface font-bold">
+                  Эп. 9/24
+                </div>
+</div>
+<!-- Content and Metadata -->
+<div class="flex flex-col justify-between flex-1 min-w-0 gap-space-sm">
+<div class="flex flex-col gap-1">
+<!-- Timing & Status Header Row -->
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs font-label-md text-label-md">
+<span class="text-primary font-bold">06:30 MSK</span>
+<span class="text-outline font-normal">/ 12:30 JST</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-[10px]">Tokyo MX</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">check_circle</span>
+<span>Вышло 4 часа назад</span>
+</div>
+</div>
+<!-- Anime Title & Episode Name -->
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold group-hover:text-primary transition-colors truncate">
+                    Клинок Бездны: Перерождение
+                  </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    Эпизод 9: «Тени на дне пропасти» (Shinkai no Kage)
+                  </p>
+</div>
+<!-- Tags, Studios, and Ratings -->
+<div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[13px] text-secondary">star</span>
+<span>8.91</span>
+</div>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Ufotable</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">Тёмное фэнтези</span>
+<div class="flex items-center gap-1 text-tertiary font-body-sm text-[11px] ml-auto">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>В вашем списке: Смотрю</span>
+</div>
+</div>
+<!-- Quick Action Buttons -->
+<div class="flex items-center justify-between gap-space-sm pt-space-xs border-t border-surface-container-highest/50">
+<span class="font-body-sm text-body-sm text-outline">Хронометраж: 23:45</span>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1 px-space-md py-1.5 rounded-full bg-primary-container text-on-primary-container hover:bg-primary transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">check</span>
+<span>Отметить серию</span>
+</button>
+<button class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" title="Информация о тайтле" type="button">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- Schedule Card 2 -->
+<article class="group relative flex flex-col sm:flex-row items-stretch gap-space-md p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md">
+<div class="relative w-full sm:w-28 sm:h-40 h-48 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Anime sci-fi cybernetic lab interior, glowing hologram screens and test tubes, anime characters in white coats, studio bones style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZvrbgNPH4AdBd9kKSD-RQ6tqIs4rKiVg2ijACiwnoIB_bQNup4TEo-heywAcNDCOaoDZ_lY_JDy1S1cJlpZfdae1trPzDRVfFWQxoLjsJuKhy5ouaTRk3ubY1232n3vBKnBxLXEcSa1Ys68eQ4-NSz6txMvmzTcsT1s9g8i6cXwJIbiR7NlrZgQr1dbAlrEOL5fiWweDKSBh4i5bN99z9cByXzoOtYqZksmdYnQ"/>
+<div class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-md font-label-sm text-[10px] text-on-surface font-bold">
+                  Эп. 4/12
+                </div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0 gap-space-sm">
+<div class="flex flex-col gap-1">
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs font-label-md text-label-md">
+<span class="text-primary font-bold">09:00 MSK</span>
+<span class="text-outline font-normal">/ 15:00 JST</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-[10px]">BS11</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">check_circle</span>
+<span>Вышло 1 час назад</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold group-hover:text-primary transition-colors truncate">
+                    Лаборатория Снов: Протокол Ноль
+                  </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    Эпизод 4: «Сингулярность памяти»
+                  </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[13px] text-secondary">star</span>
+<span>8.54</span>
+</div>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Bones</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">Sci-Fi / Детектив</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm pt-space-xs border-t border-surface-container-highest/50">
+<span class="font-body-sm text-body-sm text-outline">Хронометраж: 24:10</span>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">bookmark_add</span>
+<span>В список</span>
+</button>
+<button class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" title="Информация о тайтле" type="button">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+</div>
+<!-- Time Block 2: Прайм-тайм / Вечер (18:00 - 22:00) — HIGHLIGHTED ACTIVE AIRING WINDOW -->
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs border-b border-primary/30">
+<div class="flex items-center gap-space-sm">
+<span class="flex items-center justify-center w-7 h-7 rounded-lg bg-primary-container text-on-primary-container shadow-sm">
+<span class="material-symbols-outlined text-[18px]">campaign</span>
+</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Вечерний эфир · Главный слот</h2>
+<span class="font-body-sm text-body-sm text-primary font-medium">18:00 — 22:00 JST</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-label-sm text-label-sm font-bold animate-pulse">Сейчас наступает</span>
+</div>
+<!-- Card 3: FEATURED AIRING SOON CARD (High-impact Glassmorphism) -->
+<article class="relative flex flex-col md:flex-row items-stretch gap-space-md p-space-lg rounded-2xl bg-gradient-to-br from-surface-container via-surface-container-low to-surface-container-high shadow-xl overflow-hidden">
+<!-- Radiant decorative border glow effect -->
+<div class="absolute -top-12 -right-12 w-48 h-48 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Poster with live countdown badge -->
+<div class="relative w-full md:w-36 md:h-52 h-56 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Anime epic cinematic key visual with dramatic dark sky, purple eclipse, MAPPA studio character with intense gaze in glowing tactical uniform" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVddqIqn1TIB8-dd0Hj9ylK7m3UgEbGulVTfDuM0aU45hUS3iPcNqU-Gtj9na7SWZ8cpntXbfaOI4v-k5IAd-2N9jTmvJBNShoxB-kQwPwmz-tZK2uJpAPYXJ9Qm--zT8ofWecLjBgJW59gbn88lHrgHRQbak3NFDo_9qf9vZFLFNoYfv6zWdbTgfKtk0vXy5a9wEtDD_5gDLDsttrX63YO2kVlGLlkZr-cJhFjQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent"></div>
+<div class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-secondary-container text-on-secondary-container font-label-sm text-[11px] font-bold">
+                  Серия 5
+                </div>
+<div class="absolute bottom-2 inset-x-2 flex items-center justify-center gap-1 py-1 rounded bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-label-sm text-[11px] font-bold">
+<span class="material-symbols-outlined text-[13px]">live_tv</span>
+<span>AT-X Премьера</span>
+</div>
+</div>
+<!-- Body Information -->
+<div class="flex flex-col justify-between flex-1 min-w-0 gap-space-sm z-10">
+<div class="flex flex-col gap-1.5">
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs font-label-md text-label-md">
+<span class="text-secondary font-bold text-[15px]">13:30 MSK</span>
+<span class="text-outline font-normal">/ 19:30 JST</span>
+</div>
+<!-- Live countdown badge with pulsing indicator -->
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/30 text-secondary font-label-sm text-label-sm font-bold shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+<span>До эфира: 02 ч 14 мин</span>
+</div>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">
+                    Эхо Прошлого: Хроники Затмения
+                  </h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    Эпизод 5: «Код забвения» (Bōkyaku no Kōdo)
+                  </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm py-space-xs">
+<div class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">star</span>
+<span>8.94</span>
+</div>
+<span class="px-2.5 py-0.5 rounded-md bg-surface-container-high text-on-surface font-label-sm text-label-sm font-medium">MAPPA</span>
+<span class="px-2.5 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Экшен / Психология</span>
+<span class="px-2.5 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">24 серии</span>
+<div class="flex items-center gap-1 text-secondary font-label-sm text-label-sm font-bold ml-auto">
+<span class="material-symbols-outlined text-[14px]">favorite</span>
+<span>В вашем списке (Смотрю)</span>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-space-xs border-t border-surface-container-highest">
+<span class="font-body-sm text-body-sm text-outline">Синхронный эфир без задержек</span>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1.5 px-space-md py-2 rounded-full bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary transition-all font-label-md text-label-md font-bold shadow-md" type="button">
+<span class="material-symbols-outlined text-[16px]">notifications_active</span>
+<span>Напомнить о серии</span>
+</button>
+<button class="flex items-center gap-1 px-space-md py-2 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all font-label-md text-label-md" type="button">
+<span>О тайтле</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 4 (Evening CloverWorks) -->
+<article class="group relative flex flex-col sm:flex-row items-stretch gap-space-md p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md">
+<div class="relative w-full sm:w-28 sm:h-40 h-48 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Anime neon Tokyo night city street with rain reflections, umbrellas, CloverWorks visual music romance anime style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQZcgsjCSPtzMGb6Ps_IX4aflrOEJFBO_uRDDLA4SaGT0bejzmYsTvdtXDG6uC2RtpY8pGLIzwngBPu1YnCTemWLJzNlphPSXyMCUvJ2qIjWFvC_ZugRDvG9GkwQRUnAAbswefCKrC2BZFuIaB29hDWap-8ccHHuCCb9x3Sx_Q6ssU3K5zH3pTVpGZExv03QyaUg2vr5OSL24TV-6oiyLctrSw_NlUbTsFI8xTNA"/>
+<div class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-md font-label-sm text-[10px] text-on-surface font-bold">
+                  Эп. 4/12
+                </div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0 gap-space-sm">
+<div class="flex flex-col gap-1">
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs font-label-md text-label-md">
+<span class="text-primary font-bold">15:00 MSK</span>
+<span class="text-outline font-normal">/ 21:00 JST</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-[10px]">Tokyo MX</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">hourglass_top</span>
+<span>Через 03 ч 45 мин</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold group-hover:text-primary transition-colors truncate">
+                    Ритм Ночного Токио
+                  </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    Эпизод 4: «Случайный аккорд в дождливый вечер»
+                  </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[13px] text-secondary">star</span>
+<span>8.65</span>
+</div>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">CloverWorks</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">Музыка / Повседневность</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm pt-space-xs border-t border-surface-container-highest/50">
+<span class="font-body-sm text-body-sm text-outline">Хронометраж: 23:50</span>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">notifications</span>
+<span>Уведомить</span>
+</button>
+<button class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" title="Информация о тайтле" type="button">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+</div>
+<!-- Time Block 3: Ночные трансляции (23:00 - 02:00) -->
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs border-b border-surface-container-highest">
+<div class="flex items-center gap-space-sm">
+<span class="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-container-high text-outline">
+<span class="material-symbols-outlined text-[18px]">bedtime</span>
+</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Ночной телеэфир Японии</h2>
+<span class="font-body-sm text-body-sm text-outline">23:00 — 02:00 JST</span>
+</div>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">3 релиза</span>
+</div>
+<!-- Card 5 -->
+<article class="group relative flex flex-col sm:flex-row items-stretch gap-space-md p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md">
+<div class="relative w-full sm:w-28 sm:h-40 h-48 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Anime Nordic Viking fortress ruins in snow blizzard, northern lights aurora borealis glowing in night sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCySz2p1500THVFLu4JxxUQnJ_Qp57R09dRrnhKEjWNyPHZ06AqGGX6NUhb0jXVIhnolt5Db0w0xpieEalW37rift8DMe_Z2NuRZygbAOYdtJj36NL9ztZMCyQSAe-veOzM-2Q7zZztyH3m8wl4zYtcusE84OAYf9p37XNQikRG84RbwvizmT17DF7YuW4wDXhPVQoPdgPhFauGUEZOCEVK3xeE9xnqyA5bk8gbmQ"/>
+<div class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-md font-label-sm text-[10px] text-on-surface font-bold">
+                  Эп. 18/24
+                </div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0 gap-space-sm">
+<div class="flex flex-col gap-1">
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs font-label-md text-label-md">
+<span class="text-primary font-bold">17:30 MSK</span>
+<span class="text-outline font-normal">/ 23:30 JST</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-[10px]">NHK-G</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>Через 06 ч 15 мин</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold group-hover:text-primary transition-colors truncate">
+                    Сага о Северных Ветрах
+                  </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    Эпизод 18: «Пепел древних крепостей»
+                  </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[13px] text-secondary">star</span>
+<span>8.87</span>
+</div>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Wit Studio</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">Приключения / Драма</span>
+<div class="flex items-center gap-1 text-primary font-body-sm text-[11px] ml-auto">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>В планах</span>
+</div>
+</div>
+<div class="flex items-center justify-between gap-space-sm pt-space-xs border-t border-surface-container-highest/50">
+<span class="font-body-sm text-body-sm text-outline">Хронометраж: 24:00</span>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">notifications</span>
+<span>Уведомить</span>
+</button>
+<button class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" title="Информация о тайтле" type="button">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 6 -->
+<article class="group relative flex flex-col sm:flex-row items-stretch gap-space-md p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md">
+<div class="relative w-full sm:w-28 sm:h-40 h-48 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Anime fantasy magic academy grand gothic library with glowing floating spellbooks and purple magic symbols" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDX0U4GrGpHCXByMYo6RyFtZwo2A1h_KqjwotIRhRsoiWYa-7eFvY6f8iiAnPml1HcAsgOBQS3QTpfCBsYyInQCHumjR7pr8yUliI94UF6lrZ3QdRmULE4dABfCUDD3K0paMvXRKcOmHQOf2Fw2luJ2YdyP9QJkJzR9rDwv217CjiSqWcvRUeCbXXHz-y5CVN0-B_eCbAV5YZv_XEwBv1JRK8dEw5bvGoyIRfh-9w"/>
+<div class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-md font-label-sm text-[10px] text-on-surface font-bold">
+                  Эп. 3/12
+                </div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0 gap-space-sm">
+<div class="flex flex-col gap-1">
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs font-label-md text-label-md">
+<span class="text-primary font-bold">18:30 MSK</span>
+<span class="text-outline font-normal">/ 00:30 JST (23 окт)</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-[10px]">AT-X</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>Через 07 ч 15 мин</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold group-hover:text-primary transition-colors truncate">
+                    Академия Алхимии и Тени
+                  </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    Эпизод 3: «Запретная трансмогрификация»
+                  </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[13px] text-secondary">star</span>
+<span>8.42</span>
+</div>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Silver Link</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">Магия / Фэнтези</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm pt-space-xs border-t border-surface-container-highest/50">
+<span class="font-body-sm text-body-sm text-outline">Хронометраж: 23:40</span>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">bookmark_add</span>
+<span>В список</span>
+</button>
+<button class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" title="Информация о тайтле" type="button">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 7 -->
+<article class="group relative flex flex-col sm:flex-row items-stretch gap-space-md p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all shadow-md">
+<div class="relative w-full sm:w-28 sm:h-40 h-48 rounded-xl overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Anime fantasy floating sky islands with steampunk airships and radiant starry constellation sky, beautiful background art" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDM_O3T1tNyc9yquTrOikkI9xzlTlyME4djIoRcR-HjVqA6DMSjIuOpjncGp3jQ7sBUgfPNmVshE6hmf-u4-hu_fYS5fqstBrXfP4L5ndsvD6WNPhebPeP4Zf-SXhkwUNfh5_1GQPM5gom140E_KO6VD7cIHeRJj1A09mdMaPm5jSZ9Hnau-nGZOMbMFfC1S_jF63M01I-J0SWrW7nm4vEq2IGG30u1J_AHuybC8g"/>
+<div class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-md font-label-sm text-[10px] text-on-surface font-bold">
+                  Эп. 8/13
+                </div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0 gap-space-sm">
+<div class="flex flex-col gap-1">
+<div class="flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs font-label-md text-label-md">
+<span class="text-primary font-bold">19:15 MSK</span>
+<span class="text-outline font-normal">/ 01:15 JST (23 окт)</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-outline font-label-sm text-[10px]">BS-TBS</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-highest text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>Через 08 ч 00 мин</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold group-hover:text-primary transition-colors truncate">
+                    Горизонт Небесных Островов
+                  </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    Эпизод 8: «Встречный ветер на краю света»
+                  </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+<div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[13px] text-secondary">star</span>
+<span>8.76</span>
+</div>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">A-1 Pictures</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">Стимпанк / Приключения</span>
+</div>
+<div class="flex items-center justify-between gap-space-sm pt-space-xs border-t border-surface-container-highest/50">
+<span class="font-body-sm text-body-sm text-outline">Хронометраж: 24:00</span>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1 px-space-md py-1.5 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">bookmark_add</span>
+<span>В список</span>
+</button>
+<button class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all" title="Информация о тайтле" type="button">
+<span class="material-symbols-outlined text-[18px]">info</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+</div>
+<!-- Bottom Pagination / Day Stepper -->
+<div class="flex items-center justify-between p-space-md rounded-2xl bg-surface-container-low shadow-sm">
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+<span>Понедельник, 21 окт</span>
+</button>
+<span class="font-body-sm text-body-sm text-outline hidden sm:block">Вторник · 14 релизов расписания</span>
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all font-label-md text-label-md" type="button">
+<span>Среда, 23 окт</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</main>
+<!-- Right Column / Sidebar Widgets -->
+<aside class="lg:col-span-4 flex flex-col gap-space-lg">
+<!-- Widget 1: Personal Watchlist Upcoming this Week -->
+<section class="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">stars</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Ожидаемое вами</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-[11px] font-bold">6 тайтлов</span>
+</div>
+<p class="font-body-sm text-body-sm text-outline">
+              Премьеры серий из вашей вкладки «Моё аниме» на этой неделе:
+            </p>
+<div class="flex flex-col gap-space-sm">
+<!-- Item 1: Airing today -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high transition-all">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-1.5 h-8 rounded-full bg-secondary shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-card text-title-card text-on-surface font-semibold truncate">Эхо Прошлого</span>
+<span class="font-body-sm text-[11px] text-secondary">Сегодня, 13:30 MSK (Эп. 5)</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container text-outline hover:text-secondary flex items-center justify-center transition-colors shrink-0" title="Напоминание включено" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">notifications_active</span>
+</button>
+</div>
+<!-- Item 2: Aired today -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high transition-all">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-1.5 h-8 rounded-full bg-tertiary shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-card text-title-card text-on-surface font-semibold truncate">Клинок Бездны</span>
+<span class="font-body-sm text-[11px] text-outline">Вышло сегодня (Эп. 9)</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container text-outline hover:text-primary flex items-center justify-center transition-colors shrink-0" title="Отметить просмотренным" type="button">
+<span class="material-symbols-outlined text-[18px]">check_box_outline_blank</span>
+</button>
+</div>
+<!-- Item 3: Tomorrow -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high transition-all">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-1.5 h-8 rounded-full bg-outline-variant shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-card text-title-card text-on-surface font-semibold truncate">Магическая Битва: Осколки</span>
+<span class="font-body-sm text-[11px] text-outline">Среда, 18:00 MSK (Эп. 14)</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container text-outline hover:text-primary flex items-center justify-center transition-colors shrink-0" type="button">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+</button>
+</div>
+<!-- Item 4: Friday -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high transition-all">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-1.5 h-8 rounded-full bg-outline-variant shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-card text-title-card text-on-surface font-semibold truncate">Сумеречный Страж</span>
+<span class="font-body-sm text-[11px] text-outline">Пятница, 20:30 MSK (Эп. 7)</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container text-outline hover:text-primary flex items-center justify-center transition-colors shrink-0" type="button">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+</button>
+</div>
+</div>
+<a class="flex items-center justify-center gap-1 py-2 text-primary hover:text-primary-fixed-dim font-label-md text-label-md transition-colors mt-space-xs" href="#">
+<span>Открыть всё «Моё аниме»</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</section>
+<!-- Widget 2: Sync / Export Schedule -->
+<section class="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low shadow-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">sync</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Экспорт расписания</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Синхронизируйте даты выхода серий с вашим повседневным календарем или ботом.
+            </p>
+<div class="flex flex-col gap-space-xs">
+<button class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface transition-all" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">event</span>
+<span class="font-label-md text-label-md">iCal / Google Calendar</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">file_download</span>
+</button>
+<button class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface transition-all" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-tertiary text-[20px]">send</span>
+<span class="font-label-md text-label-md">Telegram-бот уведомлений</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">open_in_new</span>
+</button>
+<button class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface transition-all" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[20px]">rss_feed</span>
+<span class="font-label-md text-label-md">RSS-лента обновлений</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">link</span>
+</button>
+</div>
+</section>
+<!-- Widget 3: Timezone Reminder & Broadcast Specs -->
+<section class="flex flex-col gap-space-sm p-space-lg rounded-2xl bg-surface-container-low shadow-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[20px]">info</span>
+<h3 class="font-title-card text-title-card text-on-surface font-semibold">Памятка часовых поясов</h3>
+</div>
+<p class="font-body-sm text-body-sm text-outline">
+              Японское стандартное время (JST) опережает московское (MSK) ровно на <strong class="text-on-surface">6 часов</strong>.
+            </p>
+<div class="p-space-sm rounded-xl bg-surface-container-high text-body-sm text-on-surface-variant flex flex-col gap-1">
+<div class="flex justify-between items-center">
+<span>Токио (JST)</span>
+<span class="font-bold text-on-surface">19:30</span>
+</div>
+<div class="flex justify-between items-center text-primary font-medium">
+<span>Москва (MSK)</span>
+<span class="font-bold">13:30</span>
+</div>
+</div>
+<p class="font-body-sm text-[11px] text-outline leading-tight">
+              Расписание фиксирует точный момент выхода в прямой телеэфир (BS11, Tokyo MX, AT-X). Задержки стриминговых сервисов здесь не учитываются.
+            </p>
+</section>
+</aside>
+</div>
+</div>
+</div>
+</div></main><footer class="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-space-xl mt-space-xl"><div class="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop"><div class="flex flex-col lg:flex-row lg:items-start justify-between gap-space-xl pb-space-xl border-b border-outline-variant/20"><div class="max-w-md"><div class="flex items-center gap-space-sm mb-space-sm"><span class="flex items-center justify-center w-7 h-7 rounded-full bg-surface-container-high border border-secondary/40 text-secondary"><span class="material-symbols-outlined text-[16px]">filter_vintage</span></span><span class="font-headline-sm text-headline-sm font-bold text-on-surface">АНИМО</span></div><p class="font-body-md text-body-md text-on-surface-variant mb-space-sm">АНИМО — кинематографичный каталог и трекер аниме без пиратства и рекламы.</p><p class="font-body-sm text-body-sm text-outline">Платформа является информационным каталогом и трекером личной коллекции. Просмотр и воспроизведение видео отсутствуют.</p></div><div class="flex flex-wrap gap-x-space-xl gap-y-space-md"><div class="flex flex-col gap-space-xs"><span class="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-1">Навигация</span><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="katalog-ongoingov" href="#">Каталог онгоингов</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="top-100" href="#">Топ 100</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="kalendar" href="#">Календарь релизов</a></div><div class="flex flex-col gap-space-xs"><span class="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-1">Ресурсы</span><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="statistika" href="#">Статистика</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="api-dokumentaciya" href="#">API</a><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="soobshchestvo" href="#">Сообщество</a></div><div class="flex flex-col gap-space-xs"><span class="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-1">Правила</span><a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" data-path="konfidencialnost" href="#">Конфиденциальность</a></div></div></div><div class="pt-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm text-outline font-body-sm text-body-sm"><span>© 2025 АНИМО. Все права защищены.</span><span>Сделано с любовью к японской анимации.</span></div></div></footer></body></html>
