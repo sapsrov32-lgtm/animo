@@ -2,23 +2,57 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Anime } from '@/types';
 import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
+import { setAnimeWatchStatus } from '@/app/actions/tracker';
 
 interface AnimeCardProps {
   anime: Anime;
   badge?: string;
   badgeType?: 'trend' | 'status' | 'default';
   showStudio?: boolean;
+  initialBookmarked?: boolean;
 }
 
 export function AnimeCard({
   anime,
   badge,
   badgeType = 'default',
+  initialBookmarked = false,
 }: AnimeCardProps) {
+  const router = useRouter();
+  const [bookmarked, setBookmarked] = useState(initialBookmarked);
+  const [loading, setLoading] = useState(false);
+
   const displayTitle = getDisplayTitle(anime);
   const secondaryTitle = getSecondaryTitle(anime);
+
+  const handleQuickBookmark = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const nextBookmarked = !bookmarked;
+    setBookmarked(nextBookmarked);
+    setLoading(true);
+
+    try {
+      const res = await setAnimeWatchStatus(anime.id, nextBookmarked ? 'plan' : null);
+      if (res?.error === 'unauthorized') {
+        setBookmarked(bookmarked);
+        router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+        return;
+      }
+      if (res?.error) {
+        setBookmarked(bookmarked);
+      }
+    } catch {
+      setBookmarked(bookmarked);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Extract genres from either direct genres array or anime_genres join
   const genresList = (
@@ -77,15 +111,22 @@ export function AnimeCard({
         {/* Quick Add Hover Overlay Button */}
         <button
           type="button"
-          aria-label="Сохранить в список"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            window.location.href = '/login';
-          }}
-          className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-surface-container-highest/90 hover:bg-primary-container hover:text-on-primary-container text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+          aria-label={bookmarked ? 'Удалить из списка' : 'Добавить в планы'}
+          onClick={handleQuickBookmark}
+          disabled={loading}
+          className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg active:scale-90 ${
+            bookmarked
+              ? 'bg-primary text-on-primary opacity-100'
+              : 'bg-surface-container-highest/90 hover:bg-primary-container hover:text-on-primary-container text-on-surface opacity-0 group-hover:opacity-100'
+          }`}
+          title={bookmarked ? 'В вашем списке (нажмите для отмены)' : 'Добавить в планы'}
         >
-          <span className="material-symbols-outlined text-[18px]">bookmark_add</span>
+          <span
+            className="material-symbols-outlined text-[18px]"
+            style={bookmarked ? { fontVariationSettings: "'FILL' 1" } : undefined}
+          >
+            {bookmarked ? 'bookmark_added' : 'bookmark_add'}
+          </span>
         </button>
       </Link>
 

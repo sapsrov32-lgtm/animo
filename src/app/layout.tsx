@@ -3,17 +3,42 @@ import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { Footer } from '@/components/layout/Footer';
+import { createClient } from '@/lib/supabase/server';
+import { UserProfile } from '@/types';
 
 export const metadata: Metadata = {
   title: 'Анимо — кинематографичный каталог, трекер и гид по аниме',
   description: 'Каталог, персональный трекер и гид по японской анимации на русском языке. Без пиратства, рекламы и видеоплееров.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let profile: UserProfile | null = null;
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    profile = data as UserProfile | null;
+  }
+
+  const clientUser = user
+    ? {
+        id: user.id,
+        email: user.email,
+      }
+    : null;
+
   return (
     <html lang="ru" className="dark">
       <head>
@@ -29,7 +54,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface text-on-surface font-body-md antialiased min-h-screen selection:bg-secondary-container selection:text-on-secondary-container flex flex-col">
-        <Navbar />
+        <Navbar user={clientUser} profile={profile} />
         <main className="w-full pt-16 flex-1">
           {children}
         </main>

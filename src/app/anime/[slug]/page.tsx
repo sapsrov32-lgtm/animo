@@ -70,6 +70,23 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
   const secondaryTitle = getSecondaryTitle(anime);
   const genres: Genre[] = anime.anime_genres?.map((ag: any) => ag.genres).filter(Boolean) || [];
 
+  // Check auth and user's saved status for this anime
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let userAnimeRecord = null;
+  if (user) {
+    const { data: record } = await supabase
+      .from('user_anime')
+      .select('status, score, progress')
+      .eq('user_id', user.id)
+      .eq('anime_id', anime.id)
+      .maybeSingle();
+
+    userAnimeRecord = record;
+  }
+
   // 2. Fetch related anime
   const firstGenreId = genres[0]?.id;
   let relatedAnime: Anime[] = [];
@@ -175,7 +192,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                 </div>
 
                 {/* Score Pill Overlay */}
-                {anime.score && (
+                {typeof anime.score === 'number' && anime.score > 0 && (
                   <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-secondary-container/90 backdrop-blur-md text-on-secondary-container font-badge-score text-badge-score flex items-center gap-1 shadow-lg shadow-secondary-container/40">
                     <span
                       className="material-symbols-outlined text-[15px] text-secondary-fixed fill-current"
@@ -198,21 +215,31 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                     >
                       star
                     </span>
-                    {anime.score ? `${anime.score.toFixed(1)} / 10` : 'Без оценки'}
+                    {typeof anime.score === 'number' && anime.score > 0
+                      ? `${anime.score.toFixed(1)} / 10`
+                      : 'Без оценки'}
                   </span>
                   <span className="font-label-md text-label-md text-outline">
                     {anime.status === 'ongoing' ? 'В эфире' : 'Завершен'}
                   </span>
                 </div>
-                <p className="font-body-sm text-body-sm text-outline">
-                  Официальный рейтинг AniList сообщества
-                </p>
-                <div className="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-2">
-                  <div
-                    className="bg-gradient-to-r from-primary via-secondary to-tertiary h-full rounded-full"
-                    style={{ width: `${Math.min(100, ((anime.score || 7) / 10) * 100)}%` }}
-                  />
-                </div>
+                {typeof anime.score === 'number' && anime.score > 0 ? (
+                  <>
+                    <p className="font-body-sm text-body-sm text-outline">
+                      Официальный рейтинг AniList сообщества
+                    </p>
+                    <div className="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-2">
+                      <div
+                        className="bg-gradient-to-r from-primary via-secondary to-tertiary h-full rounded-full"
+                        style={{ width: `${Math.min(100, (anime.score / 10) * 100)}%` }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p className="font-body-sm text-body-sm text-outline">
+                    Оценка пока не сформирована
+                  </p>
+                )}
               </div>
             </div>
 
@@ -295,9 +322,6 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                   {anime.studio}
                 </div>
               )}
-              <div className="px-3 py-1.5 rounded-xl bg-surface-container font-label-md text-label-md text-outline border border-outline-variant/20">
-                16+
-              </div>
             </div>
 
             {/* Airing Schedule Alert Box (calculated in viewer's local timezone) */}
@@ -329,7 +353,10 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
             <WatchStatusTracker
               animeId={anime.id}
               totalEpisodes={anime.episodes}
-              isLoggedIn={false}
+              isLoggedIn={Boolean(user)}
+              initialStatus={userAnimeRecord?.status as any}
+              initialScore={userAnimeRecord?.score}
+              initialProgress={userAnimeRecord?.progress}
             />
 
             {/* Genre Tags Flow */}
@@ -381,13 +408,13 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                 <div className="p-3 rounded-xl bg-surface-container">
                   <span className="text-outline font-label-sm text-label-sm block">Сезон выхода</span>
                   <span className="font-title-card text-title-card text-on-surface font-semibold">
-                    {anime.season || '—'}
+                    {anime.season ? `${anime.season}${anime.year ? ` ${anime.year}` : ''}` : anime.year || '—'}
                   </span>
                 </div>
                 <div className="p-3 rounded-xl bg-surface-container">
-                  <span className="text-outline font-label-sm text-label-sm block">Первоисточник</span>
+                  <span className="text-outline font-label-sm text-label-sm block">Статус тайтла</span>
                   <span className="font-title-card text-title-card text-on-surface font-semibold">
-                    Манга / Ранобэ
+                    {anime.status === 'ongoing' ? 'В эфире (онгоинг)' : 'Завершён'}
                   </span>
                 </div>
               </div>
