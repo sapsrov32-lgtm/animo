@@ -46,6 +46,9 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
   // Filter by status
   if (params.status && params.status !== 'all') {
     queryBuilder = queryBuilder.eq('status', params.status);
+  } else if (!params.query && (params.sort === 'popularity' || !params.sort || params.sort === 'score')) {
+    // По умолчанию скрываем не вышедшие анонсы из топа популярности
+    queryBuilder = queryBuilder.not('status', 'eq', 'announced');
   }
 
   // Filter by min score

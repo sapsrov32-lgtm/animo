@@ -9,6 +9,9 @@ interface AnimePlayerProps {
   titleEn?: string | null;
   posterUrl?: string | null;
   bannerUrl?: string | null;
+  status?: string | null;
+  year?: number | null;
+  episodes?: number | null;
 }
 
 export function AnimePlayer({
@@ -18,15 +21,23 @@ export function AnimePlayer({
   titleEn,
   posterUrl,
   bannerUrl,
+  status,
+  year,
+  episodes,
 }: AnimePlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [activePlayer, setActivePlayer] = useState<'kodik' | 'animeembed'>('kodik');
   const [isCinemaMode, setIsCinemaMode] = useState(false);
 
+  const displayTitle = titleRu || titleEn || 'Аниме';
+  const bgImage = bannerUrl || posterUrl;
+
+  // Проверка: анонсирован ли тайтл и вышел ли он в эфир
+  const isAnnounced = status === 'announced' || (typeof year === 'number' && year > 2026);
+
   // Формирование ссылки для iframe с актуальными рабочими доменами
   const getPlayerUrl = () => {
     if (activePlayer === 'kodik') {
-      // Рабочее зеркало Kodik без блокировок
       if (shikimoriId) {
         return `https://kodikplayer.com/find-player?shikimoriID=${shikimoriId}`;
       }
@@ -35,7 +46,6 @@ export function AnimePlayer({
     }
 
     if (activePlayer === 'animeembed') {
-      // Плеер AnimeEmbed (по AniList ID или Shikimori/MAL ID)
       if (anilistId) {
         return `https://animeembed.com/embed/ani/${anilistId}/1`;
       }
@@ -47,9 +57,6 @@ export function AnimePlayer({
 
     return `https://kodikplayer.com/find-player?shikimoriID=${shikimoriId || ''}`;
   };
-
-  const bgImage = bannerUrl || posterUrl;
-  const displayTitle = titleRu || titleEn || 'Аниме';
 
   return (
     <section className={`w-full flex flex-col gap-3 sm:gap-4 transition-all duration-500 ${isCinemaMode ? 'relative z-50' : ''}`}>
@@ -65,69 +72,112 @@ export function AnimePlayer({
       <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 relative z-50">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center border border-primary/30 shrink-0">
-            <span className="material-symbols-outlined text-[20px] fill-current">play_circle</span>
+            <span className="material-symbols-outlined text-[20px] fill-current">
+              {isAnnounced ? 'event_upcoming' : 'play_circle'}
+            </span>
           </div>
           <div>
             <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface">
-              Смотреть онлайн
+              {isAnnounced ? 'Премьера ожидается' : 'Смотреть онлайн'}
             </h2>
             <p className="font-body-xs text-xs text-outline">
-              Озвучка (AniLibria, SHIZA, Дубликат) и субтитры
+              {isAnnounced
+                ? 'Тайтл находится в статусе официального анонса'
+                : 'Озвучка (AniLibria, SHIZA, Дубликат) и субтитры'}
             </p>
           </div>
         </div>
 
-        {/* Source switch & Cinema toggle */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-xs">
+        {/* Source switch & Cinema toggle (only if released) */}
+        {!isAnnounced && (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-xs">
+              <button
+                type="button"
+                onClick={() => setActivePlayer('kodik')}
+                className={`px-2.5 sm:px-3 py-1 rounded-lg transition-all font-medium touch-manipulation active:scale-95 ${
+                  activePlayer === 'kodik'
+                    ? 'bg-primary text-on-primary shadow-sm font-bold'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                Плеер 1 (Kodik)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActivePlayer('animeembed')}
+                className={`px-2.5 sm:px-3 py-1 rounded-lg transition-all font-medium touch-manipulation active:scale-95 ${
+                  activePlayer === 'animeembed'
+                    ? 'bg-primary text-on-primary shadow-sm font-bold'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                Плеер 2 (AnimeEmbed)
+              </button>
+            </div>
+
             <button
               type="button"
-              onClick={() => setActivePlayer('kodik')}
-              className={`px-2.5 sm:px-3 py-1 rounded-lg transition-all font-medium touch-manipulation active:scale-95 ${
-                activePlayer === 'kodik'
-                  ? 'bg-primary text-on-primary shadow-sm font-bold'
-                  : 'text-on-surface-variant hover:text-on-surface'
+              onClick={() => setIsCinemaMode(!isCinemaMode)}
+              title={isCinemaMode ? 'Выйти из режима кинотеатра' : 'Режим кинотеатра'}
+              className={`p-2 rounded-xl border transition-all flex items-center justify-center touch-manipulation active:scale-95 ${
+                isCinemaMode
+                  ? 'bg-secondary text-on-secondary border-secondary'
+                  : 'bg-surface-container-high border-outline-variant/30 text-on-surface-variant hover:text-on-surface'
               }`}
             >
-              Плеер 1 (Kodik)
-            </button>
-            <button
-              type="button"
-              onClick={() => setActivePlayer('animeembed')}
-              className={`px-2.5 sm:px-3 py-1 rounded-lg transition-all font-medium touch-manipulation active:scale-95 ${
-                activePlayer === 'animeembed'
-                  ? 'bg-primary text-on-primary shadow-sm font-bold'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              Плеер 2 (AnimeEmbed)
+              <span className="material-symbols-outlined text-[18px]">
+                {isCinemaMode ? 'light_mode' : 'dark_mode'}
+              </span>
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setIsCinemaMode(!isCinemaMode)}
-            title={isCinemaMode ? 'Выйти из режима кинотеатра' : 'Режим кинотеатра'}
-            className={`p-2 rounded-xl border transition-all flex items-center justify-center touch-manipulation active:scale-95 ${
-              isCinemaMode
-                ? 'bg-secondary text-on-secondary border-secondary'
-                : 'bg-surface-container-high border-outline-variant/30 text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              {isCinemaMode ? 'light_mode' : 'dark_mode'}
-            </span>
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* 16:9 Video Player Box */}
+      {/* 16:9 Player / Announcement Box */}
       <div
         className={`relative w-full aspect-video rounded-2xl sm:rounded-3xl overflow-hidden bg-black border border-outline-variant/30 shadow-2xl transition-all duration-300 ${
           isCinemaMode ? 'relative z-50 shadow-primary/20 shadow-2xl' : ''
         }`}
       >
-        {!isPlaying ? (
+        {isAnnounced ? (
+          /* Announced / Unreleased Title Banner */
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            {bgImage && (
+              <div
+                className="absolute inset-0 bg-cover bg-center blur-md scale-105 opacity-30"
+                style={{ backgroundImage: `url('${bgImage}')` }}
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/80 to-surface-container-lowest/40" />
+
+            <div className="relative z-10 flex flex-col items-center gap-3 text-center px-6 max-w-lg">
+              <div className="w-16 h-16 rounded-2xl bg-secondary-container/20 text-secondary border border-secondary/30 flex items-center justify-center shadow-lg">
+                <span className="material-symbols-outlined text-3xl">event_upcoming</span>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
+                  Серии ещё не вышли в эфир
+                </h3>
+                <p className="font-body-md text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                  Официальная премьера «{displayTitle}» запланирована на {year ? `${year} год` : 'будущие сезоны'}. Как только состоится релиз в Японии, видеоплеер со всеми вариантами озвучек станет доступен здесь автоматически.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                <span className="px-3 py-1 rounded-full bg-surface-container-high text-xs text-secondary border border-secondary/30 font-medium">
+                  Статус: Официальный анонс
+                </span>
+                {year && (
+                  <span className="px-3 py-1 rounded-full bg-surface-container-high text-xs text-outline border border-outline-variant/30">
+                    Релиз: {year} г.
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : !isPlaying ? (
           /* Atmospheric Poster Placeholder with Instant Launch Button */
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {bgImage && (
@@ -185,10 +235,12 @@ export function AnimePlayer({
       </div>
 
       {/* Helpful tips bar */}
-      <div className="flex flex-wrap items-center justify-between text-[11px] sm:text-xs text-outline px-1 gap-1">
-        <span>Если серия долго грузится, переключитесь на «Плеер 2».</span>
-        <span>Плеер адаптирован под телефон и полноэкранный режим.</span>
-      </div>
+      {!isAnnounced && (
+        <div className="flex flex-wrap items-center justify-between text-[11px] sm:text-xs text-outline px-1 gap-1">
+          <span>Если в одном плеере нет нужной серии или озвучки, переключитесь на «Плеер 2» выше.</span>
+          <span>Плеер адаптирован под телефон и полноэкранный режим.</span>
+        </div>
+      )}
     </section>
   );
 }

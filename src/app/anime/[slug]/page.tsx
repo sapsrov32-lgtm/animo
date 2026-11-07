@@ -381,6 +381,9 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
               titleEn={anime.title_en}
               posterUrl={anime.poster_url}
               bannerUrl={anime.banner_url}
+              status={anime.status}
+              year={anime.year}
+              episodes={anime.episodes}
             />
 
             {/* Production & Crew Details Bento */}

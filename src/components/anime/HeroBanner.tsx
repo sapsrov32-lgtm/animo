@@ -60,7 +60,9 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
                 <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   star
                 </span>
-                <span className="font-badge-score text-badge-score">{anime.score.toFixed(1)}</span>
+                <span className="font-badge-score text-badge-score">
+                  {anime.score > 9.5 ? '9.5' : anime.score.toFixed(1)}
+                </span>
                 <span className="text-secondary/60 text-xs px-1">•</span>
                 <span className="font-label-sm text-label-sm uppercase tracking-wider">TOP Рейтинга</span>
               </div>

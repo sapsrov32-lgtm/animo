@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 import { AiringCountdown } from './AiringCountdown';
 
 interface AiringCardProps {
@@ -27,14 +28,16 @@ export function AiringCard({
   tags = ['Субтитры', 'Озвучка'],
   poster_url,
 }: AiringCardProps) {
+  const [imgError, setImgError] = useState(false);
+
   return (
     <div className="relative flex items-center gap-4 p-4 lg:p-5 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 shadow-sm group">
       <Link
         href={`/anime/${slug || id}`}
         prefetch={true}
-        className="relative w-24 h-32 lg:w-28 lg:h-36 rounded-xl overflow-hidden shrink-0 bg-surface-container-high block"
+        className="relative w-24 h-32 lg:w-28 lg:h-36 rounded-xl overflow-hidden shrink-0 bg-surface-container-high block select-none touch-manipulation"
       >
-        {poster_url && (
+        {poster_url && !imgError ? (
           <Image
             src={poster_url}
             alt={title}
@@ -42,7 +45,13 @@ export function AiringCard({
             sizes="120px"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             unoptimized
+            onError={() => setImgError(true)}
           />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-lowest">
+            <span className="material-symbols-outlined text-2xl text-primary/40 mb-1">filter_vintage</span>
+            <span className="text-[10px] text-on-surface line-clamp-2">{title}</span>
+          </div>
         )}
         {episode_num && (
           <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/90 font-label-sm text-[10px] text-tertiary">
@@ -80,17 +89,14 @@ export function AiringCard({
               </span>
             ))}
           </div>
-          <button
-            aria-label="Напомнить о релизе"
-            type="button"
-            onClick={() => {
-              window.location.href = '/login';
-            }}
+          <Link
+            href={`/anime/${slug || id}`}
+            prefetch={true}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant font-label-md text-label-md transition-colors"
           >
-            <span className="material-symbols-outlined text-[16px]">notifications_none</span>
-            <span className="hidden sm:inline">Напомнить</span>
-          </button>
+            <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+            <span className="hidden sm:inline">Смотреть</span>
+          </Link>
         </div>
       </div>
     </div>
