@@ -92,7 +92,7 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
                 {secondaryTitle}
               </span>
             )}
-            <h1 className="font-display-hero text-display-hero text-on-surface tracking-tight leading-[1.08] drop-shadow-md">
+            <h1 className="font-display-hero text-display-hero-mobile sm:text-display-hero text-on-surface tracking-tight leading-[1.08] drop-shadow-md">
               {displayTitle}
             </h1>
           </div>

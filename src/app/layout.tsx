@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
 import { MobileNav } from '@/components/layout/MobileNav';
@@ -6,30 +6,39 @@ import { Footer } from '@/components/layout/Footer';
 import { createClient } from '@/lib/supabase/server';
 import { UserProfile } from '@/types';
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: '#0c0a14',
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://animo.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://animo-virid.vercel.app'),
   title: {
-    default: 'Анимо — кинематографичный каталог, трекер и гид по аниме',
+    default: 'Анимо — кинематографичный каталог, трекер и онлайн-просмотр аниме',
     template: '%s | Анимо',
   },
   description:
-    'Каталог, персональный трекер и гид по японской анимации на русском языке. Без пиратства, рекламы и видеоплееров.',
-  keywords: ['аниме', 'каталог аниме', 'трекер аниме', 'онгоинги', 'расписание аниме', 'что посмотреть'],
+    'Полный каталог на 38 000+ аниме, персональный трекер серий, расписание онгоингов и просмотр онлайн на русском языке.',
+  keywords: ['аниме', 'каталог аниме', 'трекер аниме', 'онгоинги', 'расписание аниме', 'смотреть аниме онлайн'],
   authors: [{ name: 'Анимо' }],
   creator: 'Анимо',
   openGraph: {
-    title: 'Анимо — кинематографичный каталог, трекер и гид по аниме',
+    title: 'Анимо — кинематографичный каталог, трекер и онлайн-просмотр аниме',
     description:
-      'Каталог, персональный трекер и гид по японской анимации на русском языке. Без пиратства, рекламы и видеоплееров.',
-    url: 'https://animo.app',
+      'Полный каталог на 38 000+ аниме, персональный трекер серий, расписание онгоингов и просмотр онлайн на русском языке.',
+    url: 'https://animo-virid.vercel.app',
     siteName: 'Анимо',
     locale: 'ru_RU',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Анимо — каталог и гид по аниме',
-    description: 'Кинематографичный каталог, трекер серий и календарь онгоингов на русском языке.',
+    title: 'Анимо — каталог и онлайн-просмотр аниме',
+    description: 'Кинематографичный каталог, трекер серий и онлайн-плеер на русском языке.',
   },
   robots: {
     index: true,
@@ -81,7 +90,7 @@ export default async function RootLayout({
       </head>
       <body className="bg-surface text-on-surface font-body-md antialiased min-h-screen selection:bg-secondary-container selection:text-on-secondary-container flex flex-col">
         <Navbar user={clientUser} profile={profile} />
-        <main className="w-full pt-16 flex-1">
+        <main className="w-full pt-16 pb-24 md:pb-0 flex-1">
           {children}
         </main>
         <MobileNav />

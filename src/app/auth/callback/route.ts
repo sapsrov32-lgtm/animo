@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+const TWO_YEARS_IN_SECONDS = 60 * 60 * 24 * 365 * 2;
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
@@ -39,6 +41,11 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
+        cookieOptions: {
+          maxAge: TWO_YEARS_IN_SECONDS,
+          sameSite: 'lax',
+          path: '/',
+        },
         cookies: {
           getAll() {
             return request.cookies.getAll();
@@ -47,7 +54,12 @@ export async function GET(request: NextRequest) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
             response = NextResponse.redirect(redirectUrl);
             cookiesToSet.forEach(({ name, value, options }) =>
-              response.cookies.set(name, value, options)
+              response.cookies.set(name, value, {
+                ...options,
+                maxAge: TWO_YEARS_IN_SECONDS,
+                sameSite: 'lax',
+                path: '/',
+              })
             );
           },
         },

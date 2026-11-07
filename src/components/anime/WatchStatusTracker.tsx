@@ -34,7 +34,8 @@ export function WatchStatusTracker({
   useEffect(() => {
     setUserLoggedIn(isLoggedIn);
     const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
+    supabase.auth.getUser().then(async (res: any) => {
+      const data = res?.data;
       if (data?.user) {
         setUserLoggedIn(true);
         // Если при SSR статус не был подгружен, подгружаем актуальный статус пользователя
@@ -315,13 +316,13 @@ export function WatchStatusTracker({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-space-xs gap-space-sm">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-body-md text-body-md text-on-surface">Моя оценка:</span>
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5 overflow-x-auto py-1">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
               <button
                 key={star}
                 type="button"
                 onClick={() => handleScoreChange(star)}
-                className={`text-[22px] leading-none transition-transform hover:scale-125 focus:outline-none p-0.5 ${
+                className={`text-[22px] min-w-[26px] h-8 flex items-center justify-center leading-none transition-transform hover:scale-125 focus:outline-none touch-manipulation active:scale-95 ${
                   score && score >= star
                     ? 'text-secondary font-bold'
                     : 'text-outline/30 hover:text-secondary'
@@ -340,8 +341,8 @@ export function WatchStatusTracker({
         </div>
 
         <div className="flex items-center gap-space-xs text-outline font-body-sm text-body-sm">
-          <span className="material-symbols-outlined text-[18px]">verified_user</span>
-          <span>Каталог без видеоплеера и рекламы</span>
+          <span className="material-symbols-outlined text-[18px] text-primary">cloud_done</span>
+          <span>Автосохранение в аккаунт</span>
         </div>
       </div>
     </div>

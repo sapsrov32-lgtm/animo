@@ -122,7 +122,7 @@ export function CatalogView({
             Каталог тайтлов
           </h1>
           <p className="font-body-md text-body-md text-on-surface-variant max-w-xl mt-1">
-            Исследуйте рейтинги, фильтруйте по любимым жанрам и добавляйте шедевры в личные коллекции без рекламы и видеоплееров.
+            Исследуйте базу японской анимации, выбирайте серии и сохраняйте шедевры в личные коллекции.
           </p>
         </div>
 
@@ -163,7 +163,7 @@ export function CatalogView({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Искать по названию (ромадзи/оригинал/рус) с триграммным индексом..."
+              placeholder="Поиск по названию или жанру аниме..."
               className="w-full h-11 pl-11 pr-10 rounded-xl bg-surface-container text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:bg-surface-container-high transition-all"
             />
             {searchQuery && (

@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+const TWO_YEARS_IN_SECONDS = 60 * 60 * 24 * 365 * 2;
+
 export async function createClient() {
   const cookieStore = await cookies();
 
@@ -9,7 +11,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookieOptions: {
-        maxAge: 60 * 60 * 24 * 365,
+        maxAge: TWO_YEARS_IN_SECONDS,
         sameSite: 'lax',
         path: '/',
       },
@@ -22,7 +24,7 @@ export async function createClient() {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, {
                 ...options,
-                maxAge: 60 * 60 * 24 * 365,
+                maxAge: TWO_YEARS_IN_SECONDS,
                 sameSite: 'lax',
                 path: '/',
               })

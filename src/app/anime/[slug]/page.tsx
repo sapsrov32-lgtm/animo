@@ -108,7 +108,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
       <div className="relative w-full -mt-16 overflow-hidden">
         {/* Atmospheric Artwork Layer */}
         <div
-          className="w-full min-h-[460px] lg:h-[540px] bg-cover bg-center"
+          className="w-full min-h-[260px] sm:min-h-[360px] lg:h-[500px] bg-cover bg-center"
           style={{
             backgroundImage: `url('${anime.banner_url || anime.poster_url || ''}')`,
           }}
@@ -152,8 +152,8 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg lg:gap-gutter-desktop items-start">
           
           {/* Left Column: Poster Canvas & Quick Stats */}
-          <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-space-md">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-surface-container-low group border border-outline-variant/30">
+          <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-space-md w-full">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-surface-container-low group border border-outline-variant/30 max-w-[240px] sm:max-w-[280px] mx-auto lg:max-w-none w-full">
               {/* Poster Image */}
               <div className="aspect-[2/3] w-full overflow-hidden relative bg-surface-container-high">
                 {anime.poster_url ? (
@@ -272,7 +272,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                   {anime.format || 'ТВ СЕРИАЛ'}
                 </span>
               </div>
-              <h1 className="font-headline-lg text-headline-lg md:text-display-hero md:font-display-hero text-on-surface tracking-tight leading-tight">
+              <h1 className="font-headline-lg text-headline-sm sm:text-headline-lg md:text-display-hero md:font-display-hero text-on-surface tracking-tight leading-tight">
                 {displayTitle}
               </h1>
               {secondaryTitle && (
