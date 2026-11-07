@@ -29,6 +29,7 @@ export function AdminWorkspace({ initialAnimeList, allGenres }: AdminWorkspacePr
   const [slug, setSlug] = useState('');
   const [format, setFormat] = useState('ТВ Сериал');
   const [episodes, setEpisodes] = useState<string>('');
+  const [shikimoriId, setShikimoriId] = useState<string>('');
   const [status, setStatus] = useState<AnimeStatus>('ongoing');
   const [year, setYear] = useState<string>(new Date().getFullYear().toString());
   const [season, setSeason] = useState('');
@@ -90,6 +91,7 @@ export function AdminWorkspace({ initialAnimeList, allGenres }: AdminWorkspacePr
     setSlug(anime.slug);
     setFormat(anime.format || 'ТВ Сериал');
     setEpisodes(anime.episodes ? anime.episodes.toString() : '');
+    setShikimoriId(anime.shikimori_id ? anime.shikimori_id.toString() : '');
     setStatus(anime.status);
     setYear(anime.year ? anime.year.toString() : '');
     setSeason(anime.season || '');
@@ -120,6 +122,7 @@ export function AdminWorkspace({ initialAnimeList, allGenres }: AdminWorkspacePr
     setSlug('');
     setFormat('ТВ Сериал');
     setEpisodes('');
+    setShikimoriId('');
     setStatus('ongoing');
     setYear(new Date().getFullYear().toString());
     setSeason('');
@@ -195,6 +198,7 @@ export function AdminWorkspace({ initialAnimeList, allGenres }: AdminWorkspacePr
       status,
       format: format.trim() || 'ТВ Сериал',
       episodes: episodes ? parseInt(episodes, 10) : null,
+      shikimori_id: shikimoriId ? parseInt(shikimoriId, 10) : null,
       poster_url: posterUrl.trim() || null,
       banner_url: bannerUrl.trim() || null,
       airing_day: airingDay.trim() || null,
@@ -589,8 +593,8 @@ export function AdminWorkspace({ initialAnimeList, allGenres }: AdminWorkspacePr
                 </div>
               </div>
 
-              {/* Format, Episodes, Status */}
-              <div className="grid grid-cols-3 gap-3">
+              {/* Format, Episodes, Status, Shikimori ID */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="font-label-sm text-label-sm text-outline uppercase font-semibold">
                     Формат
@@ -636,6 +640,19 @@ export function AdminWorkspace({ initialAnimeList, allGenres }: AdminWorkspacePr
                     <option value="finished">Завершён</option>
                     <option value="announced">Анонс</option>
                   </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="font-label-sm text-label-sm text-outline uppercase font-semibold">
+                    Shikimori ID (Плеер)
+                  </label>
+                  <input
+                    type="number"
+                    value={shikimoriId}
+                    onChange={(e) => setShikimoriId(e.target.value)}
+                    placeholder="ID для видео"
+                    className="w-full h-11 px-3.5 rounded-xl bg-surface-container text-on-surface font-body-md border border-outline-variant/20 focus:border-primary focus:outline-none"
+                  />
                 </div>
               </div>
 

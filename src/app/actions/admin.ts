@@ -16,6 +16,7 @@ export interface AnimeInputData {
   status: AnimeStatus;
   format?: string | null;
   episodes?: number | null;
+  shikimori_id?: number | null;
   poster_url?: string | null;
   banner_url?: string | null;
   airing_day?: string | null;
@@ -84,6 +85,7 @@ export async function upsertAnimeAction(data: AnimeInputData) {
     status: data.status,
     format: data.format?.trim() || 'ТВ Сериал',
     episodes: data.episodes ? Number(data.episodes) : null,
+    shikimori_id: data.shikimori_id ? Number(data.shikimori_id) : null,
     poster_url: data.poster_url?.trim() || null,
     banner_url: data.banner_url?.trim() || null,
     airing_day: data.airing_day?.trim() || null,

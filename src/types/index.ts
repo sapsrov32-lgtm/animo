@@ -23,6 +23,7 @@ export interface Anime {
   poster_url?: string | null;
   banner_url?: string | null;
   anilist_id?: number | null;
+  shikimori_id?: number | null;
   airing_day?: string | null;
   next_episode_at?: string | null;
   score?: number | null;

@@ -8,6 +8,7 @@ import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
 import { AnimeCard } from '@/components/anime/AnimeCard';
 import { AiringCountdown } from '@/components/anime/AiringCountdown';
 import { WatchStatusTracker } from '@/components/anime/WatchStatusTracker';
+import { AnimePlayer } from '@/components/anime/AnimePlayer';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -385,6 +386,15 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                 {anime.description || 'Описание этого тайтла ещё дополняется редакторами каталога.'}
               </p>
             </section>
+
+            {/* Online Video Player */}
+            <AnimePlayer
+              shikimoriId={anime.shikimori_id}
+              titleRu={anime.title_ru}
+              titleEn={anime.title_en}
+              posterUrl={anime.poster_url}
+              bannerUrl={anime.banner_url}
+            />
 
             {/* Production & Crew Details Bento */}
             <section className="p-space-lg rounded-2xl bg-surface-container-low flex flex-col gap-space-sm border border-outline-variant/20 shadow-sm">
