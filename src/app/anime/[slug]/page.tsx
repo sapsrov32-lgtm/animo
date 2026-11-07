@@ -11,6 +11,8 @@ import { AiringCountdown } from '@/components/anime/AiringCountdown';
 import { WatchStatusTracker } from '@/components/anime/WatchStatusTracker';
 import { AnimePlayer } from '@/components/anime/AnimePlayer';
 
+export const revalidate = 3600; // Кеширование страниц аниме на Vercel Edge на 1 час (ISR)
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
