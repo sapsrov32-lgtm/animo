@@ -45,3 +45,6 @@ next-env.d.ts
 # Stitch zip & raw unpack
 stitch_animo_anime_discovery_platform.zip
 stitch_animo_anime_discovery_platform/
+
+.vercel
+.env*
