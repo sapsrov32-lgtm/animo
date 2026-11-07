@@ -7,8 +7,34 @@ import { createClient } from '@/lib/supabase/server';
 import { UserProfile } from '@/types';
 
 export const metadata: Metadata = {
-  title: 'Анимо — кинематографичный каталог, трекер и гид по аниме',
-  description: 'Каталог, персональный трекер и гид по японской анимации на русском языке. Без пиратства, рекламы и видеоплееров.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://animo.app'),
+  title: {
+    default: 'Анимо — кинематографичный каталог, трекер и гид по аниме',
+    template: '%s | Анимо',
+  },
+  description:
+    'Каталог, персональный трекер и гид по японской анимации на русском языке. Без пиратства, рекламы и видеоплееров.',
+  keywords: ['аниме', 'каталог аниме', 'трекер аниме', 'онгоинги', 'расписание аниме', 'что посмотреть'],
+  authors: [{ name: 'Анимо' }],
+  creator: 'Анимо',
+  openGraph: {
+    title: 'Анимо — кинематографичный каталог, трекер и гид по аниме',
+    description:
+      'Каталог, персональный трекер и гид по японской анимации на русском языке. Без пиратства, рекламы и видеоплееров.',
+    url: 'https://animo.app',
+    siteName: 'Анимо',
+    locale: 'ru_RU',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Анимо — каталог и гид по аниме',
+    description: 'Кинематографичный каталог, трекер серий и календарь онгоингов на русском языке.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default async function RootLayout({
