@@ -3,20 +3,33 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Anime } from '@/types';
+import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
 
 interface HeroBannerProps {
   anime: Anime;
+  isLoggedIn?: boolean;
 }
 
-export function HeroBanner({ anime }: HeroBannerProps) {
+export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<string | null>(null);
 
+  const displayTitle = getDisplayTitle(anime);
+  const secondaryTitle = getSecondaryTitle(anime);
+
   const handleSelectStatus = (statusName: string) => {
+    if (!isLoggedIn) {
+      window.location.href = '/login';
+      return;
+    }
     setCurrentStatus(statusName);
     setDropdownOpen(false);
-    alert(`Статус «${statusName}» для тайтла «${anime.title_ru}» сохранен! (демо)`);
   };
+
+  const genres =
+    anime.genres ||
+    anime.anime_genres?.map((ag) => ag.genres).filter(Boolean) ||
+    [];
 
   return (
     <section className="relative w-full overflow-hidden bg-surface-container-lowest -mt-16 pt-24 pb-16 lg:pb-24">
@@ -26,10 +39,10 @@ export function HeroBanner({ anime }: HeroBannerProps) {
 
       {/* Backdrop Visual Frame */}
       <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity">
-        {anime.banner_url && (
+        {(anime.banner_url || anime.poster_url) && (
           <div
             className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url('${anime.banner_url}')` }}
+            style={{ backgroundImage: `url('${anime.banner_url || anime.poster_url}')` }}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/80 to-transparent" />
@@ -42,53 +55,66 @@ export function HeroBanner({ anime }: HeroBannerProps) {
           
           {/* Meta Pills & Badges */}
           <div className="flex flex-wrap items-center gap-space-xs sm:gap-space-sm pt-4">
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/30 text-secondary border-0 shadow-[0_0_16px_rgba(255,176,205,0.2)]">
-              <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                star
-              </span>
-              <span className="font-badge-score text-badge-score">{anime.score?.toFixed(2) || '8.94'}</span>
-              <span className="text-secondary/60 text-xs px-1">•</span>
-              <span className="font-label-sm text-label-sm uppercase tracking-wider">TOP #4 Сезона</span>
-            </div>
+            {anime.score && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/30 text-secondary border-0 shadow-[0_0_16px_rgba(255,176,205,0.2)]">
+                <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  star
+                </span>
+                <span className="font-badge-score text-badge-score">{anime.score.toFixed(1)}</span>
+                <span className="text-secondary/60 text-xs px-1">•</span>
+                <span className="font-label-sm text-label-sm uppercase tracking-wider">TOP Рейтинга</span>
+              </div>
+            )}
 
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high/70 text-on-surface-variant font-label-md text-label-md">
               <span>{anime.format || 'ТВ Сериал'}</span>
               <span className="text-outline text-xs">•</span>
-              <span>24 мин</span>
-              <span className="text-outline text-xs">•</span>
-              <span className="text-primary-fixed">{anime.studio || 'MAPPA'}</span>
-              <span className="text-outline text-xs">•</span>
-              <span>{anime.season || 'Осень 2024'}</span>
+              <span>{anime.episodes ? `${anime.episodes} эп.` : 'Онгоинг'}</span>
+              {anime.studio && (
+                <>
+                  <span className="text-outline text-xs">•</span>
+                  <span className="text-primary-fixed">{anime.studio}</span>
+                </>
+              )}
+              {anime.year && (
+                <>
+                  <span className="text-outline text-xs">•</span>
+                  <span>{anime.year}</span>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Titles: Japanese Callout & Russian Main */}
+          {/* Titles: Callout & Main */}
           <div className="flex flex-col gap-1">
-            {anime.title_jp && (
+            {secondaryTitle && (
               <span className="font-title-card text-title-card text-secondary/80 tracking-widest uppercase">
-                {anime.title_jp}
+                {secondaryTitle}
               </span>
             )}
             <h1 className="font-display-hero text-display-hero text-on-surface tracking-tight leading-[1.08] drop-shadow-md">
-              {anime.title_ru}
+              {displayTitle}
             </h1>
           </div>
 
           {/* Genres Chips */}
-          <div className="flex flex-wrap gap-2">
-            {anime.genres?.map((genre) => (
-              <span
-                key={genre.id}
-                className="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-default"
-              >
-                {genre.name_ru}
-              </span>
-            ))}
-          </div>
+          {genres.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {genres.slice(0, 4).map((genre) => (
+                <Link
+                  key={genre.id}
+                  href={`/catalog?genre=${genre.slug}`}
+                  className="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                >
+                  {genre.name_ru}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {/* Synopsis Narrative */}
-          <p className="font-body-lg text-body-lg text-on-surface-variant/90 max-w-2xl leading-relaxed">
-            {anime.description}
+          <p className="font-body-lg text-body-lg text-on-surface-variant/90 max-w-2xl leading-relaxed line-clamp-3">
+            {anime.description || 'Описание этого культового тайтла доступно на странице карточки.'}
           </p>
 
           {/* CTA & Status Tracker Cluster */}
@@ -108,13 +134,19 @@ export function HeroBanner({ anime }: HeroBannerProps) {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
+                onClick={() => {
+                  if (!isLoggedIn) {
+                    window.location.href = '/login';
+                  } else {
+                    setDropdownOpen(!dropdownOpen);
+                  }
+                }}
                 className="flex items-center gap-2 px-5 h-11 rounded-full bg-surface-container-high/90 hover:bg-surface-bright text-on-surface font-label-md text-label-md shadow-sm transition-all"
               >
                 <span className="material-symbols-outlined text-secondary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   bookmark
                 </span>
-                <span>{currentStatus ? currentStatus : 'Добавить в список'}</span>
+                <span>{currentStatus || 'Добавить в список'}</span>
                 <span className="material-symbols-outlined text-[16px] text-outline">
                   expand_more
                 </span>
@@ -132,7 +164,7 @@ export function HeroBanner({ anime }: HeroBannerProps) {
                       <span className="w-2 h-2 rounded-full bg-tertiary" />
                       В планах
                     </span>
-                    <span className="text-xs text-outline">0/24</span>
+                    <span className="text-xs text-outline">Хочу</span>
                   </button>
 
                   <button
@@ -144,7 +176,7 @@ export function HeroBanner({ anime }: HeroBannerProps) {
                       <span className="w-2 h-2 rounded-full bg-secondary" />
                       Смотрю
                     </span>
-                    <span className="text-xs text-outline">+1 эп.</span>
+                    <span className="text-xs text-outline">В процессе</span>
                   </button>
 
                   <button
@@ -164,8 +196,8 @@ export function HeroBanner({ anime }: HeroBannerProps) {
 
             {/* Watchlist Count Counter Pill */}
             <div className="hidden sm:flex items-center gap-2 px-4 h-11 rounded-full bg-surface-container-lowest/60 text-outline font-label-sm text-label-sm">
-              <span className="material-symbols-outlined text-[16px] text-primary">people</span>
-              <span>34 812 следят за релизом</span>
+              <span className="material-symbols-outlined text-[16px] text-primary">verified</span>
+              <span>Без пиратства и рекламы</span>
             </div>
           </div>
 

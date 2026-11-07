@@ -11,24 +11,27 @@ export interface Genre {
 export interface Anime {
   id: string;
   slug: string;
-  title_ru: string;
-  title_en?: string;
-  title_jp?: string;
-  description: string;
-  year: number;
-  season?: string;
+  title_ru?: string | null;
+  title_en?: string | null;
+  title_jp?: string | null;
+  description?: string | null;
+  year?: number | null;
+  season?: string | null;
   status: AnimeStatus;
-  format?: string;
-  episodes?: number;
-  poster_url: string;
-  banner_url?: string;
-  anilist_id?: number;
-  airing_day?: string;
-  next_episode_at?: string;
-  score?: number;
-  genres?: Genre[];
-  studio?: string;
+  format?: string | null;
+  episodes?: number | null;
+  poster_url?: string | null;
+  banner_url?: string | null;
+  anilist_id?: number | null;
+  airing_day?: string | null;
+  next_episode_at?: string | null;
+  score?: number | null;
+  studio?: string | null;
   is_published?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  genres?: Genre[];
+  anime_genres?: { genres: Genre }[];
 }
 
 export interface UserAnime {
@@ -36,7 +39,7 @@ export interface UserAnime {
   user_id: string;
   anime_id: string;
   status: WatchStatus;
-  score?: number;
+  score?: number | null;
   progress: number;
   updated_at: string;
   anime?: Anime;
@@ -45,7 +48,7 @@ export interface UserAnime {
 export interface UserProfile {
   id: string;
   username: string;
-  avatar_url?: string;
+  avatar_url?: string | null;
   role: UserRole;
   created_at: string;
 }

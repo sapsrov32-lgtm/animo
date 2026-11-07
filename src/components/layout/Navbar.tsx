@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 const NAV_ITEMS = [
@@ -13,7 +13,15 @@ const NAV_ITEMS = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/catalog?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/30">
@@ -57,7 +65,7 @@ export function Navbar() {
         {/* Search & Actions */}
         <div className="flex items-center gap-space-sm sm:gap-space-md">
           {/* Search bar */}
-          <div className="hidden md:flex items-center relative w-60 lg:w-72">
+          <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center relative w-60 lg:w-72">
             <span className="material-symbols-outlined absolute left-3 text-outline text-[18px] pointer-events-none">
               search
             </span>
@@ -68,7 +76,7 @@ export function Navbar() {
               placeholder="Найти аниме, жанр... (⌘K)"
               className="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container-low/90 border border-outline-variant/30 text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
             />
-          </div>
+          </form>
 
           {/* Quick links to Admin & Profile */}
           <Link
