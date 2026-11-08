@@ -60,12 +60,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     );
 
-    // Выгружаем слаги всех опубликованных тайтлов (до 45 000 по стандарту sitemaps.org)
+    // Выгружаем слаги всех опубликованных тайтлов (исключая 18+ и неопубликованные)
     const { data: animeList, error } = await supabase
       .from('anime')
       .select('slug, updated_at')
       .eq('is_published', true)
-      .order('score', { ascending: false, nullsFirst: false })
+      .eq('is_adult', false)
+      .order('popularity', { ascending: false, nullsFirst: false })
       .limit(45000);
 
     if (error) {

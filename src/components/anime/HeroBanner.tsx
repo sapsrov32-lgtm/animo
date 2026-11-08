@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Anime } from '@/types';
-import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
+import { getDisplayTitle, getSecondaryTitle, cleanDescription } from '@/lib/format';
 
 interface HeroBannerProps {
   anime: Anime;
@@ -116,7 +116,11 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
 
           {/* Synopsis Narrative */}
           <p className="font-body-lg text-body-lg text-on-surface-variant/90 max-w-2xl leading-relaxed line-clamp-3">
-            {anime.description || 'Описание этого культового тайтла доступно на странице карточки.'}
+            {anime.description
+              ? /[а-яё]/i.test(anime.description)
+                ? cleanDescription(anime.description)
+                : 'Описание на русском пока нет'
+              : 'Описание на русском пока нет'}
           </p>
 
           {/* CTA & Status Tracker Cluster */}

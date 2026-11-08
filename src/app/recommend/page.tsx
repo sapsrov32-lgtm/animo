@@ -14,15 +14,16 @@ export const revalidate = 300; // cache for 5 minutes
 export default async function RecommendPage() {
   const supabase = await createClient();
 
-  // Fetch top rated anime with genres for recommendation scoring
+  // Fetch top anime with genres for recommendation scoring (excluding 18+)
   const { data: animeData, error } = await supabase
     .from('anime')
     .select('*, anime_genres(genres(*))')
     .eq('is_published', true)
+    .eq('is_adult', false)
     .not('poster_url', 'is', null)
     .in('format', ['ТВ Сериал', 'Фильм', 'OVA', 'ONA'])
     .gte('score', 6.5)
-    .order('score', { ascending: false, nullsFirst: false })
+    .order('popularity', { ascending: false, nullsFirst: false })
     .limit(1500);
 
   if (error) {

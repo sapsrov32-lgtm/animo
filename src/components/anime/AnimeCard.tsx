@@ -70,8 +70,23 @@ export function AnimeCard({
     (anime.status === 'ongoing'
       ? 'Онгоинг'
       : anime.status === 'announced'
-      ? 'Анонс'
-      : 'Завершен');
+      ? 'Скоро'
+      : 'Завершён');
+
+  let episodeLabel = '';
+  if (anime.status === 'ongoing') {
+    episodeLabel = anime.episodes ? `Онгоинг (из ${anime.episodes})` : 'Онгоинг';
+  } else if (anime.status === 'announced') {
+    episodeLabel = 'Скоро';
+  } else {
+    if (anime.format === 'Фильм' || anime.format === 'Movie') {
+      episodeLabel = 'Фильм';
+    } else if (anime.episodes) {
+      episodeLabel = `${anime.episodes} эп.`;
+    } else {
+      episodeLabel = 'Завершён';
+    }
+  }
 
   // Realistic score formatting
   const scoreVal =
@@ -196,17 +211,16 @@ export function AnimeCard({
               {displayTitle}
             </h3>
           </Link>
+          {anime.title_jp && anime.title_jp !== displayTitle && anime.title_jp !== secondaryTitle && (
+            <span className="text-[10px] text-outline/80 block truncate font-normal mt-0.5">
+              {anime.title_jp}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center justify-between text-outline font-body-sm text-[11px] pt-1 border-t border-outline-variant/10">
           <span className="truncate max-w-[110px]">{genresList || 'Аниме'}</span>
-          <span>
-            {anime.status === 'ongoing'
-              ? anime.episodes
-                ? `${anime.episodes} эп.`
-                : 'Онгоинг'
-              : `${anime.episodes || 12} эп.`}
-          </span>
+          <span className="font-medium text-on-surface-variant shrink-0">{episodeLabel}</span>
         </div>
       </div>
     </div>

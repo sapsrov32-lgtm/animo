@@ -3,18 +3,31 @@ export function sanitizeRussianTitle(title: string | null | undefined): string |
   const trimmed = title.trim();
   if (!trimmed) return null;
 
-  // Detect non-Russian Cyrillic characters (Ukrainian, Bulgarian, Serbian, etc.)
+  // 1. Detect non-Russian Cyrillic characters (Ukrainian, Belarusian, Serbian, Macedonian, etc.)
   // e.g. і, ї, є, ґ, ў, љ, њ, џ, ћ, ђ
   if (/[ієїґўљњџћђ]/i.test(trimmed)) {
     return null;
   }
 
-  // Detect specific non-Russian phrases (e.g. Bulgarian "Дневниците на билкарката")
-  if (/\b(дневниците|билкарката|сезон|епизод)\b/i.test(trimmed) && !/сезон \d|епизод \d/i.test(trimmed)) {
-    // If it clearly has Bulgarian definite suffixes "-та", "-то", "-те" in title words
-    if (/\b\w+(?:та|то|те)\s+на\s+\w+/i.test(trimmed)) {
-      return null;
-    }
+  // 2. Detect Bulgarian characteristic words:
+  // e.g. "Дневниците на билкарката", "Гимназията на мъртвите", "Екот на терор", "кръстоносци"
+  if (/\b(дневниците|билкарката|кръстоносци|мъртвите|екот|приключенията|сезона|невероятните)\b/i.test(trimmed)) {
+    return null;
+  }
+
+  // Bulgarian definite article phrases: "...та на...", "...то на...", "...те на...", "...ят на..."
+  if (/\b\w+(?:та|то|те|ят|ът)\s+на\s+\w+/i.test(trimmed)) {
+    return null;
+  }
+
+  // Bulgarian characteristic prepositions
+  if (/\b(?:във|със)\b/i.test(trimmed)) {
+    return null;
+  }
+
+  // 3. Detect Ukrainian words
+  if (/\b(трилогія|початку|історій|року|серія|фільм|дахів)\b/i.test(trimmed)) {
+    return null;
   }
 
   return trimmed;
@@ -103,4 +116,36 @@ export function formatAiringTime(isoDate: string | null | undefined): {
     remainingStr,
     isPast: false,
   };
+}
+
+export function getAiringScheduleDisplay(isoDate: string | null | undefined): string {
+  if (!isoDate) return 'Дата не объявлена';
+  const target = new Date(isoDate);
+  if (isNaN(target.getTime())) return 'Дата не объявлена';
+
+  const now = new Date();
+  const timeStr = target.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+  const isToday =
+    target.getDate() === now.getDate() &&
+    target.getMonth() === now.getMonth() &&
+    target.getFullYear() === now.getFullYear();
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow =
+    target.getDate() === tomorrow.getDate() &&
+    target.getMonth() === tomorrow.getMonth() &&
+    target.getFullYear() === tomorrow.getFullYear();
+
+  if (isToday) {
+    return `Сегодня ${timeStr}`;
+  }
+  if (isTomorrow) {
+    return `Завтра ${timeStr}`;
+  }
+
+  const weekday = target.toLocaleDateString('ru-RU', { weekday: 'short' });
+  const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1).replace('.', '');
+  return `${capitalizedWeekday}, ${timeStr}`;
 }

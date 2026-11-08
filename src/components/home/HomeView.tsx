@@ -8,11 +8,22 @@ import { AnimeCard } from '@/components/anime/AnimeCard';
 import { AiringCard } from '@/components/anime/AiringCard';
 import { getDisplayTitle } from '@/lib/format';
 
+export interface UserStats {
+  totalEpisodes: number;
+  completedCount: number;
+  averageScore: number | null;
+  topGenre: string | null;
+  streakDays: number;
+  monthlyEpisodes: number[];
+}
+
 interface HomeViewProps {
   heroAnime: Anime;
   popularAnime: Anime[];
   ongoingAnime: Anime[];
   seasonalAnime: Anime[];
+  isLoggedIn?: boolean;
+  userStats?: UserStats | null;
 }
 
 export function HomeView({
@@ -20,6 +31,8 @@ export function HomeView({
   popularAnime,
   ongoingAnime,
   seasonalAnime,
+  isLoggedIn = false,
+  userStats = null,
 }: HomeViewProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedSeasonTab, setSelectedSeasonTab] = useState('Все');
@@ -327,19 +340,22 @@ export function HomeView({
               </div>
 
               <div className="pt-6">
-                <div className="p-4 rounded-2xl bg-surface-container-low flex items-center gap-4 mb-4 border border-outline-variant/20">
-                  <div className="w-12 h-12 rounded-xl bg-secondary-container/30 flex items-center justify-center text-secondary">
-                    <span className="material-symbols-outlined text-[24px]">local_fire_department</span>
+                {isLoggedIn && userStats && userStats.streakDays > 0 ? (
+                  <div className="p-4 rounded-2xl bg-surface-container-low flex items-center gap-4 mb-4 border border-outline-variant/20">
+                    <div className="w-12 h-12 rounded-xl bg-secondary-container/30 flex items-center justify-center text-secondary">
+                      <span className="material-symbols-outlined text-[24px]">local_fire_department</span>
+                    </div>
+                    <div>
+                      <span className="font-headline-sm text-headline-sm text-on-surface block">
+                        {userStats.streakDays}{' '}
+                        {userStats.streakDays === 1 ? 'день' : userStats.streakDays < 5 ? 'дня' : 'дней'} подряд
+                      </span>
+                      <span className="font-body-sm text-body-sm text-outline">
+                        Текущая серия активности в трекере
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-headline-sm text-headline-sm text-on-surface block">
-                      18 дней подряд
-                    </span>
-                    <span className="font-body-sm text-body-sm text-outline">
-                      Текущая серия активности в трекере
-                    </span>
-                  </div>
-                </div>
+                ) : null}
                 <Link
                   href="/profile"
                   className="inline-flex items-center gap-2 font-label-md text-label-md text-primary hover:text-primary-fixed transition-colors"
@@ -350,80 +366,129 @@ export function HomeView({
               </div>
             </div>
 
-            {/* Right: Interactive Dashboard Widget */}
-            <div className="lg:w-2/3 rounded-3xl bg-surface-container-low p-6 lg:p-8 shadow-xl flex flex-col justify-between border border-outline-variant/20">
-              <div className="flex items-center justify-between pb-6 mb-6">
-                <div className="flex items-center gap-3">
-                  <span className="w-3 h-3 rounded-full bg-secondary" />
-                  <span className="font-title-card text-title-card text-on-surface">Мой год в аниме 2024</span>
+            {/* Right: Interactive Dashboard Widget or Guest Prompt */}
+            {!isLoggedIn || !userStats ? (
+              <div className="lg:w-2/3 rounded-3xl bg-surface-container-low p-8 lg:p-12 shadow-xl flex flex-col items-center justify-center text-center gap-5 border border-outline-variant/20">
+                <div className="w-16 h-16 rounded-2xl bg-primary-container/20 text-primary flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[34px]">bar_chart</span>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
-                  Актуально
-                </span>
-              </div>
-
-              {/* Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-                <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
-                  <span className="text-outline font-label-sm text-label-sm">Эпизодов</span>
-                  <span className="font-headline-md text-headline-md text-on-surface font-bold">842</span>
-                  <span className="text-[11px] text-tertiary">~14.6 дней жизни</span>
+                <div className="max-w-md flex flex-col gap-2">
+                  <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">
+                    Войдите, чтобы увидеть свою статистику
+                  </h3>
+                  <p className="font-body-sm text-body-sm text-outline leading-relaxed">
+                    Отмечайте просмотренные серии и сериалы, чтобы получить честную статистику года{' '}
+                    {new Date().getFullYear()}: время просмотра, средний балл и график активности.
+                  </p>
                 </div>
-                <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
-                  <span className="text-outline font-label-sm text-label-sm">Завершено</span>
-                  <span className="font-headline-md text-headline-md text-on-surface font-bold">48</span>
-                  <span className="text-[11px] text-outline">Тайтлов</span>
-                </div>
-                <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
-                  <span className="text-outline font-label-sm text-label-sm">Средний балл</span>
-                  <span className="font-headline-md text-headline-md text-secondary font-bold">8.2</span>
-                  <span className="text-[11px] text-outline">Из 10</span>
-                </div>
-                <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
-                  <span className="text-outline font-label-sm text-label-sm">Топ-жанр</span>
-                  <span className="font-title-card text-title-card text-on-surface truncate">Психология</span>
-                  <span className="text-[11px] text-primary">34% времени</span>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <Link
+                    href="/login"
+                    className="min-h-[44px] px-6 rounded-xl bg-primary text-on-primary font-label-md text-sm font-semibold flex items-center justify-center hover:brightness-110 active:scale-95 transition-all shadow-md"
+                  >
+                    Войти
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="min-h-[44px] px-6 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-sm font-medium flex items-center justify-center border border-outline-variant/30 active:scale-95 transition-all"
+                  >
+                    Регистрация
+                  </Link>
                 </div>
               </div>
-
-              {/* SVG Chart */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between text-outline font-label-sm text-label-sm">
-                  <span>Сезонный темп просмотра (эпизодов по месяцам)</span>
-                  <span>Пик: Август (112 эп.)</span>
+            ) : (
+              <div className="lg:w-2/3 rounded-3xl bg-surface-container-low p-6 lg:p-8 shadow-xl flex flex-col justify-between border border-outline-variant/20">
+                <div className="flex items-center justify-between pb-6 mb-6">
+                  <div className="flex items-center gap-3">
+                    <span className="w-3 h-3 rounded-full bg-secondary" />
+                    <span className="font-title-card text-title-card text-on-surface">
+                      Мой год в аниме {new Date().getFullYear()}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Metrics */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                  <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
+                    <span className="text-outline font-label-sm text-label-sm">Эпизодов</span>
+                    <span className="font-headline-md text-headline-md text-on-surface font-bold">
+                      {userStats.totalEpisodes}
+                    </span>
+                    <span className="text-[11px] text-tertiary">
+                      ~{((userStats.totalEpisodes * 23) / 60 / 24).toFixed(1)} дней жизни
+                    </span>
+                  </div>
+                  <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
+                    <span className="text-outline font-label-sm text-label-sm">Завершено</span>
+                    <span className="font-headline-md text-headline-md text-on-surface font-bold">
+                      {userStats.completedCount}
+                    </span>
+                    <span className="text-[11px] text-outline">Тайтлов</span>
+                  </div>
+                  <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
+                    <span className="text-outline font-label-sm text-label-sm">Средний балл</span>
+                    <span className="font-headline-md text-headline-md text-secondary font-bold">
+                      {userStats.averageScore ? userStats.averageScore.toFixed(1) : '—'}
+                    </span>
+                    <span className="text-[11px] text-outline">Из 10</span>
+                  </div>
+                  <div className="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
+                    <span className="text-outline font-label-sm text-label-sm">Топ-жанр</span>
+                    <span className="font-title-card text-title-card text-on-surface truncate">
+                      {userStats.topGenre || '—'}
+                    </span>
+                    <span className="text-[11px] text-primary">Основной интерес</span>
+                  </div>
+                </div>
+
+                {/* SVG Chart */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-outline font-label-sm text-label-sm">
+                    <span>Сезонный темп просмотра (эпизодов по месяцам)</span>
+                    <span>Всего за год: {userStats.totalEpisodes} эп.</span>
+                  </div>
                 <div className="w-full h-24 pt-2">
-                  <svg className="w-full h-full overflow-visible text-primary" viewBox="0 0 500 80">
-                    <rect className="fill-surface-container hover:fill-surface-container-highest transition-colors" height="35" rx="4" width="28" x="10" y="45" />
-                    <rect className="fill-surface-container hover:fill-surface-container-highest transition-colors" height="45" rx="4" width="28" x="52" y="35" />
-                    <rect className="fill-surface-container hover:fill-surface-container-highest transition-colors" height="52" rx="4" width="28" x="94" y="28" />
-                    <rect className="fill-surface-container hover:fill-surface-container-highest transition-colors" height="40" rx="4" width="28" x="136" y="40" />
-                    <rect className="fill-surface-container-highest hover:fill-primary/60 transition-colors" height="60" rx="4" width="28" x="178" y="20" />
-                    <rect className="fill-surface-container hover:fill-surface-container-highest transition-colors" height="50" rx="4" width="28" x="220" y="30" />
-                    <rect className="fill-surface-container-highest hover:fill-primary/60 transition-colors" height="65" rx="4" width="28" x="262" y="15" />
-                    <rect className="fill-primary-container shadow-lg" height="78" rx="4" width="28" x="304" y="2" />
-                    <rect className="fill-surface-container-highest hover:fill-primary/60 transition-colors" height="58" rx="4" width="28" x="346" y="22" />
-                    <rect className="fill-secondary shadow-sm" height="68" rx="4" width="28" x="388" y="12" />
-                    <rect className="fill-surface-container opacity-60" height="42" rx="4" width="28" x="430" y="38" />
-                    <rect className="fill-surface-container-high opacity-30" height="10" rx="4" width="28" x="472" y="70" />
-                  </svg>
-                </div>
-                <div className="flex justify-between text-[11px] text-outline pt-1 font-label-sm">
-                  <span>Янв</span>
-                  <span>Фев</span>
-                  <span>Мар</span>
-                  <span>Апр</span>
-                  <span>Май</span>
-                  <span>Июн</span>
-                  <span>Июл</span>
-                  <span className="text-primary-fixed font-bold">Авг</span>
-                  <span>Сен</span>
-                  <span className="text-secondary font-bold">Окт</span>
-                  <span>Ноя</span>
-                  <span>Дек</span>
+                    <svg className="w-full h-full overflow-visible text-primary" viewBox="0 0 500 80">
+                      {userStats.monthlyEpisodes.map((count, mIdx) => {
+                        const maxVal = Math.max(...userStats.monthlyEpisodes, 1);
+                        const barHeight = Math.max((count / maxVal) * 70, 6);
+                        const y = 78 - barHeight;
+                        const x = 10 + mIdx * 42;
+                        return (
+                          <rect
+                            key={mIdx}
+                            className={
+                              count > 0
+                                ? 'fill-primary hover:fill-primary-container transition-colors'
+                                : 'fill-surface-container opacity-40'
+                            }
+                            height={barHeight}
+                            rx="4"
+                            width="28"
+                            x={x}
+                            y={y}
+                          />
+                        );
+                      })}
+                    </svg>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-outline pt-1 font-label-sm">
+                    <span>Янв</span>
+                    <span>Фев</span>
+                    <span>Мар</span>
+                    <span>Апр</span>
+                    <span>Май</span>
+                    <span>Июн</span>
+                    <span>Июл</span>
+                    <span>Авг</span>
+                    <span>Сен</span>
+                    <span>Окт</span>
+                    <span>Ноя</span>
+                    <span>Дек</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>

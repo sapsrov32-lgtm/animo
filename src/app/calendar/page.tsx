@@ -14,11 +14,12 @@ export const revalidate = 60; // revalidate every minute
 export default async function CalendarPage() {
   const supabase = await createClient();
 
-  // 1. Fetch all ongoing and scheduled anime
+  // 1. Fetch all ongoing and scheduled anime (strictly non-adult)
   const { data: ongoingData, error } = await supabase
     .from('anime')
     .select('*, anime_genres(genres(*))')
     .eq('is_published', true)
+    .eq('is_adult', false)
     .or('status.eq.ongoing,airing_day.not.is.null,next_episode_at.not.is.null')
     .order('next_episode_at', { ascending: true, nullsFirst: false });
 

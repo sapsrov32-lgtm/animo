@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { formatAiringTime } from '@/lib/format';
+import { formatAiringTime, getAiringScheduleDisplay } from '@/lib/format';
 
 interface AiringCountdownProps {
   nextEpisodeAt: string | null | undefined;
@@ -10,6 +10,7 @@ interface AiringCountdownProps {
 }
 
 export function AiringCountdown({ nextEpisodeAt, mode = 'badge' }: AiringCountdownProps) {
+  const [scheduleStr, setScheduleStr] = useState<string>('');
   const [formatted, setFormatted] = useState<{
     dayName: string;
     timeStr: string;
@@ -19,8 +20,10 @@ export function AiringCountdown({ nextEpisodeAt, mode = 'badge' }: AiringCountdo
 
   useEffect(() => {
     setFormatted(formatAiringTime(nextEpisodeAt));
+    setScheduleStr(getAiringScheduleDisplay(nextEpisodeAt));
     const interval = setInterval(() => {
       setFormatted(formatAiringTime(nextEpisodeAt));
+      setScheduleStr(getAiringScheduleDisplay(nextEpisodeAt));
     }, 60000);
     return () => clearInterval(interval);
   }, [nextEpisodeAt]);
@@ -45,9 +48,9 @@ export function AiringCountdown({ nextEpisodeAt, mode = 'badge' }: AiringCountdo
 
   if (mode === 'badge') {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm shrink-0">
-        <span className="material-symbols-outlined text-[13px]">timer</span>
-        {formatted.isPast ? 'Вышла' : `через ${formatted.remainingStr}`}
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm shrink-0 font-medium">
+        <span className="material-symbols-outlined text-[14px]">schedule</span>
+        {scheduleStr || (formatted.isPast ? 'Вышла' : `через ${formatted.remainingStr}`)}
       </span>
     );
   }

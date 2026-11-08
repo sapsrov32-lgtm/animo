@@ -16,7 +16,18 @@ export interface CatalogFilterParams {
   perPage?: number;
 }
 
-const EXCLUDED_FORMATS = ['Музыка', 'Music', 'MUSIC'];
+const EXCLUDED_FORMATS = [
+  'Музыка',
+  'Music',
+  'MUSIC',
+  'Спэшл',
+  'Special',
+  'SPECIAL',
+  'ТВ Короткометражка',
+  'Short',
+  'SHORT',
+  'UNKNOWN',
+];
 
 export async function fetchCatalogAnime(params: CatalogFilterParams) {
   const supabase = await createClient();
@@ -34,7 +45,8 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
   let queryBuilder = supabase
     .from('anime')
     .select(selectQuery, { count: 'exact' })
-    .eq('is_published', true);
+    .eq('is_published', true)
+    .eq('is_adult', false);
 
   if (hasGenreFilter) {
     queryBuilder = queryBuilder.eq('anime_genres.genres.slug', params.genre);
@@ -44,7 +56,7 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
   if (params.format && params.format !== 'all') {
     queryBuilder = queryBuilder.eq('format', params.format);
   } else {
-    // Exclude music PV / CM by default
+    // Exclude music PV / CM, specials, and short formats by default
     queryBuilder = queryBuilder.not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`);
   }
 
@@ -75,10 +87,9 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
   // Sorting
   switch (params.sort) {
     case 'score':
-      // High score with reasonable episode filter to prevent 1-user 10.0 anomalies
       queryBuilder = queryBuilder
         .order('score', { ascending: false, nullsFirst: false })
-        .order('year', { ascending: false, nullsFirst: false });
+        .order('popularity', { ascending: false, nullsFirst: false });
       break;
     case 'release_desc':
       queryBuilder = queryBuilder.order('year', { ascending: false, nullsFirst: false });
@@ -92,8 +103,8 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
     case 'popularity':
     default:
       queryBuilder = queryBuilder
-        .order('score', { ascending: false, nullsFirst: false })
-        .order('year', { ascending: false, nullsFirst: false });
+        .order('popularity', { ascending: false, nullsFirst: false })
+        .order('score', { ascending: false, nullsFirst: false });
       break;
   }
 

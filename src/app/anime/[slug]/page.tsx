@@ -23,7 +23,12 @@ const isUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 const getAnime = cache(async (slug: string) => {
   const supabase = await createClient();
   const isUuid = isUuidRegex.test(slug);
-  let query = supabase.from('anime').select('*, anime_genres(genres(*))');
+  let query = supabase
+    .from('anime')
+    .select('*, anime_genres(genres(*))')
+    .eq('is_published', true)
+    .eq('is_adult', false);
+
   if (isUuid) {
     query = query.or(`slug.eq.${slug},id.eq.${slug}`);
   } else {
@@ -121,18 +126,27 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
           .eq('anime_genres.genre_id', firstGenreId)
           .neq('id', anime.id)
           .eq('is_published', true)
+          .eq('is_adult', false)
           .limit(5)
       : supabase
           .from('anime')
           .select('*, anime_genres(genres(*))')
           .neq('id', anime.id)
           .eq('is_published', true)
+          .eq('is_adult', false)
           .order('score', { ascending: false, nullsFirst: false })
           .limit(5),
   ]);
 
   const userAnimeRecord = recordRes.data;
   const relatedAnime: Anime[] = (relatedRes.data as Anime[]) || [];
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://animo-virid.vercel.app';
+  const pageUrl = `${baseUrl}/anime/${anime.slug || anime.id}`;
+
+  const isMovieFormat =
+    anime.format === 'Фильм' ||
+    anime.format === 'Movie' ||
+    anime.format === 'MOVIE';
 
   return (
     <div className="flex flex-col w-full pb-16">
@@ -142,11 +156,12 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
-            '@type': anime.format === 'MOVIE' ? 'Movie' : 'TVSeries',
+            '@type': isMovieFormat ? 'Movie' : 'TVSeries',
             name: displayTitle,
             alternateName: secondaryTitle || undefined,
             description: anime.description || `${displayTitle} — описание сюжета, рейтинг сообщества и график выхода серий на Анимо`,
             image: anime.poster_url || anime.banner_url || undefined,
+            url: pageUrl,
             datePublished: anime.year ? `${anime.year}-01-01` : undefined,
             numberOfEpisodes: anime.episodes || undefined,
             genre: genres.map((g) => g.name_ru),

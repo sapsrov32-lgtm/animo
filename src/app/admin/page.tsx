@@ -1,8 +1,9 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { AdminWorkspace } from '@/components/admin/AdminWorkspace';
-import { Anime, Genre } from '@/types';
+import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { getAdminOverviewData } from '@/app/actions/admin-dashboard';
+import { Genre } from '@/types';
 
 export const metadata: Metadata = {
   title: 'Админ-панель — Управление каталогом | Анимо',
@@ -38,20 +39,13 @@ export default async function AdminPage() {
     redirect('/login?redirect=/admin&error=forbidden');
   }
 
-  // 3. Fetch all anime (only authorized staff can reach this line)
-  const { data: animeData } = await supabase
-    .from('anime')
-    .select('*, anime_genres(genres(*))')
-    .order('updated_at', { ascending: false });
+  // 3. Fetch Overview Data & Genres
+  const [overviewData, { data: genresData }] = await Promise.all([
+    getAdminOverviewData('30d'),
+    supabase.from('genres').select('*').order('name_ru'),
+  ]);
 
-  // 4. Fetch all genres
-  const { data: genresData } = await supabase
-    .from('genres')
-    .select('*')
-    .order('name_ru');
-
-  const allAnime = (animeData as Anime[]) || [];
   const allGenres = (genresData as Genre[]) || [];
 
-  return <AdminWorkspace initialAnimeList={allAnime} allGenres={allGenres} />;
+  return <AdminDashboard initialData={overviewData} allGenres={allGenres} />;
 }
