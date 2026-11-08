@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Anime } from '@/types';
+import { CalendarAiringItem } from '@/lib/anilist';
 import { CalendarCard } from './CalendarCard';
 
 interface CalendarWorkspaceProps {
-  animeList: Anime[];
+  schedules: CalendarAiringItem[];
   userAnimeMap: Record<string, { status: string; progress: number }>;
   isLoggedIn: boolean;
 }
@@ -22,29 +22,45 @@ const WEEKDAYS = [
 ];
 
 export function CalendarWorkspace({
-  animeList,
+  schedules,
   userAnimeMap,
   isLoggedIn,
 }: CalendarWorkspaceProps) {
-  // 1. Timezone detection & Live clock
-  const [userTimezone, setUserTimezone] = useState<string>('UTC+3, Москва');
+  // 1. Client timezone detection & live clock
+  const [userTimezone, setUserTimezone] = useState<string>('Определение пояса...');
   const [localTime, setLocalTime] = useState<string>('');
   const [tokyoTime, setTokyoTime] = useState<string>('');
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const offsetHours = -new Date().getTimezoneOffset() / 60;
+      const offsetMinutes = -new Date().getTimezoneOffset();
+      const offsetHours = offsetMinutes / 60;
       const sign = offsetHours >= 0 ? '+' : '';
-      setUserTimezone(`${tz.split('/').pop()?.replace(/_/g, ' ') || tz} (UTC${sign}${offsetHours})`);
+      const formattedOffset = `UTC${sign}${offsetHours}`;
+      setUserTimezone(`${tz} (${formattedOffset})`);
     } catch {
-      setUserTimezone('Москва (UTC+3)');
+      setUserTimezone('Ваш часовой пояс');
     }
 
     const updateClock = () => {
       const now = new Date();
-      setLocalTime(now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-      setTokyoTime(now.toLocaleTimeString('ru-RU', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      setLocalTime(
+        now.toLocaleTimeString('ru-RU', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+      );
+      setTokyoTime(
+        now.toLocaleTimeString('ru-RU', {
+          timeZone: 'Asia/Tokyo',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+      );
     };
 
     updateClock();
@@ -52,7 +68,7 @@ export function CalendarWorkspace({
     return () => clearInterval(interval);
   }, []);
 
-  // 2. Week calculation: dates for Monday through Sunday
+  // 2. Week calculation in user's browser timezone
   const today = useMemo(() => new Date(), []);
   const todayDayIndex = (today.getDay() + 6) % 7; // 0=Mon, ..., 6=Sun
   const todayKey = WEEKDAYS[todayDayIndex].key;
@@ -62,7 +78,7 @@ export function CalendarWorkspace({
   const [filterMode, setFilterMode] = useState<'all' | 'watchlist'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Calculate day dates for the week
+  // Calculate dates for Monday through Sunday
   const weekDates = useMemo(() => {
     const monday = new Date(today);
     const diff = today.getDate() - todayDayIndex;
@@ -80,9 +96,9 @@ export function CalendarWorkspace({
     });
   }, [today, todayDayIndex, todayKey]);
 
-  // 3. Map anime to their calculated local airing day
+  // 3. Map schedules to user's local day & sort by airingAt, then popularity
   const groupedAnime = useMemo(() => {
-    const groups: Record<string, Anime[]> = {
+    const groups: Record<string, CalendarAiringItem[]> = {
       пн: [],
       вт: [],
       ср: [],
@@ -92,46 +108,51 @@ export function CalendarWorkspace({
       вс: [],
     };
 
-    animeList.forEach((anime) => {
-      let dayKey = anime.airing_day;
-
-      // Always prioritize calculating from next_episode_at in viewer's local timezone
-      if (anime.next_episode_at) {
-        const airDate = new Date(anime.next_episode_at);
-        const dayIdx = (airDate.getDay() + 6) % 7;
-        dayKey = WEEKDAYS[dayIdx].key;
-      }
+    schedules.forEach((item) => {
+      if (!item.airingAt) return;
+      const airDate = new Date(item.airingAt * 1000);
+      const dayIdx = (airDate.getDay() + 6) % 7;
+      const dayKey = WEEKDAYS[dayIdx]?.key;
 
       if (dayKey && groups[dayKey]) {
-        groups[dayKey].push(anime);
-      } else {
-        // Fallback to today if ongoing but unassigned
-        groups[todayKey].push(anime);
+        groups[dayKey].push(item);
       }
     });
 
+    // Sort within each day: time ascending, then popularity descending
+    Object.keys(groups).forEach((k) => {
+      groups[k].sort((a, b) => {
+        if (a.airingAt !== b.airingAt) {
+          return a.airingAt - b.airingAt;
+        }
+        return (b.popularity || 0) - (a.popularity || 0);
+      });
+    });
+
     return groups;
-  }, [animeList, todayKey]);
+  }, [schedules]);
 
-  // 4. Counts
+  // 4. Counts from filtered schedule
   const todayCount = groupedAnime[todayKey]?.length || 0;
-  const weekCount = animeList.length;
-  const watchlistCount = animeList.filter((a) => userAnimeMap[a.id]).length;
+  const uniqueMediaCount = useMemo(() => {
+    return new Set(schedules.map((s) => s.mediaId)).size;
+  }, [schedules]);
 
-  // 5. Filter items for active day or full week
-  const filterList = (list: Anime[]) => {
+  const watchlistCount = useMemo(() => {
+    return schedules.filter((s) => s.dbId && userAnimeMap[s.dbId]).length;
+  }, [schedules, userAnimeMap]);
+
+  // 5. Filter items
+  const filterList = (list: CalendarAiringItem[]) => {
     return list.filter((item) => {
-      // Watchlist filter
-      if (filterMode === 'watchlist' && !userAnimeMap[item.id]) {
+      if (filterMode === 'watchlist' && (!item.dbId || !userAnimeMap[item.dbId])) {
         return false;
       }
-      // Search filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const titleRu = item.title_ru?.toLowerCase() || '';
-        const titleEn = item.title_en?.toLowerCase() || '';
-        const studio = item.studio?.toLowerCase() || '';
-        return titleRu.includes(q) || titleEn.includes(q) || studio.includes(q);
+        const titleRu = item.titleRu?.toLowerCase() || '';
+        const titleEn = item.titleEn?.toLowerCase() || '';
+        return titleRu.includes(q) || titleEn.includes(q);
       }
       return true;
     });
@@ -139,12 +160,21 @@ export function CalendarWorkspace({
 
   const activeDayAnime = filterList(groupedAnime[activeDay] || []);
 
-  // 6. User watchlist ongoing items for the sidebar
-  const userUpcomingAnime = animeList.filter((a) => userAnimeMap[a.id]);
+  // 6. User watchlist items for sidebar
+  const userUpcomingAnime = useMemo(() => {
+    const seen = new Set<number>();
+    return schedules.filter((s) => {
+      if (s.dbId && userAnimeMap[s.dbId] && !seen.has(s.mediaId)) {
+        seen.add(s.mediaId);
+        return true;
+      }
+      return false;
+    });
+  }, [schedules, userAnimeMap]);
 
-  // Export .ics calendar generator
+  // 7. Export .ics calendar generator
   const handleExportIcs = () => {
-    let icsContent = [
+    const icsLines = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'PRODID:-//Animo//Anime Release Calendar//RU',
@@ -152,36 +182,46 @@ export function CalendarWorkspace({
       'METHOD:PUBLISH',
     ];
 
-    animeList.forEach((anime) => {
-      if (anime.next_episode_at) {
-        const start = new Date(anime.next_episode_at);
-        const end = new Date(start.getTime() + 30 * 60 * 1000); // 30 min duration
+    schedules.forEach((item) => {
+      if (item.airingAt) {
+        const start = new Date(item.airingAt * 1000);
+        const end = new Date(start.getTime() + 30 * 60 * 1000);
         const toIcsDate = (d: Date) =>
           d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 
-        icsContent.push(
+        const title = item.titleRu || item.titleEn;
+
+        icsLines.push(
           'BEGIN:VEVENT',
-          `UID:${anime.id}@animo.app`,
+          `UID:${item.id}@animo-virid.vercel.app`,
           `DTSTAMP:${toIcsDate(new Date())}`,
           `DTSTART:${toIcsDate(start)}`,
           `DTEND:${toIcsDate(end)}`,
-          `SUMMARY:Премьера: ${anime.title_ru || anime.title_en}`,
-          `DESCRIPTION:Трансляция новой серии аниме ${anime.title_ru || anime.title_en} (${anime.format || 'ТВ'})`,
-          `URL:https://animo.app/anime/${anime.slug || anime.id}`,
+          `SUMMARY:${title} — Серия ${item.episode}`,
+          `DESCRIPTION:Премьера серии ${item.episode} аниме «${title}» (${item.format})`,
+          `URL:https://animo-virid.vercel.app/anime/${item.slug}`,
           'END:VEVENT'
         );
       }
     });
 
-    icsContent.push('END:VCALENDAR');
+    icsLines.push('END:VCALENDAR');
 
-    const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const blob = new Blob([icsLines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = 'animo-schedule.ics';
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleShareLink = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
+    }
   };
 
   return (
@@ -192,7 +232,6 @@ export function CalendarWorkspace({
         <div className="absolute top-96 right-10 w-[420px] h-[420px] bg-secondary-container/15 rounded-full blur-[160px] pointer-events-none" />
 
         <div className="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-lg flex flex-col gap-space-xl">
-          
           {/* Breadcrumbs & Header Section */}
           <section className="flex flex-col gap-space-md">
             <nav className="flex items-center gap-space-xs text-outline font-body-sm text-body-sm">
@@ -209,7 +248,7 @@ export function CalendarWorkspace({
                 <div className="inline-flex items-center gap-space-xs px-3 py-1 rounded-full bg-surface-container-high w-fit border border-outline-variant/30">
                   <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                   <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-bold">
-                    Онгоинги · Прямой телеэфир
+                    Онгоинги · Официальный эфир
                   </span>
                 </div>
 
@@ -242,7 +281,7 @@ export function CalendarWorkspace({
                   <div className="flex flex-col">
                     <span className="font-label-sm text-label-sm text-outline">В расписании</span>
                     <span className="font-headline-sm text-headline-sm text-on-surface font-bold">
-                      {weekCount} онгоингов
+                      {uniqueMediaCount} онгоингов
                     </span>
                   </div>
                 </div>
@@ -354,7 +393,7 @@ export function CalendarWorkspace({
             </div>
           </section>
 
-          {/* Weekdays Selector Strip (Sticky Desktop Navigation) */}
+          {/* Weekdays Selector Strip */}
           {viewMode === 'day' && (
             <section className="sticky top-16 z-30 py-space-xs bg-surface/90 backdrop-blur-xl">
               <div className="grid grid-cols-7 gap-space-xs sm:gap-space-sm p-space-xs rounded-2xl bg-surface-container-low shadow-md overflow-x-auto border border-outline-variant/20">
@@ -403,7 +442,7 @@ export function CalendarWorkspace({
                             isActive ? 'text-primary font-bold' : 'text-outline'
                           }`}
                         >
-                          {dayAnimeCount} {dayAnimeCount === 1 ? 'тайтл' : 'тайтлов'}
+                          {dayAnimeCount} {dayAnimeCount === 1 ? 'серия' : 'серий'}
                         </span>
                       </div>
                     </button>
@@ -413,9 +452,8 @@ export function CalendarWorkspace({
             </section>
           )}
 
-          {/* Main Layout: 2-Column Desktop Grid (Timeline 67% | Sidebar 33%) */}
+          {/* Main Layout: 2-Column Desktop Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
-            
             {/* Left Column: Schedule List */}
             <div className="lg:col-span-8 flex flex-col gap-space-xl">
               {viewMode === 'day' ? (
@@ -436,7 +474,7 @@ export function CalendarWorkspace({
                       </h2>
                     </div>
                     <span className="px-2.5 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">
-                      {activeDayAnime.length} {activeDayAnime.length === 1 ? 'релиз' : 'релизов'}
+                      {activeDayAnime.length} {activeDayAnime.length === 1 ? 'серия' : 'серий'}
                     </span>
                   </div>
 
@@ -446,10 +484,10 @@ export function CalendarWorkspace({
                         event_busy
                       </span>
                       <h3 className="font-title-card text-title-card font-bold text-on-surface">
-                        В этот день нет премьер
+                        В этот день релизов нет
                       </h3>
                       <p className="font-body-sm text-body-sm text-outline max-w-sm">
-                        На этот день недели в расписании пока нет запланированных серий онгоингов. Попробуйте выбрать другой день или посмотреть всю неделю.
+                        На этот день в расписании пока нет подтверждённых трансляций. Попробуйте выбрать другой день или посмотреть всю неделю.
                       </p>
                       <button
                         type="button"
@@ -461,12 +499,12 @@ export function CalendarWorkspace({
                     </div>
                   ) : (
                     <div className="flex flex-col gap-space-md">
-                      {activeDayAnime.map((anime) => (
+                      {activeDayAnime.map((item) => (
                         <CalendarCard
-                          key={anime.id}
-                          anime={anime}
-                          userStatus={userAnimeMap[anime.id]?.status}
-                          userProgress={userAnimeMap[anime.id]?.progress}
+                          key={item.id}
+                          item={item}
+                          userStatus={item.dbId ? userAnimeMap[item.dbId]?.status : null}
+                          userProgress={item.dbId ? userAnimeMap[item.dbId]?.progress : 0}
                           userTimezone={userTimezone}
                           isLoggedIn={isLoggedIn}
                         />
@@ -504,17 +542,17 @@ export function CalendarWorkspace({
                             </h2>
                           </div>
                           <span className="px-2.5 py-0.5 rounded-md bg-surface-container-high text-outline font-label-sm text-label-sm">
-                            {dayAnime.length} {dayAnime.length === 1 ? 'релиз' : 'релизов'}
+                            {dayAnime.length} {dayAnime.length === 1 ? 'серия' : 'серий'}
                           </span>
                         </div>
 
                         <div className="flex flex-col gap-space-md">
-                          {dayAnime.map((anime) => (
+                          {dayAnime.map((item) => (
                             <CalendarCard
-                              key={anime.id}
-                              anime={anime}
-                              userStatus={userAnimeMap[anime.id]?.status}
-                              userProgress={userAnimeMap[anime.id]?.progress}
+                              key={item.id}
+                              item={item}
+                              userStatus={item.dbId ? userAnimeMap[item.dbId]?.status : null}
+                              userProgress={item.dbId ? userAnimeMap[item.dbId]?.progress : 0}
                               userTimezone={userTimezone}
                               isLoggedIn={isLoggedIn}
                             />
@@ -529,7 +567,6 @@ export function CalendarWorkspace({
 
             {/* Right Column: Sidebar Widgets */}
             <aside className="lg:col-span-4 flex flex-col gap-space-lg">
-              
               {/* Widget 1: Personal Watchlist Upcoming */}
               <section className="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20">
                 <div className="flex items-center justify-between">
@@ -540,12 +577,12 @@ export function CalendarWorkspace({
                     </h3>
                   </div>
                   <span className="px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-[11px] font-bold">
-                    {watchlistCount} {watchlistCount === 1 ? 'тайтл' : 'тайтлов'}
+                    {userUpcomingAnime.length} {userUpcomingAnime.length === 1 ? 'тайтл' : 'тайтлов'}
                   </span>
                 </div>
 
                 <p className="font-body-sm text-body-sm text-outline">
-                  Онгоинги из вашей вкладки «Моё аниме», выходящие в эфир:
+                  Онгоинги из вашей вкладки «Моё аниме», выходящие в эфир на этой неделе:
                 </p>
 
                 {!isLoggedIn ? (
@@ -563,7 +600,7 @@ export function CalendarWorkspace({
                 ) : userUpcomingAnime.length === 0 ? (
                   <div className="p-4 rounded-xl bg-surface-container text-center flex flex-col items-center gap-2">
                     <p className="font-body-sm text-outline">
-                      В вашем списке пока нет онгоингов из расписания. Добавьте выходящие тайтлы в «Смотрю» или «В планах».
+                      В вашем списке пока нет онгоингов из расписания на эту неделю. Добавьте выходящие тайтлы в «Смотрю» или «В планах».
                     </p>
                     <Link
                       href="/catalog"
@@ -577,17 +614,17 @@ export function CalendarWorkspace({
                     {userUpcomingAnime.slice(0, 5).map((item) => (
                       <Link
                         key={item.id}
-                        href={`/anime/${item.slug || item.id}`}
+                        href={`/anime/${item.slug}`}
                         className="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high transition-all group"
                       >
                         <div className="flex items-center gap-space-sm min-w-0">
                           <div className="w-1.5 h-8 rounded-full bg-secondary shrink-0" />
                           <div className="flex flex-col min-w-0">
                             <span className="font-title-card text-title-card text-on-surface font-semibold truncate group-hover:text-primary transition-colors">
-                              {item.title_ru || item.title_en}
+                              {item.titleRu || item.titleEn}
                             </span>
                             <span className="font-body-sm text-[11px] text-outline">
-                              {item.airing_day ? `Каждый ${item.airing_day.toUpperCase()}` : 'В эфире'}
+                              Серия {item.episode} · {item.format}
                             </span>
                           </div>
                         </div>
@@ -600,7 +637,7 @@ export function CalendarWorkspace({
                 )}
               </section>
 
-              {/* Widget 2: Sync / Export Schedule */}
+              {/* Widget 2: Sync / Export Schedule (Только реально работающие функции) */}
               <section className="flex flex-col gap-space-md p-space-lg rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20">
                 <div className="flex items-center gap-space-xs">
                   <span className="material-symbols-outlined text-primary text-[20px]">sync</span>
@@ -609,7 +646,7 @@ export function CalendarWorkspace({
                   </h3>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Синхронизируйте даты выхода серий с Google Calendar, Apple Calendar или личным расписанием.
+                  Экспортируйте подтверждённые даты выхода серий в личный календарь или поделитесь ссылкой на расписание.
                 </p>
 
                 <div className="flex flex-col gap-space-xs">
@@ -620,37 +657,25 @@ export function CalendarWorkspace({
                   >
                     <div className="flex items-center gap-space-sm">
                       <span className="material-symbols-outlined text-primary text-[20px]">event</span>
-                      <span className="font-label-md text-label-md">iCal / Google Calendar</span>
+                      <span className="font-label-md text-label-md">iCal / Google Calendar (.ics)</span>
                     </div>
                     <span className="material-symbols-outlined text-outline text-[18px]">file_download</span>
                   </button>
 
-                  <Link
-                    href="https://t.me"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface transition-all text-left"
-                  >
-                    <div className="flex items-center gap-space-sm">
-                      <span className="material-symbols-outlined text-tertiary text-[20px]">send</span>
-                      <span className="font-label-md text-label-md">Telegram-канал премьер</span>
-                    </div>
-                    <span className="material-symbols-outlined text-outline text-[18px]">open_in_new</span>
-                  </Link>
-
                   <button
                     type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(window.location.href);
-                      alert('Ссылка на расписание скопирована в буфер обмена!');
-                    }}
+                    onClick={handleShareLink}
                     className="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface transition-all text-left"
                   >
                     <div className="flex items-center gap-space-sm">
                       <span className="material-symbols-outlined text-secondary text-[20px]">link</span>
-                      <span className="font-label-md text-label-md">Поделиться ссылкой</span>
+                      <span className="font-label-md text-label-md">
+                        {copiedLink ? 'Ссылка скопирована в буфер!' : 'Поделиться ссылкой'}
+                      </span>
                     </div>
-                    <span className="material-symbols-outlined text-outline text-[18px]">content_copy</span>
+                    <span className="material-symbols-outlined text-outline text-[18px]">
+                      {copiedLink ? 'done' : 'content_copy'}
+                    </span>
                   </button>
                 </div>
               </section>
@@ -688,11 +713,8 @@ export function CalendarWorkspace({
                   Японские телеканалы транслируют серии по местному времени (JST). «Анимо» автоматически пересчитывает дату и время каждой премьеры в ваш локальный часовой пояс.
                 </p>
               </section>
-
             </aside>
-
           </div>
-
         </div>
       </div>
     </div>

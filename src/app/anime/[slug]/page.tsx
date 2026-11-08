@@ -6,6 +6,7 @@ import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { Anime, Genre } from '@/types';
 import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
+import { sortAndFormatGenres } from '@/lib/genres';
 import { AnimeCard } from '@/components/anime/AnimeCard';
 import { AiringCountdown } from '@/components/anime/AiringCountdown';
 import { WatchStatusTracker } from '@/components/anime/WatchStatusTracker';
@@ -35,6 +36,11 @@ const getAnime = cache(async (slug: string) => {
     query = query.eq('slug', slug);
   }
   const { data } = await query.maybeSingle();
+  if (data) {
+    if (data.is_adult) return null;
+    const genreSlugs = data.anime_genres?.map((ag: any) => ag.genres?.slug?.toLowerCase()) || [];
+    if (genreSlugs.includes('hentai')) return null;
+  }
   return data;
 });
 
@@ -106,7 +112,11 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
   const user = userRes.data?.user;
   const displayTitle = getDisplayTitle(anime);
   const secondaryTitle = getSecondaryTitle(anime);
-  const genres: Genre[] = anime.anime_genres?.map((ag: any) => ag.genres).filter(Boolean) || [];
+  const rawGenres: Genre[] = anime.anime_genres?.map((ag: any) => ag.genres).filter(Boolean) || [];
+  const sortedNames = sortAndFormatGenres(rawGenres.map((g) => g.name_ru), 10);
+  const genres: Genre[] = sortedNames
+    .map((name) => rawGenres.find((g) => g.name_ru === name))
+    .filter(Boolean) as Genre[];
   const firstGenreId = genres[0]?.id;
 
   // Параллельный запрос сохранённого статуса и похожих аниме

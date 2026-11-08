@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { CalendarWorkspace } from '@/components/calendar/CalendarWorkspace';
-import { Anime } from '@/types';
+import { fetchCalendarAiringSchedule } from '@/lib/anilist';
 
 export const metadata: Metadata = {
   title: 'Календарь выхода серий — Анимо',
@@ -9,25 +9,14 @@ export const metadata: Metadata = {
     'Точное интерактивное расписание выхода серий аниме-онгоингов по дням недели с автоматическим пересчётом на местное время зрителя.',
 };
 
-export const revalidate = 60; // revalidate every minute
+// Cache schedule for 30 minutes (1800 seconds)
+export const revalidate = 1800;
 
 export default async function CalendarPage() {
   const supabase = await createClient();
 
-  // 1. Fetch all ongoing and scheduled anime (strictly non-adult)
-  const { data: ongoingData, error } = await supabase
-    .from('anime')
-    .select('*, anime_genres(genres(*))')
-    .eq('is_published', true)
-    .eq('is_adult', false)
-    .or('status.eq.ongoing,airing_day.not.is.null,next_episode_at.not.is.null')
-    .order('next_episode_at', { ascending: true, nullsFirst: false });
-
-  if (error) {
-    console.error('Error fetching calendar anime:', error);
-  }
-
-  const animeList = (ongoingData as Anime[]) || [];
+  // 1. Fetch official AniList airing schedule for the week (strictly non-18+, TV/ONA/OVA/Movie only)
+  const schedules = await fetchCalendarAiringSchedule();
 
   // 2. Fetch authenticated user's tracked anime if logged in
   const {
@@ -54,7 +43,7 @@ export default async function CalendarPage() {
 
   return (
     <CalendarWorkspace
-      animeList={animeList}
+      schedules={schedules}
       userAnimeMap={userAnimeMap}
       isLoggedIn={Boolean(user)}
     />

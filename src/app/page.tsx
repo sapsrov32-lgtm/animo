@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { HomeView } from '@/components/home/HomeView';
+import { fetchHomeAiringSchedule } from '@/lib/anilist';
 import { HERO_ANIME, POPULAR_ANIME, SEASON_ANIME } from '@/data/mockAnime';
 import { Anime } from '@/types';
 
@@ -14,7 +15,7 @@ export default async function HomePage() {
   const [
     { data: topAnimeList },
     { data: popularData },
-    { data: ongoingData },
+    ongoingData,
     { data: seasonalData },
     userRes,
   ] = await Promise.all([
@@ -45,19 +46,8 @@ export default async function HomePage() {
       .order('popularity', { ascending: false, nullsFirst: false })
       .range(0, 14),
 
-    // Ongoing: Airing series with verified next episode schedule, sorted by popularity
-    supabase
-      .from('anime')
-      .select('*, anime_genres(genres(*))')
-      .eq('is_published', true)
-      .eq('is_adult', false)
-      .eq('status', 'ongoing')
-      .in('format', MAIN_FORMATS)
-      .not('poster_url', 'is', null)
-      .not('next_episode_at', 'is', null)
-      .gte('next_episode_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString())
-      .order('popularity', { ascending: false, nullsFirst: false })
-      .limit(12),
+    // Ongoing: Popular series airing in the upcoming 7 days from AniList airingSchedule
+    fetchHomeAiringSchedule(5000, 12),
 
     // Seasonal: Hits of recent years sorted by popularity
     supabase
@@ -182,7 +172,7 @@ export default async function HomePage() {
 
   const popularAnime =
     popularData && popularData.length > 0 ? (popularData as Anime[]) : POPULAR_ANIME;
-  const ongoingAnime = (ongoingData as Anime[]) || [];
+  const ongoingAnime = (ongoingData as any[]) || [];
   const seasonalAnime =
     seasonalData && seasonalData.length > 0 ? (seasonalData as Anime[]) : SEASON_ANIME;
 

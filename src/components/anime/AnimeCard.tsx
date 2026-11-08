@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Anime } from '@/types';
 import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
+import { sortAndFormatGenres } from '@/lib/genres';
 import { setAnimeWatchStatus } from '@/app/actions/tracker';
 
 interface AnimeCardProps {
@@ -56,14 +57,12 @@ export function AnimeCard({
     }
   };
 
-  // Extract genres
-  const genresList = (
+  // Extract genres (up to 3 in AniList order)
+  const rawGenres =
     anime.genres?.map((g) => g.name_ru) ||
     anime.anime_genres?.map((ag) => ag.genres?.name_ru).filter(Boolean) ||
-    []
-  )
-    .slice(0, 2)
-    .join(', ');
+    [];
+  const genresList = sortAndFormatGenres(rawGenres, 3).join(', ');
 
   const displayBadge =
     badge ||

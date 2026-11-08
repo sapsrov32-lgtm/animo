@@ -20,7 +20,7 @@ export interface UserStats {
 interface HomeViewProps {
   heroAnime: Anime;
   popularAnime: Anime[];
-  ongoingAnime: Anime[];
+  ongoingAnime: any[];
   seasonalAnime: Anime[];
   isLoggedIn?: boolean;
   userStats?: UserStats | null;
@@ -67,10 +67,10 @@ export function HomeView({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2 text-secondary font-label-sm text-label-sm uppercase tracking-widest">
                 <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                Тренды сообщества
+                Топ сообщества
               </div>
               <h2 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
-                Популярное сейчас
+                Популярное
               </h2>
             </div>
             <div className="flex items-center gap-3">
@@ -188,17 +188,17 @@ export function HomeView({
                 </Link>
               </div>
             ) : ongoingAnime.length > 0 ? (
-              ongoingAnime.map((item) => (
+              ongoingAnime.map((item: any) => (
                 <AiringCard
                   key={item.id}
                   id={item.id}
                   slug={item.slug}
-                  title={getDisplayTitle(item)}
+                  title={item.titleRu || item.title || getDisplayTitle(item)}
                   studio={item.studio}
                   next_episode_at={item.next_episode_at}
                   poster_url={item.poster_url}
                   format={item.format}
-                  episode_num={item.episodes ? Math.min(item.episodes, 12) : undefined}
+                  episode_num={item.episode_num || (item.episodes ? Math.min(item.episodes, 12) : undefined)}
                 />
               ))
             ) : (

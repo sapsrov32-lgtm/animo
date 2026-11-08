@@ -30,7 +30,10 @@ export default async function RecommendPage() {
     console.error('Error fetching recommendation anime:', error);
   }
 
-  const allAnime = (animeData as Anime[]) || [];
+  const allAnime = ((animeData as Anime[]) || []).filter((a) => {
+    const gSlugs = a.anime_genres?.map((ag: any) => ag.genres?.slug?.toLowerCase()) || [];
+    return !gSlugs.includes('hentai') && !gSlugs.includes('ecchi');
+  });
 
   // Fetch user list if authenticated
   const {
