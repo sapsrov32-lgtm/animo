@@ -25,7 +25,11 @@ export function AuthForm() {
 
   useEffect(() => {
     if (urlError) {
-      setError(urlError);
+      if (urlError === 'forbidden') {
+        setError('Доступ ограничен: панель управления доступна только администрации сервиса.');
+      } else {
+        setError(urlError);
+      }
     }
   }, [urlError]);
 

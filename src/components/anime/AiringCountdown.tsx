@@ -27,8 +27,20 @@ export function AiringCountdown({ nextEpisodeAt, mode = 'badge' }: AiringCountdo
 
   if (!formatted || !nextEpisodeAt) {
     return mode === 'full' ? (
-      <span className="text-outline text-sm">Расписание уточняется</span>
-    ) : null;
+      <div className="flex flex-col">
+        <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
+          Дата выхода следующего эпизода не объявлена
+        </span>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
+          Следите за обновлениями официального расписания авторов.
+        </p>
+      </div>
+    ) : (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-outline font-label-sm text-xs shrink-0">
+        <span className="material-symbols-outlined text-[13px]">schedule</span>
+        Дата не объявлена
+      </span>
+    );
   }
 
   if (mode === 'badge') {

@@ -26,6 +26,7 @@ export function AnimeCard({
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
   const [loading, setLoading] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const displayTitle = getDisplayTitle(anime);
   const secondaryTitle = getSecondaryTitle(anime);
@@ -55,7 +56,7 @@ export function AnimeCard({
     }
   };
 
-  // Extract genres from either direct genres array or anime_genres join
+  // Extract genres
   const genresList = (
     anime.genres?.map((g) => g.name_ru) ||
     anime.anime_genres?.map((ag) => ag.genres?.name_ru).filter(Boolean) ||
@@ -64,99 +65,147 @@ export function AnimeCard({
     .slice(0, 2)
     .join(', ');
 
-  const displayBadge = badge || (anime.status === 'ongoing' ? 'Онгоинг' : (anime.status === 'announced' ? 'Анонс' : 'Завершен'));
-  const scoreVal = typeof anime.score === 'number' && anime.score > 0
-    ? (anime.score > 9.5 ? '9.5' : anime.score.toFixed(1))
-    : null;
+  const displayBadge =
+    badge ||
+    (anime.status === 'ongoing'
+      ? 'Онгоинг'
+      : anime.status === 'announced'
+      ? 'Анонс'
+      : 'Завершен');
+
+  // Realistic score formatting
+  const scoreVal =
+    typeof anime.score === 'number' && anime.score > 0
+      ? anime.score > 9.5
+        ? '9.5'
+        : anime.score.toFixed(1)
+      : null;
 
   return (
-    <div className="group relative flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 hover:-translate-y-1 shadow-md">
+    <div className="group relative flex flex-col rounded-2xl bg-surface-container-low overflow-hidden hover:bg-surface-container transition-all duration-300 hover:-translate-y-1 shadow-md border border-outline-variant/15">
       <Link
         href={`/anime/${anime.slug || anime.id}`}
         prefetch={true}
         className="relative w-full aspect-[2/3] overflow-hidden bg-surface-container-high block select-none touch-manipulation"
       >
+        {/* Loading Skeleton */}
+        {!imgLoaded && !imgError && anime.poster_url && (
+          <div className="absolute inset-0 bg-surface-container-high animate-pulse z-0" />
+        )}
+
         {anime.poster_url && !imgError ? (
           <Image
             src={anime.poster_url}
             alt={displayTitle}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ${
+              imgLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
             unoptimized
-            onError={() => setImgError(true)}
+            loading="lazy"
+            onLoad={() => setImgLoaded(true)}
+            onError={() => {
+              setImgError(true);
+              setImgLoaded(true);
+            }}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-lowest">
-            <span className="material-symbols-outlined text-4xl text-primary/40 mb-2">filter_vintage</span>
-            <span className="font-label-sm text-xs text-on-surface line-clamp-3 font-medium">
-              {displayTitle}
-            </span>
-            <span className="font-label-sm text-[10px] text-outline mt-1 uppercase">
+          /* Graceful stylized poster fallback */
+          <div className="w-full h-full flex flex-col items-center justify-between p-3.5 text-center bg-gradient-to-br from-surface-container-high via-surface-container to-surface-container-lowest border-b border-outline-variant/20">
+            <div className="w-8 h-8 rounded-full bg-surface-container-highest/60 flex items-center justify-center text-secondary mt-2">
+              <span className="material-symbols-outlined text-[18px]">movie</span>
+            </div>
+            <div className="flex flex-col gap-1 w-full my-auto">
+              <span className="font-label-md text-xs sm:text-sm text-on-surface line-clamp-3 font-semibold px-1">
+                {displayTitle}
+              </span>
+              {secondaryTitle && (
+                <span className="font-body-xs text-[10px] text-outline line-clamp-1">
+                  {secondaryTitle}
+                </span>
+              )}
+            </div>
+            <span className="px-2 py-0.5 rounded bg-surface-container-lowest/80 text-[10px] text-primary uppercase font-bold tracking-wider">
               {anime.format || 'Аниме'}
             </span>
           </div>
         )}
+
         <div className="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent pointer-events-none" />
 
-        {/* Badges top row */}
-        <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none">
+        {/* Top Badges Bar */}
+        <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between gap-1 pointer-events-none z-10">
+          {scoreVal ? (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-secondary-fixed font-badge-score text-badge-score shadow-sm">
+              <span
+                className="material-symbols-outlined text-[14px] text-secondary fill-current"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                star
+              </span>
+              <span>{scoreVal}</span>
+            </div>
+          ) : (
+            <div />
+          )}
+
           <span
-            className={`px-2 py-0.5 rounded-full font-label-sm text-[10px] uppercase tracking-wide backdrop-blur-md ${
+            className={`px-2 py-0.5 rounded-full font-label-sm text-[10px] tracking-wide uppercase shadow-sm backdrop-blur-md ${
               badgeType === 'trend'
-                ? 'bg-secondary-container/90 text-on-secondary-container'
-                : 'bg-surface-container-highest/80 text-on-surface-variant'
+                ? 'bg-secondary-container text-on-secondary-container font-bold'
+                : 'bg-surface-container-lowest/85 text-on-surface'
             }`}
           >
             {displayBadge}
           </span>
-          {scoreVal && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md text-secondary font-badge-score text-badge-score">
-              <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                star
-              </span>
-              {scoreVal}
-            </span>
-          )}
         </div>
 
-        {/* Quick Add Hover Overlay Button */}
+        {/* Interactive Quick Bookmark Button (>= 44x44px touch target) */}
         <button
           type="button"
-          aria-label={bookmarked ? 'Удалить из списка' : 'Добавить в планы'}
           onClick={handleQuickBookmark}
-          disabled={loading}
-          className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg active:scale-90 touch-manipulation ${
+          aria-label={bookmarked ? 'Удалить из списка' : 'Добавить в список'}
+          className={`absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 z-10 shadow-lg touch-manipulation active:scale-90 ${
             bookmarked
-              ? 'bg-primary text-on-primary opacity-100'
-              : 'bg-surface-container-highest/90 hover:bg-primary-container hover:text-on-primary-container text-on-surface opacity-0 group-hover:opacity-100'
+              ? 'bg-secondary text-on-secondary shadow-secondary/30'
+              : 'bg-surface-container-lowest/85 backdrop-blur-md text-on-surface hover:text-secondary hover:bg-surface-container-high'
           }`}
-          title={bookmarked ? 'В вашем списке (нажмите для отмены)' : 'Добавить в планы'}
         >
-          <span
-            className="material-symbols-outlined text-[18px]"
-            style={bookmarked ? { fontVariationSettings: "'FILL' 1" } : undefined}
-          >
-            {bookmarked ? 'bookmark_added' : 'bookmark_add'}
-          </span>
+          {loading ? (
+            <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <span
+              className="material-symbols-outlined text-[20px]"
+              style={{ fontVariationSettings: bookmarked ? "'FILL' 1" : "'FILL' 0" }}
+            >
+              {bookmarked ? 'bookmark' : 'bookmark_border'}
+            </span>
+          )}
         </button>
       </Link>
 
-      <div className="p-3.5 flex flex-col flex-1 justify-between gap-2">
+      {/* Meta Content */}
+      <div className="p-3 sm:p-3.5 flex flex-col justify-between flex-1 gap-1">
         <div>
-          <span className="text-[11px] font-label-sm text-outline tracking-wider block truncate">
-            {secondaryTitle || anime.studio || (anime.year ? `${anime.year} г.` : 'Аниме')}
+          <span className="font-label-sm text-[11px] text-outline block truncate">
+            {secondaryTitle || anime.format || 'Аниме'}
           </span>
           <Link href={`/anime/${anime.slug || anime.id}`} prefetch={true}>
-            <h3 className="font-title-card text-title-card text-on-surface group-hover:text-primary-fixed transition-colors line-clamp-1">
+            <h3 className="font-title-card text-title-card font-semibold text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
               {displayTitle}
             </h3>
           </Link>
         </div>
-        <div className="flex items-center justify-between text-outline font-body-sm text-body-sm pt-1">
-          <span className="truncate">{genresList || `${anime.year || 2024} г.`}</span>
-          <span className="text-tertiary font-label-sm text-[11px] shrink-0">
-            {anime.episodes ? `${anime.episodes} эп.` : (anime.status === 'ongoing' ? 'Онгоинг' : (anime.status === 'announced' ? 'Скоро' : 'Завершен'))}
+
+        <div className="flex items-center justify-between text-outline font-body-sm text-[11px] pt-1 border-t border-outline-variant/10">
+          <span className="truncate max-w-[110px]">{genresList || 'Аниме'}</span>
+          <span>
+            {anime.status === 'ongoing'
+              ? anime.episodes
+                ? `${anime.episodes} эп.`
+                : 'Онгоинг'
+              : `${anime.episodes || 12} эп.`}
           </span>
         </div>
       </div>

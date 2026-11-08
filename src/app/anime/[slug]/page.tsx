@@ -9,7 +9,7 @@ import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
 import { AnimeCard } from '@/components/anime/AnimeCard';
 import { AiringCountdown } from '@/components/anime/AiringCountdown';
 import { WatchStatusTracker } from '@/components/anime/WatchStatusTracker';
-import { AnimePlayer } from '@/components/anime/AnimePlayer';
+import { WhereToWatch } from '@/components/anime/WhereToWatch';
 
 export const revalidate = 3600; // Кеширование страниц аниме на Vercel Edge на 1 час (ISR)
 
@@ -43,9 +43,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const title = getDisplayTitle(anime);
-  const seoTitle = `Смотреть аниме ${title} онлайн бесплатно на Animo`;
+  const seoTitle = `${title}: описание, рейтинг, серии | Анимо`;
   const yearStr = anime.year ? `(${anime.year})` : '';
-  const seoDescription = `Смотреть аниме ${title} ${yearStr} онлайн бесплатно в хорошем HD качестве. Выбор озвучки (AniLibria, SHIZA, Дубликат) и субтитров на Animo. ${anime.description?.slice(0, 100) || ''}`.trim();
+  const seoDescription = `${title} ${yearStr} — подробное описание сюжета, официальный рейтинг сообщества, список персонажей и расписание выхода серий в каталоге Анимо. ${anime.description?.slice(0, 100) || ''}`.trim();
   const pageUrl = `${baseUrl}/anime/${anime.slug || anime.id}`;
   const poster = anime.poster_url || anime.banner_url || '';
 
@@ -61,9 +61,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: seoTitle,
       description: seoDescription,
       url: pageUrl,
-      siteName: 'Animo',
+      siteName: 'Анимо',
       locale: 'ru_RU',
-      type: 'video.other',
+      type: 'website',
       images: poster
         ? [
             {
@@ -145,7 +145,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
             '@type': anime.format === 'MOVIE' ? 'Movie' : 'TVSeries',
             name: displayTitle,
             alternateName: secondaryTitle || undefined,
-            description: anime.description || `${displayTitle} смотреть онлайн на Animo`,
+            description: anime.description || `${displayTitle} — описание сюжета, рейтинг сообщества и график выхода серий на Анимо`,
             image: anime.poster_url || anime.banner_url || undefined,
             datePublished: anime.year ? `${anime.year}-01-01` : undefined,
             numberOfEpisodes: anime.episodes || undefined,
@@ -434,17 +434,15 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
               </p>
             </section>
 
-            {/* Online Video Player */}
-            <AnimePlayer
+            {/* Official Legal Streaming & Trailers */}
+            <WhereToWatch
+              animeId={anime.id}
               shikimoriId={anime.shikimori_id}
               anilistId={anime.anilist_id}
               titleRu={anime.title_ru}
               titleEn={anime.title_en}
-              posterUrl={anime.poster_url}
-              bannerUrl={anime.banner_url}
-              status={anime.status}
-              year={anime.year}
-              episodes={anime.episodes}
+              isLoggedIn={Boolean(user)}
+              initialWatchStatus={userAnimeRecord?.status as any}
             />
 
             {/* Production & Crew Details Bento */}
@@ -495,7 +493,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                     href={`/catalog?genre=${genres[0]?.slug || 'all'}`}
                     className="font-label-md text-label-md text-primary hover:text-primary-fixed transition-colors flex items-center gap-1"
                   >
-                    <span>Смотреть ещё</span>
+                    <span>В каталог</span>
                     <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                   </Link>
                 </div>

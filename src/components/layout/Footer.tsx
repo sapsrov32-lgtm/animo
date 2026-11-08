@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
 export function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="w-full bg-surface-container-lowest border-t border-outline-variant/30 py-space-xl mt-space-xl pb-24 md:pb-space-xl">
       <div className="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
@@ -14,10 +16,10 @@ export function Footer() {
               <span className="font-headline-sm text-headline-sm font-bold text-on-surface">АНИМО</span>
             </div>
             <p className="font-body-md text-body-md text-on-surface-variant mb-space-sm">
-              АНИМО — кинематографичный каталог и трекер аниме без пиратства и рекламы.
+              Каталог аниме, трекер серий и календарь релизов.
             </p>
             <p className="font-body-sm text-body-sm text-outline">
-              Платформа является информационным каталогом и трекером личной коллекции. Просмотр и воспроизведение видео отсутствуют.
+              Анимо не размещает и не воспроизводит видео. Ссылки ведут на официальные сервисы. Данные: AniList.
             </p>
           </div>
 
@@ -42,34 +44,22 @@ export function Footer() {
 
             <div className="flex flex-col gap-space-xs">
               <span className="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-1">
-                Управление
+                Правовая информация
               </span>
-              <Link href="/admin" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">
-                Админ-панель
+              <Link href="/terms" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">
+                Правила сервиса
               </Link>
-              <Link href="/profile" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">
-                Статистика года
+              <Link href="/privacy" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">
+                Политика конфиденциальности
               </Link>
-            </div>
-
-            <div className="flex flex-col gap-space-xs">
-              <span className="font-label-md text-label-md text-on-surface uppercase tracking-wider mb-1">
-                Правила
-              </span>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">
-                Каталог без стриминга
-              </span>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">
-                Конфиденциальность
-              </span>
             </div>
           </div>
 
         </div>
 
         <div className="pt-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm text-outline font-body-sm text-body-sm">
-          <span>© 2025 АНИМО. Все права защищены.</span>
-          <span>Сделано с любовью к японской анимации.</span>
+          <span>© {currentYear} АНИМО. Все права защищены.</span>
+          <span>Каталог, персональный трекер и календарь релизов.</span>
         </div>
       </div>
     </footer>

@@ -14,12 +14,16 @@ export const revalidate = 300; // cache for 5 minutes
 export default async function RecommendPage() {
   const supabase = await createClient();
 
-  // 1. Fetch published anime with genres
+  // Fetch top rated anime with genres for recommendation scoring
   const { data: animeData, error } = await supabase
     .from('anime')
     .select('*, anime_genres(genres(*))')
     .eq('is_published', true)
-    .order('score', { ascending: false, nullsFirst: false });
+    .not('poster_url', 'is', null)
+    .in('format', ['ТВ Сериал', 'Фильм', 'OVA', 'ONA'])
+    .gte('score', 6.5)
+    .order('score', { ascending: false, nullsFirst: false })
+    .limit(1500);
 
   if (error) {
     console.error('Error fetching recommendation anime:', error);
@@ -27,7 +31,7 @@ export default async function RecommendPage() {
 
   const allAnime = (animeData as Anime[]) || [];
 
-  // 2. Fetch authenticated user's tracked anime if logged in
+  // Fetch user list if authenticated
   const {
     data: { user },
   } = await supabase.auth.getUser();

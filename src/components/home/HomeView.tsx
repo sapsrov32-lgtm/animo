@@ -65,7 +65,7 @@ export function HomeView({
                 href="/catalog?sort=popularity"
                 className="hidden sm:inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:text-primary-fixed transition-colors"
               >
-                <span>Смотреть все</span>
+                <span>Все тайтлы</span>
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </Link>
               <div className="flex items-center gap-1">
@@ -156,8 +156,26 @@ export function HomeView({
 
           {/* Schedule Bento Matrix */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-            {ongoingAnime.length > 0 ? (
-              (airingFilter === 'all' ? ongoingAnime : []).map((item) => (
+            {airingFilter === 'my' ? (
+              <div className="col-span-1 md:col-span-2 p-8 text-center bg-surface-container-low rounded-2xl flex flex-col items-center justify-center gap-3 border border-outline-variant/20 shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-secondary">
+                  <span className="material-symbols-outlined text-[24px]">bookmark</span>
+                </div>
+                <h3 className="font-title-card text-on-surface font-bold text-base">
+                  Тайтлы из вашего списка
+                </h3>
+                <p className="font-body-sm text-outline max-w-md text-sm">
+                  Войдите в аккаунт, чтобы добавить любимые онгоинги в список «Смотрю» и видеть персональное расписание выхода серий прямо здесь.
+                </p>
+                <Link
+                  href="/login"
+                  className="mt-1 min-h-[44px] px-6 rounded-xl bg-primary text-on-primary font-label-md text-sm font-semibold flex items-center justify-center hover:brightness-110 active:scale-95 transition-all shadow-md"
+                >
+                  Войти в аккаунт
+                </Link>
+              </div>
+            ) : ongoingAnime.length > 0 ? (
+              ongoingAnime.map((item) => (
                 <AiringCard
                   key={item.id}
                   id={item.id}
@@ -166,11 +184,12 @@ export function HomeView({
                   studio={item.studio}
                   next_episode_at={item.next_episode_at}
                   poster_url={item.poster_url}
+                  format={item.format}
                   episode_num={item.episodes ? Math.min(item.episodes, 12) : undefined}
                 />
               ))
             ) : (
-              <div className="col-span-2 p-8 text-center bg-surface-container-low rounded-2xl text-outline">
+              <div className="col-span-1 md:col-span-2 p-8 text-center bg-surface-container-low rounded-2xl text-outline">
                 Новые серии ожидаются в ближайшее время.
               </div>
             )}

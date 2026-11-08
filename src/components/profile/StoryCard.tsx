@@ -1,12 +1,13 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { toPng } from 'html-to-image';
 import { UserProfile, UserAnime } from '@/types';
 import { getDisplayTitle } from '@/lib/format';
 
 interface StoryCardProps {
-  profile: UserProfile;
+  profile: UserProfile | null;
   stats: {
     totalEpisodes: number;
     totalHours: number;
@@ -20,6 +21,7 @@ interface StoryCardProps {
 export function StoryCard({ profile, stats, topAnime }: StoryCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const currentYear = new Date().getFullYear();
 
   const getProxiedImageUrl = (url?: string | null) => {
     if (!url) return '';
@@ -30,7 +32,7 @@ export function StoryCard({ profile, stats, topAnime }: StoryCardProps) {
   };
 
   const handleDownload = async () => {
-    if (!cardRef.current || isExporting) return;
+    if (!cardRef.current || isExporting || !profile) return;
     setIsExporting(true);
 
     try {
@@ -50,7 +52,38 @@ export function StoryCard({ profile, stats, topAnime }: StoryCardProps) {
     }
   };
 
-  const currentYear = new Date().getFullYear();
+  // Guest State
+  if (!profile) {
+    return (
+      <div className="w-full max-w-sm mx-auto p-6 sm:p-8 rounded-3xl bg-surface-container-low border border-outline-variant/30 text-center flex flex-col items-center gap-4 shadow-xl">
+        <div className="w-14 h-14 rounded-2xl bg-secondary/15 text-secondary flex items-center justify-center border border-secondary/30">
+          <span className="material-symbols-outlined text-3xl">auto_awesome</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <h3 className="font-headline-sm text-lg font-bold text-on-surface">
+            Войдите, чтобы увидеть свою статистику
+          </h3>
+          <p className="font-body-sm text-xs text-outline leading-relaxed max-w-xs">
+            Сохраняйте серии, ставьте оценки и отслеживайте личную статистику и итоги {currentYear} года.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 w-full pt-2">
+          <Link
+            href="/login"
+            className="flex-1 min-h-[44px] flex items-center justify-center rounded-xl bg-primary text-on-primary font-label-md text-sm font-semibold hover:brightness-110 active:scale-95 transition-all shadow-md"
+          >
+            Войти
+          </Link>
+          <Link
+            href="/login?tab=signup"
+            className="flex-1 min-h-[44px] flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface font-label-md text-sm font-semibold border border-outline-variant/30 hover:bg-surface-bright active:scale-95 transition-all"
+          >
+            Регистрация
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-space-md w-full">
@@ -148,7 +181,8 @@ export function StoryCard({ profile, stats, topAnime }: StoryCardProps) {
           <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-surface-container-low/90 backdrop-blur-sm border border-outline-variant/20">
             <span className="font-body-sm text-[11px] text-outline">Главный жанр года:</span>
             <span className="font-label-md text-label-md font-bold text-tertiary">
-              {stats.topGenreName} {stats.topGenrePercent > 0 ? `(${stats.topGenrePercent}%)` : ''}
+              {stats.topGenreName || 'Не определён'}{' '}
+              {stats.topGenrePercent > 0 ? `(${stats.topGenrePercent}%)` : ''}
             </span>
           </div>
 
@@ -160,7 +194,7 @@ export function StoryCard({ profile, stats, topAnime }: StoryCardProps) {
 
             {topAnime.length === 0 ? (
               <div className="p-3 rounded-xl bg-surface-container-high/30 text-center font-body-sm text-[12px] text-outline">
-                Добавьте просмотренные тайтлы в список, чтобы составить рейтинг года
+                Пока пусто, добавь первый тайтл в список
               </div>
             ) : (
               topAnime.slice(0, 5).map((item, index) => {
@@ -242,7 +276,7 @@ export function StoryCard({ profile, stats, topAnime }: StoryCardProps) {
           type="button"
           onClick={handleDownload}
           disabled={isExporting}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 min-h-[44px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 touch-manipulation"
         >
           {isExporting ? (
             <>

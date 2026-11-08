@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { WatchStatus } from '@/types';
 import { setAnimeWatchStatus, setAnimeScore, setAnimeProgress } from '@/app/actions/tracker';
 import { createClient } from '@/lib/supabase/client';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 interface WatchStatusTrackerProps {
   animeId: string;
@@ -29,6 +30,7 @@ export function WatchStatusTracker({
   const [progress, setProgress] = useState<number>(initialProgress);
   const [isSaving, setIsSaving] = useState(false);
   const [userLoggedIn, setUserLoggedIn] = useState(isLoggedIn);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Синхронизация сессии на клиенте (устраняет ложные запросы авторизации)
   useEffect(() => {
@@ -71,7 +73,7 @@ export function WatchStatusTracker({
   const handleStatusChange = async (newStatus: WatchStatus) => {
     const authed = await ensureAuthenticated();
     if (!authed) {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      setAuthModalOpen(true);
       return;
     }
 
@@ -123,7 +125,7 @@ export function WatchStatusTracker({
   const handleScoreChange = async (newScore: number) => {
     const authed = await ensureAuthenticated();
     if (!authed) {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      setAuthModalOpen(true);
       return;
     }
 
@@ -169,7 +171,7 @@ export function WatchStatusTracker({
   const handleProgressChange = async (delta: number) => {
     const authed = await ensureAuthenticated();
     if (!authed) {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      setAuthModalOpen(true);
       return;
     }
 
@@ -345,6 +347,8 @@ export function WatchStatusTracker({
           <span>Автосохранение в аккаунт</span>
         </div>
       </div>
+
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </div>
   );
 }

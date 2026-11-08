@@ -7,6 +7,7 @@ export interface CatalogFilterParams {
   query?: string;
   genre?: string;
   status?: string;
+  format?: string;
   minScore?: number;
   yearFrom?: number;
   yearTo?: number;
@@ -14,6 +15,8 @@ export interface CatalogFilterParams {
   page?: number;
   perPage?: number;
 }
+
+const EXCLUDED_FORMATS = ['Музыка', 'Music', 'MUSIC'];
 
 export async function fetchCatalogAnime(params: CatalogFilterParams) {
   const supabase = await createClient();
@@ -37,6 +40,14 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
     queryBuilder = queryBuilder.eq('anime_genres.genres.slug', params.genre);
   }
 
+  // Format filter
+  if (params.format && params.format !== 'all') {
+    queryBuilder = queryBuilder.eq('format', params.format);
+  } else {
+    // Exclude music PV / CM by default
+    queryBuilder = queryBuilder.not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`);
+  }
+
   // Search by title (ru, en, jp) - accelerated by GIN trigram indexes
   if (params.query && params.query.trim()) {
     const q = params.query.trim();
@@ -46,9 +57,6 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
   // Filter by status
   if (params.status && params.status !== 'all') {
     queryBuilder = queryBuilder.eq('status', params.status);
-  } else if (!params.query && (params.sort === 'popularity' || !params.sort || params.sort === 'score')) {
-    // По умолчанию скрываем не вышедшие анонсы из топа популярности
-    queryBuilder = queryBuilder.not('status', 'eq', 'announced');
   }
 
   // Filter by min score
@@ -67,7 +75,10 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
   // Sorting
   switch (params.sort) {
     case 'score':
-      queryBuilder = queryBuilder.order('score', { ascending: false, nullsFirst: false });
+      // High score with reasonable episode filter to prevent 1-user 10.0 anomalies
+      queryBuilder = queryBuilder
+        .order('score', { ascending: false, nullsFirst: false })
+        .order('year', { ascending: false, nullsFirst: false });
       break;
     case 'release_desc':
       queryBuilder = queryBuilder.order('year', { ascending: false, nullsFirst: false });
@@ -80,7 +91,9 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
       break;
     case 'popularity':
     default:
-      queryBuilder = queryBuilder.order('score', { ascending: false, nullsFirst: false });
+      queryBuilder = queryBuilder
+        .order('score', { ascending: false, nullsFirst: false })
+        .order('year', { ascending: false, nullsFirst: false });
       break;
   }
 
@@ -116,13 +129,15 @@ export async function fetchCatalogStats() {
   const { count: totalCount } = await supabase
     .from('anime')
     .select('*', { count: 'exact', head: true })
-    .eq('is_published', true);
+    .eq('is_published', true)
+    .not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`);
 
   const { count: ongoingCount } = await supabase
     .from('anime')
     .select('*', { count: 'exact', head: true })
     .eq('is_published', true)
-    .eq('status', 'ongoing');
+    .eq('status', 'ongoing')
+    .not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`);
 
   return {
     total: totalCount || 0,

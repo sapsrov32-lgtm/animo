@@ -8,24 +8,26 @@ export const revalidate = 60; // Cache for 60 seconds
 export default async function HomePage() {
   const supabase = await createClient();
 
-  // Fetch real anime from Supabase using anon key
+  const MAIN_FORMATS = ['ТВ Сериал', 'Фильм', 'OVA', 'ONA'];
+
+  // Fetch real anime from Supabase
   const [
     { data: topAnimeList },
     { data: popularData },
     { data: ongoingData },
     { data: seasonalData },
   ] = await Promise.all([
-    // Hero Anime: Real masterpiece with verified poster and video
+    // Hero Anime: Masterpiece TV series or major movie with verified poster
     supabase
       .from('anime')
       .select('*, anime_genres(genres(*))')
       .eq('is_published', true)
       .in('status', ['finished', 'ongoing'])
-      .not('shikimori_id', 'is', null)
+      .in('format', MAIN_FORMATS)
       .not('poster_url', 'is', null)
-      .gte('episodes', 1)
+      .or('episodes.gte.4,format.eq.Фильм')
       .lte('score', 9.5)
-      .gte('score', 8.7)
+      .gte('score', 8.5)
       .order('score', { ascending: false, nullsFirst: false })
       .limit(1),
 
@@ -35,36 +37,34 @@ export default async function HomePage() {
       .select('*, anime_genres(genres(*))')
       .eq('is_published', true)
       .in('status', ['finished', 'ongoing'])
-      .not('shikimori_id', 'is', null)
+      .in('format', MAIN_FORMATS)
       .not('poster_url', 'is', null)
-      .gte('episodes', 1)
+      .or('episodes.gte.3,format.eq.Фильм')
       .lte('score', 9.5)
       .gte('score', 8.0)
       .order('score', { ascending: false, nullsFirst: false })
       .range(1, 15),
 
-    // Ongoing: Currently airing series with active releases
+    // Ongoing: Currently airing series with active releases (next 7 days prioritized)
     supabase
       .from('anime')
       .select('*, anime_genres(genres(*))')
       .eq('is_published', true)
       .eq('status', 'ongoing')
-      .not('shikimori_id', 'is', null)
+      .in('format', MAIN_FORMATS)
       .not('poster_url', 'is', null)
-      .lte('score', 9.5)
-      .order('score', { ascending: false, nullsFirst: false })
-      .limit(6),
+      .order('next_episode_at', { ascending: true, nullsFirst: false })
+      .limit(12),
 
-    // Seasonal: Hits of recent seasons (2023 - 2026)
+    // Seasonal: Hits of recent years
     supabase
       .from('anime')
       .select('*, anime_genres(genres(*))')
       .eq('is_published', true)
       .in('status', ['finished', 'ongoing'])
-      .not('shikimori_id', 'is', null)
+      .in('format', MAIN_FORMATS)
       .not('poster_url', 'is', null)
-      .gte('year', 2023)
-      .lte('year', 2026)
+      .gte('year', 2022)
       .lte('score', 9.5)
       .order('year', { ascending: false, nullsFirst: false })
       .order('score', { ascending: false, nullsFirst: false })
@@ -72,13 +72,11 @@ export default async function HomePage() {
   ]);
 
   const heroAnime = (topAnimeList?.[0] as Anime) || HERO_ANIME;
-  const popularAnime = (popularData && popularData.length > 0)
-    ? (popularData as Anime[])
-    : POPULAR_ANIME;
+  const popularAnime =
+    popularData && popularData.length > 0 ? (popularData as Anime[]) : POPULAR_ANIME;
   const ongoingAnime = (ongoingData as Anime[]) || [];
-  const seasonalAnime = (seasonalData && seasonalData.length > 0)
-    ? (seasonalData as Anime[])
-    : SEASON_ANIME;
+  const seasonalAnime =
+    seasonalData && seasonalData.length > 0 ? (seasonalData as Anime[]) : SEASON_ANIME;
 
   return (
     <HomeView

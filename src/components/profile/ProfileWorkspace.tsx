@@ -11,7 +11,7 @@ import { setAnimeProgress, setAnimeWatchStatus } from '@/app/actions/tracker';
 import { createClient } from '@/lib/supabase/client';
 
 interface ProfileWorkspaceProps {
-  profile: UserProfile;
+  profile: UserProfile | null;
   initialItems: UserAnime[];
 }
 
@@ -84,6 +84,10 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
 
   // Handlers
   const handleProgressChange = async (animeId: string, currentProgress: number, delta: number, maxEpisodes: number | null | undefined) => {
+    if (!profile) {
+      router.push('/login?redirect=/profile');
+      return;
+    }
     const max = maxEpisodes || 999;
     const nextProgress = Math.max(0, Math.min(max, currentProgress + delta));
 
@@ -96,6 +100,10 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
   };
 
   const handleStatusChange = async (animeId: string, newStatus: WatchStatus | null) => {
+    if (!profile) {
+      router.push('/login?redirect=/profile');
+      return;
+    }
     const prev = items;
     if (newStatus === null) {
       setItems((prev) => prev.filter((i) => i.anime_id !== animeId));
@@ -128,12 +136,12 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
     router.refresh();
   };
 
-  const formattedJoinDate = profile.created_at
+  const formattedJoinDate = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString('ru-RU', {
         month: 'long',
         year: 'numeric',
       })
-    : 'ноябрь 2024';
+    : '';
 
   return (
     <div className="flex flex-col w-full pb-16">
@@ -143,121 +151,150 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
         <div className="absolute top-20 right-10 w-96 h-96 bg-tertiary/5 rounded-full blur-[120px] pointer-events-none -z-10" />
 
         <div className="max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop pt-space-lg pb-space-xl">
-          {/* Profile Header Hero Card */}
-          <div className="relative rounded-3xl bg-surface-container-low p-space-lg md:p-space-xl shadow-xl overflow-hidden border border-outline-variant/30">
-            <div className="absolute inset-0 bg-gradient-to-r from-surface-container-lowest via-surface-container-low/70 to-surface-container-lowest pointer-events-none" />
-            <div className="absolute -right-16 -bottom-16 w-80 h-80 bg-primary-container/10 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg">
-              {/* Left: User Identity */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-space-lg">
-                <div className="relative group">
-                  <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-primary via-secondary to-primary-container blur-md opacity-80" />
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-surface-container-highest shadow-2xl border-2 border-secondary/50 flex items-center justify-center">
-                    {profile.avatar_url ? (
-                      <Image
-                        src={profile.avatar_url}
-                        alt={profile.username}
-                        fill
-                        className="w-full h-full object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <span className="material-symbols-outlined text-secondary text-5xl">
-                        person
-                      </span>
-                    )}
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 px-2.5 py-0.5 rounded-full bg-surface-container-lowest text-primary font-badge-score text-badge-score shadow-md border border-primary/30">
-                    ★ {countDone}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex flex-wrap items-center gap-space-sm">
-                    <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">
-                      {profile.username || 'Пользователь Анимо'}
-                    </h1>
-                    <span className="px-3 py-1 rounded-full bg-primary/15 text-primary font-label-sm text-label-sm tracking-wide uppercase border border-primary/20">
-                      {profile.role === 'admin'
-                        ? 'Администратор'
-                        : profile.role === 'editor'
-                        ? 'Редактор'
-                        : 'Киномастер'}
-                    </span>
-                  </div>
-
-                  <p className="font-body-sm text-body-sm text-outline flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[16px] text-outline">
-                      calendar_today
-                    </span>
-                    Участник клуба с {formattedJoinDate} • Персональный трекер
-                  </p>
-
-                  {/* Quick Metric Strip */}
-                  <div className="flex flex-wrap items-center gap-2 pt-2">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high text-on-surface shadow-sm border border-outline-variant/20">
-                      <span
-                        className="material-symbols-outlined text-[18px] text-primary"
-                        style={{ fontVariationSettings: "'FILL' 1" }}
-                      >
-                        movie_filter
-                      </span>
-                      <span className="font-label-md text-label-md font-semibold">{totalEpisodes}</span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">эпизодов</span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high text-on-surface shadow-sm border border-outline-variant/20">
-                      <span
-                        className="material-symbols-outlined text-[18px] text-secondary"
-                        style={{ fontVariationSettings: "'FILL' 1" }}
-                      >
-                        auto_stories
-                      </span>
-                      <span className="font-label-md text-label-md font-semibold">{countAll}</span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">в списке</span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high text-on-surface shadow-sm border border-outline-variant/20">
-                      <span
-                        className="material-symbols-outlined text-[18px] text-tertiary"
-                        style={{ fontVariationSettings: "'FILL' 1" }}
-                      >
-                        star
-                      </span>
-                      <span className="font-label-md text-label-md font-semibold">
-                        {avgScore ? avgScore.toFixed(1) : '—'}
-                      </span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">ср. оценка</span>
-                    </div>
-                  </div>
-                </div>
+          {!profile ? (
+            /* Guest Header Hero Card */
+            <div className="relative rounded-3xl bg-surface-container-low p-8 md:p-12 shadow-xl overflow-hidden border border-outline-variant/30 text-center flex flex-col items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-primary/20 text-primary flex items-center justify-center border border-primary/30">
+                <span className="material-symbols-outlined text-3xl">account_circle</span>
               </div>
-
-              {/* Right: Actions Profile */}
-              <div className="flex flex-wrap items-center gap-space-sm pt-2 lg:pt-0">
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all"
+              <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface">
+                Личный кабинет и трекер аниме
+              </h1>
+              <p className="font-body-md text-on-surface-variant max-w-md">
+                Войдите в аккаунт, чтобы сохранять прогресс серий, составлять персональные списки и сформировать персональные итоги года.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <Link
+                  href="/login"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-label-md font-semibold hover:brightness-110 active:scale-95 transition-all shadow-md min-h-[44px] flex items-center justify-center"
                 >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {copyFeedback ? 'done' : 'share'}
-                  </span>
-                  <span>{copyFeedback ? 'Ссылка скопирована!' : 'Поделиться'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-container-highest text-error hover:bg-surface-bright active:scale-95 transition-all shadow-sm font-label-md text-label-md"
+                  Войти
+                </Link>
+                <Link
+                  href="/login?tab=signup"
+                  className="px-6 py-2.5 rounded-xl bg-surface-container-high text-on-surface font-label-md font-semibold border border-outline-variant/30 hover:bg-surface-bright active:scale-95 transition-all min-h-[44px] flex items-center justify-center"
                 >
-                  <span className="material-symbols-outlined text-[18px]">logout</span>
-                  <span>Выйти</span>
-                </button>
+                  Зарегистрироваться
+                </Link>
               </div>
             </div>
-          </div>
+          ) : (
+            /* Profile Header Hero Card */
+            <div className="relative rounded-3xl bg-surface-container-low p-space-lg md:p-space-xl shadow-xl overflow-hidden border border-outline-variant/30">
+              <div className="absolute inset-0 bg-gradient-to-r from-surface-container-lowest via-surface-container-low/70 to-surface-container-lowest pointer-events-none" />
+              <div className="absolute -right-16 -bottom-16 w-80 h-80 bg-primary-container/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg">
+                {/* Left: User Identity */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-space-lg">
+                  <div className="relative group">
+                    <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-primary via-secondary to-primary-container blur-md opacity-80" />
+                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-surface-container-highest shadow-2xl border-2 border-secondary/50 flex items-center justify-center">
+                      {profile.avatar_url ? (
+                        <Image
+                          src={profile.avatar_url}
+                          alt={profile.username}
+                          fill
+                          className="w-full h-full object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <span className="material-symbols-outlined text-secondary text-5xl">
+                          person
+                        </span>
+                      )}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 px-2.5 py-0.5 rounded-full bg-surface-container-lowest text-primary font-badge-score text-badge-score shadow-md border border-primary/30">
+                      ★ {countDone}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center gap-space-sm">
+                      <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">
+                        {profile.username || 'Пользователь Анимо'}
+                      </h1>
+                      <span className="px-3 py-1 rounded-full bg-primary/15 text-primary font-label-sm text-label-sm tracking-wide uppercase border border-primary/20">
+                        {profile.role === 'admin'
+                          ? 'Администратор'
+                          : profile.role === 'editor'
+                          ? 'Редактор'
+                          : 'Киномастер'}
+                      </span>
+                    </div>
+
+                    <p className="font-body-sm text-body-sm text-outline flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px] text-outline">
+                        calendar_today
+                      </span>
+                      Участник клуба с {formattedJoinDate || 'недавнего времени'} • Персональный трекер
+                    </p>
+
+                    {/* Quick Metric Strip */}
+                    <div className="flex flex-wrap items-center gap-2 pt-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high text-on-surface shadow-sm border border-outline-variant/20">
+                        <span
+                          className="material-symbols-outlined text-[18px] text-primary"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          movie_filter
+                        </span>
+                        <span className="font-label-md text-label-md font-semibold">{totalEpisodes}</span>
+                        <span className="font-body-sm text-body-sm text-on-surface-variant">эпизодов</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high text-on-surface shadow-sm border border-outline-variant/20">
+                        <span
+                          className="material-symbols-outlined text-[18px] text-secondary"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          auto_stories
+                        </span>
+                        <span className="font-label-md text-label-md font-semibold">{countAll}</span>
+                        <span className="font-body-sm text-body-sm text-on-surface-variant">в списке</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-high text-on-surface shadow-sm border border-outline-variant/20">
+                        <span
+                          className="material-symbols-outlined text-[18px] text-tertiary"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          star
+                        </span>
+                        <span className="font-label-md text-label-md font-semibold">
+                          {avgScore ? avgScore.toFixed(1) : '—'}
+                        </span>
+                        <span className="font-body-sm text-body-sm text-on-surface-variant">ср. оценка</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Actions Profile */}
+                <div className="flex flex-wrap items-center gap-space-sm pt-2 lg:pt-0">
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {copyFeedback ? 'done' : 'share'}
+                    </span>
+                    <span>{copyFeedback ? 'Ссылка скопирована!' : 'Поделиться'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-container-highest text-error hover:bg-surface-bright active:scale-95 transition-all shadow-sm font-label-md text-label-md"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                    <span>Выйти</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -416,10 +453,10 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
                   <span className="material-symbols-outlined text-3xl">bookmark_border</span>
                 </div>
                 <h3 className="font-title-card text-title-card font-bold text-on-surface">
-                  В этом списке пока ничего нет
+                  Пока пусто, добавь первый тайтл
                 </h3>
                 <p className="font-body-sm text-body-sm text-outline max-w-sm">
-                  Перейдите в каталог и добавьте интересующие тайтлы в список «В планах» или «Смотрю».
+                  Перейдите в каталог и добавьте интересующие тайтлы в личный список просмотра.
                 </p>
                 <Link
                   href="/catalog"

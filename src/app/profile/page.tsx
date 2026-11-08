@@ -1,12 +1,11 @@
 import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { ProfileWorkspace } from '@/components/profile/ProfileWorkspace';
 import { UserProfile, UserAnime } from '@/types';
 
 export const metadata: Metadata = {
-  title: 'Моё аниме — Анимо',
-  description: 'Личные списки аниме, отслеживание серий, персональная статистика и карточка «Мой год в аниме».',
+  title: 'Моё аниме — персональный трекер | Анимо',
+  description: 'Личные списки аниме, отслеживание просмотренных серий, персональная статистика и карточка итогов года.',
 };
 
 export default async function ProfilePage() {
@@ -17,7 +16,7 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login?redirect=/profile');
+    return <ProfileWorkspace profile={null} initialItems={[]} />;
   }
 
   // 1. Fetch user profile

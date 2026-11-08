@@ -1,9 +1,32 @@
+export function sanitizeRussianTitle(title: string | null | undefined): string | null {
+  if (!title) return null;
+  const trimmed = title.trim();
+  if (!trimmed) return null;
+
+  // Detect non-Russian Cyrillic characters (Ukrainian, Bulgarian, Serbian, etc.)
+  // e.g. і, ї, є, ґ, ў, љ, њ, џ, ћ, ђ
+  if (/[ієїґўљњџћђ]/i.test(trimmed)) {
+    return null;
+  }
+
+  // Detect specific non-Russian phrases (e.g. Bulgarian "Дневниците на билкарката")
+  if (/\b(дневниците|билкарката|сезон|епизод)\b/i.test(trimmed) && !/сезон \d|епизод \d/i.test(trimmed)) {
+    // If it clearly has Bulgarian definite suffixes "-та", "-то", "-те" in title words
+    if (/\b\w+(?:та|то|те)\s+на\s+\w+/i.test(trimmed)) {
+      return null;
+    }
+  }
+
+  return trimmed;
+}
+
 export function getDisplayTitle(anime: {
   title_ru?: string | null;
   title_en?: string | null;
   title_jp?: string | null;
 }): string {
-  return anime.title_ru || anime.title_en || anime.title_jp || 'Без названия';
+  const validRu = sanitizeRussianTitle(anime.title_ru);
+  return validRu || anime.title_en || anime.title_jp || 'Без названия';
 }
 
 export function getSecondaryTitle(anime: {
@@ -11,13 +34,22 @@ export function getSecondaryTitle(anime: {
   title_en?: string | null;
   title_jp?: string | null;
 }): string | null {
-  if (anime.title_ru) {
+  const validRu = sanitizeRussianTitle(anime.title_ru);
+  if (validRu) {
     return anime.title_en || anime.title_jp || null;
   }
   if (anime.title_en) {
     return anime.title_jp || null;
   }
   return null;
+}
+
+export function cleanDescription(desc: string | null | undefined): string {
+  if (!desc) return 'Описание этого тайтла ещё дополняется редакторами каталога.';
+  return desc
+    .replace(/\s*\((?:Source|written by):[^)]*\)/gi, '')
+    .replace(/\s*\[(?:Written by|Source):[^\]]*\]/gi, '')
+    .trim();
 }
 
 export function formatAiringTime(isoDate: string | null | undefined): {
@@ -30,7 +62,7 @@ export function formatAiringTime(isoDate: string | null | undefined): {
     return {
       dayName: '',
       timeStr: '',
-      remainingStr: '',
+      remainingStr: 'Дата не объявлена',
       isPast: true,
     };
   }

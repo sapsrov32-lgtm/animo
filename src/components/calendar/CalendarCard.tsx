@@ -31,8 +31,8 @@ export function CalendarCard({
   const secondaryTitle = getSecondaryTitle(anime);
 
   // Time calculations
-  let localTime = '12:00';
-  let jstTime = '18:00';
+  let localTime = 'Дата не объявлена';
+  let jstTime = '—';
   let hasAired = false;
   let timeDiffHours = 0;
 
