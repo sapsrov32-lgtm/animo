@@ -91,6 +91,44 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
+        {/* Global Schema.org JSON-LD: WebSite with SearchAction (Google Sitelinks Searchbox) & Organization */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'WebSite',
+                  '@id': 'https://animo-virid.vercel.app/#website',
+                  url: 'https://animo-virid.vercel.app',
+                  name: 'Анимо',
+                  alternateName: ['Animo', 'Анимо онлайн', 'Animo Anime'],
+                  description: 'Каталог аниме, трекер серий и календарь релизов',
+                  inLanguage: 'ru-RU',
+                  potentialAction: {
+                    '@type': 'SearchAction',
+                    target: {
+                      '@type': 'EntryPoint',
+                      urlTemplate: 'https://animo-virid.vercel.app/catalog?q={search_term_string}',
+                    },
+                    'query-input': 'required name=search_term_string',
+                  },
+                },
+                {
+                  '@type': 'Organization',
+                  '@id': 'https://animo-virid.vercel.app/#organization',
+                  name: 'Анимо',
+                  url: 'https://animo-virid.vercel.app',
+                  logo: {
+                    '@type': 'ImageObject',
+                    url: 'https://animo-virid.vercel.app/favicon.ico',
+                  },
+                },
+              ],
+            }),
+          }}
+        />
       </head>
       <body className="bg-surface text-on-surface font-body-md antialiased min-h-screen selection:bg-secondary-container selection:text-on-secondary-container flex flex-col">
         <Navbar user={clientUser} profile={profile} />

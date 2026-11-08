@@ -60,10 +60,36 @@ export default async function CalendarPage() {
   }
 
   return (
-    <CalendarWorkspace
-      schedules={schedules}
-      userAnimeMap={userAnimeMap}
-      isLoggedIn={Boolean(user)}
-    />
+    <>
+      {/* Schema.org Breadcrumbs */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              {
+                '@type': 'ListItem',
+                position: 1,
+                name: 'Главная',
+                item: 'https://animo-virid.vercel.app',
+              },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: 'Календарь выхода серий',
+                item: 'https://animo-virid.vercel.app/calendar',
+              },
+            ],
+          }),
+        }}
+      />
+      <CalendarWorkspace
+        schedules={schedules}
+        userAnimeMap={userAnimeMap}
+        isLoggedIn={Boolean(user)}
+      />
+    </>
   );
 }

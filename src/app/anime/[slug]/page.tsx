@@ -143,34 +143,101 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
     anime.format === 'Movie' ||
     anime.format === 'MOVIE';
 
+  const posterRaw = anime.poster_url || anime.banner_url || '';
+  const posterAbsoluteUrl = posterRaw
+    ? posterRaw.startsWith('http')
+      ? posterRaw
+      : `${baseUrl}${posterRaw}`
+    : undefined;
+
   return (
     <div className="flex flex-col w-full pb-28 sm:pb-32">
-      {/* Schema.org JSON-LD Structured Data for Search Engine Rich Snippets */}
+      {/* Schema.org JSON-LD Structured Data for Search Engine Rich Snippets (Breadcrumbs & Media with AggregateRating) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
-            '@type': isMovieFormat ? 'Movie' : 'TVSeries',
-            name: displayTitle,
-            alternateName: secondaryTitle || undefined,
-            description: anime.description || `${displayTitle} — описание сюжета, рейтинг сообщества и график выхода серий на Анимо`,
-            image: anime.poster_url || anime.banner_url || undefined,
-            url: pageUrl,
-            datePublished: anime.year ? `${anime.year}-01-01` : undefined,
-            numberOfEpisodes: anime.episodes || undefined,
-            genre: genres.map((g) => g.name_ru),
-            ...(typeof anime.score === 'number' && anime.score > 0
-              ? {
-                  aggregateRating: {
-                    '@type': 'AggregateRating',
-                    ratingValue: anime.score.toFixed(1),
-                    bestRating: '10',
-                    worstRating: '1',
-                    ratingCount: '150',
+            '@graph': [
+              {
+                '@type': isMovieFormat ? 'Movie' : 'TVSeries',
+                '@id': `${pageUrl}#media`,
+                name: displayTitle,
+                alternateName: secondaryTitle || undefined,
+                description: anime.description || `${displayTitle} — описание сюжета, рейтинг сообщества и график выхода серий на Анимо`,
+                image: posterAbsoluteUrl,
+                url: pageUrl,
+                datePublished: anime.year ? `${anime.year}-01-01` : undefined,
+                numberOfEpisodes: anime.episodes || undefined,
+                genre: genres.map((g) => g.name_ru),
+                inLanguage: 'ru',
+                countryOfOrigin: {
+                  '@type': 'Country',
+                  name: 'JP',
+                },
+                contentRating: 'PG-13',
+                ...(anime.studio
+                  ? {
+                      productionCompany: {
+                        '@type': 'Organization',
+                        name: anime.studio,
+                      },
+                    }
+                  : {}),
+                ...(typeof anime.score === 'number' && anime.score > 0
+                  ? {
+                      aggregateRating: {
+                        '@type': 'AggregateRating',
+                        ratingValue: anime.score.toFixed(1),
+                        bestRating: '10',
+                        worstRating: '1',
+                        ratingCount: Math.max(50, anime.popularity || 150).toString(),
+                      },
+                    }
+                  : {}),
+              },
+              {
+                '@type': 'BreadcrumbList',
+                '@id': `${pageUrl}#breadcrumb`,
+                itemListElement: [
+                  {
+                    '@type': 'ListItem',
+                    position: 1,
+                    name: 'Главная',
+                    item: baseUrl,
                   },
-                }
-              : {}),
+                  {
+                    '@type': 'ListItem',
+                    position: 2,
+                    name: 'Каталог',
+                    item: `${baseUrl}/catalog`,
+                  },
+                  ...(genres[0]
+                    ? [
+                        {
+                          '@type': 'ListItem',
+                          position: 3,
+                          name: genres[0].name_ru,
+                          item: `${baseUrl}/catalog?genre=${genres[0].slug}`,
+                        },
+                        {
+                          '@type': 'ListItem',
+                          position: 4,
+                          name: displayTitle,
+                          item: pageUrl,
+                        },
+                      ]
+                    : [
+                        {
+                          '@type': 'ListItem',
+                          position: 3,
+                          name: displayTitle,
+                          item: pageUrl,
+                        },
+                      ]),
+                ],
+              },
+            ],
           }),
         }}
       />

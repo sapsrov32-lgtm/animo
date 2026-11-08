@@ -49,12 +49,52 @@ export default async function CatalogPage({
   ]);
 
   return (
-    <CatalogView
-      initialItems={initialData.items}
-      initialTotal={initialData.total}
-      genres={genres}
-      stats={stats}
-      initialParams={initialParams}
-    />
+    <>
+      {/* Schema.org CollectionPage & Breadcrumbs */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'CollectionPage',
+                '@id': 'https://animo-virid.vercel.app/catalog#collection',
+                url: 'https://animo-virid.vercel.app/catalog',
+                name: 'Каталог аниме — Анимо',
+                description:
+                  'Полный каталог аниме на русском языке: поиск, фильтры по жанрам, годам и статусу, честные рейтинги без пиратства.',
+                inLanguage: 'ru-RU',
+              },
+              {
+                '@type': 'BreadcrumbList',
+                '@id': 'https://animo-virid.vercel.app/catalog#breadcrumb',
+                itemListElement: [
+                  {
+                    '@type': 'ListItem',
+                    position: 1,
+                    name: 'Главная',
+                    item: 'https://animo-virid.vercel.app',
+                  },
+                  {
+                    '@type': 'ListItem',
+                    position: 2,
+                    name: 'Каталог аниме',
+                    item: 'https://animo-virid.vercel.app/catalog',
+                  },
+                ],
+              },
+            ],
+          }),
+        }}
+      />
+      <CatalogView
+        initialItems={initialData.items}
+        initialTotal={initialData.total}
+        genres={genres}
+        stats={stats}
+        initialParams={initialParams}
+      />
+    </>
   );
 }
