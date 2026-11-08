@@ -1842,7 +1842,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                           Авто-робот синхронизации новинок 24/7
                           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Активен (каждые 4 часа)
+                            Активен (Ежедневно в 03:00 UTC)
                           </span>
                         </h3>
                         <p className={`text-xs ${textMuted}`}>
