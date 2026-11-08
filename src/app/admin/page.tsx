@@ -28,15 +28,15 @@ export default async function AdminPage() {
     redirect('/login?redirect=/admin');
   }
 
-  // 2. Strict Server-Side Role Verification
+  // 2. Strict Server-Side Role Verification (Admin Only)
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'editor')) {
-    redirect('/login?redirect=/admin&error=forbidden');
+  if (!profile || profile.role !== 'admin') {
+    redirect('/login?redirect=/admin');
   }
 
   // 3. Fetch Overview Data & Genres

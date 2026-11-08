@@ -13,6 +13,7 @@ const MOBILE_NAV_ITEMS = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  if (pathname?.startsWith('/admin')) return null;
 
   return (
     <nav

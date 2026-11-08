@@ -27,6 +27,7 @@ interface NavbarProps {
 export function Navbar({ user, profile }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -42,6 +43,11 @@ export function Navbar({ user, profile }: NavbarProps) {
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
   const isStaff = profile?.role === 'admin' || profile?.role === 'editor';
+
+  // Do not render consumer navbar in admin panel
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   // Debounced search for QuickSearchDropdown
   useEffect(() => {

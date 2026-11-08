@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { AnimeStatus } from '@/types';
+import { logAdminAction } from './admin-dashboard';
 
 export interface AnimeInputData {
   id?: string;
@@ -122,6 +123,11 @@ export async function upsertAnimeAction(data: AnimeInputData) {
     }
   }
 
+  await logAdminAction(data.id ? 'update_anime' : 'create_anime', 'anime', savedAnime.id, {
+    title: savedAnime.title_ru || savedAnime.title_en,
+    slug: savedAnime.slug,
+  });
+
   revalidatePath('/admin');
   revalidatePath('/catalog');
   revalidatePath('/calendar');
@@ -150,6 +156,8 @@ export async function toggleAnimePublishAction(animeId: string, isPublished: boo
     return { error: error.message };
   }
 
+  await logAdminAction(isPublished ? 'publish_anime' : 'unpublish_anime', 'anime', animeId);
+
   revalidatePath('/admin');
   revalidatePath('/catalog');
   return { success: true };
@@ -167,6 +175,8 @@ export async function deleteAnimeAction(animeId: string) {
   if (error) {
     return { error: error.message };
   }
+
+  await logAdminAction('delete_anime', 'anime', animeId);
 
   revalidatePath('/admin');
   revalidatePath('/catalog');

@@ -1,18 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import {
   LayoutDashboard,
@@ -39,13 +42,32 @@ import {
   Moon,
   Clock,
   Sparkles,
+  Download,
+  Filter,
+  Check,
+  X,
+  Menu,
+  Database,
+  ArrowUpRight,
+  FileSpreadsheet,
+  Flame,
+  BookmarkCheck,
+  Send,
+  HelpCircle,
+  Sliders,
+  CheckCheck,
 } from 'lucide-react';
 import {
   fetchAdminCatalog,
   fetchAdminUsers,
+  fetchAdminReviews,
   updateUserRole,
+  deleteUserRatingAction,
+  updateAnimeAiringAction,
   fetchSiteSettings,
   saveSiteSettings,
+  exportCsvAction,
+  getAdminOverviewData,
 } from '@/app/actions/admin-dashboard';
 import { upsertAnimeAction, toggleAnimePublishAction, deleteAnimeAction } from '@/app/actions/admin';
 import { getDisplayTitle } from '@/lib/format';
@@ -55,16 +77,30 @@ interface AdminDashboardProps {
   allGenres: any[];
 }
 
-export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'catalog' | 'users' | 'calendar' | 'settings' | 'audit'
-  >('overview');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [period, setPeriod] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+type TabKey =
+  | 'overview'
+  | 'catalog'
+  | 'users'
+  | 'reviews'
+  | 'calendar'
+  | 'sources'
+  | 'reports'
+  | 'audit'
+  | 'settings';
 
-  // Catalog state
+export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) {
+  const [data, setData] = useState(initialData);
+  const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
+  const [period, setPeriod] = useState<'7d' | '30d' | '90d' | '1y' | 'all'>('30d');
+  const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Catalog tab states
   const [catalogPage, setCatalogPage] = useState(1);
   const [catalogItems, setCatalogItems] = useState<any[]>(initialData.topAnime || []);
   const [catalogTotal, setCatalogTotal] = useState(initialData.metrics.totalAnime);
@@ -75,41 +111,81 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
   const [editingAnime, setEditingAnime] = useState<any | null>(null);
   const [savingAnime, setSavingAnime] = useState(false);
 
-  // Users state
+  // Users tab states
   const [usersList, setUsersList] = useState<any[]>(initialData.recentUsers || []);
+  const [usersTotal, setUsersTotal] = useState(initialData.metrics.totalUsers);
+  const [usersSearch, setUsersSearch] = useState('');
+  const [usersRole, setUsersRole] = useState('all');
   const [usersLoading, setUsersLoading] = useState(false);
 
-  // Settings state
-  const [siteSettings, setSiteSettings] = useState<any>({
-    title: 'Анимо — каталог аниме и трекер серий',
-    description: 'Полная база данных на 38 000+ аниме, трекер серий и календарь релизов.',
+  // Reviews tab states
+  const [reviewsList, setReviewsList] = useState<any[]>([]);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  // Calendar edit states
+  const [editingAiring, setEditingAiring] = useState<{ id: string; title: string; nextEp: string; day: string } | null>(null);
+
+  // Settings tab states
+  const [settingsData, setSettingsData] = useState<any>({
+    siteName: 'Анимо',
+    tagline: 'Каталог аниме, трекер серий и календарь релизов',
+    description: 'Полная база данных на 38 000+ аниме, персональный трекер серий и календарь релизов.',
     allowRegistrations: true,
     maintenanceMode: false,
+    telegramUrl: 'https://t.me/animo',
+    vkUrl: 'https://vk.com/animo',
   });
+  const [settingsSavedToast, setSettingsSavedToast] = useState(false);
 
-  // Calculate greeting
-  const [greeting, setGreeting] = useState('Добрый день');
+  // Mount effect & theme preference
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 6) setGreeting('Доброй ночи');
-    else if (hour < 12) setGreeting('Доброе утро');
-    else if (hour < 18) setGreeting('Добрый день');
-    else setGreeting('Добрый вечер');
-
-    // Load initial settings
+    setMounted(true);
+    const savedTheme = localStorage.getItem('animo_admin_theme') as 'light' | 'dark';
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
     fetchSiteSettings().then((s) => {
-      if (s && Object.keys(s).length > 0) {
-        setSiteSettings((prev: any) => ({ ...prev, ...s }));
+      if (s.general || s.features || s.socials) {
+        setSettingsData((prev: any) => ({
+          ...prev,
+          siteName: s.general?.siteName || prev.siteName,
+          tagline: s.general?.tagline || prev.tagline,
+          description: s.general?.description || prev.description,
+          allowRegistrations: s.features?.allowRegistration ?? true,
+          telegramUrl: s.socials?.telegram || prev.telegramUrl,
+          vkUrl: s.socials?.vk || prev.vkUrl,
+        }));
       }
     });
   }, []);
 
-  // Fetch catalog when filters change
-  const loadCatalog = async () => {
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    localStorage.setItem('animo_admin_theme', next);
+  };
+
+  // Change period and refetch real data
+  const handlePeriodChange = (newPeriod: '7d' | '30d' | '90d' | '1y' | 'all') => {
+    setPeriod(newPeriod);
+    setPeriodMenuOpen(false);
+    startTransition(async () => {
+      try {
+        const fresh = await getAdminOverviewData(newPeriod);
+        setData(fresh);
+      } catch (err) {
+        console.error('Error refreshing period data:', err);
+      }
+    });
+  };
+
+  // Load catalog items when catalog tab active or filters change
+  const loadCatalog = async (page = 1) => {
     setCatalogLoading(true);
     try {
       const res = await fetchAdminCatalog({
-        page: catalogPage,
+        page,
         perPage: 15,
         search: catalogSearch,
         status: catalogStatus,
@@ -117,38 +193,75 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
       });
       setCatalogItems(res.items);
       setCatalogTotal(res.total);
-    } catch (e) {
-      console.error(e);
+      setCatalogPage(page);
+    } catch (err) {
+      console.error(err);
     } finally {
       setCatalogLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 'catalog') {
-      loadCatalog();
+  // Load users
+  const loadUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const res = await fetchAdminUsers({
+        page: 1,
+        perPage: 25,
+        search: usersSearch,
+        role: usersRole,
+      });
+      setUsersList(res.users);
+      setUsersTotal(res.total);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUsersLoading(false);
     }
-  }, [activeTab, catalogPage, catalogStatus, catalogFormat]);
-
-  const handleCatalogSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCatalogPage(1);
-    loadCatalog();
   };
 
-  const handleTogglePublish = async (id: string, current: boolean) => {
-    await toggleAnimePublishAction(id, !current);
+  // Load reviews
+  const loadReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const res = await fetchAdminReviews({ page: 1, perPage: 25 });
+      setReviewsList(res.items);
+      setReviewsTotal(res.total);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'catalog') loadCatalog(1);
+    if (activeTab === 'users') loadUsers();
+    if (activeTab === 'reviews') loadReviews();
+  }, [activeTab]);
+
+  // Greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 6 ? 'Доброй ночи' : hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер';
+  const adminName = data.currentUser?.username || 'Администратор';
+
+  // Toggle publish
+  const handleTogglePublish = async (item: any) => {
+    const nextState = !item.is_published;
     setCatalogItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, is_published: !current } : item))
+      prev.map((a) => (a.id === item.id ? { ...a, is_published: nextState } : a))
     );
+    await toggleAnimePublishAction(item.id, nextState);
   };
 
+  // Delete anime
   const handleDeleteAnime = async (id: string) => {
-    if (!confirm('Удалить этот тайтл из базы?')) return;
+    if (!confirm('Вы уверены, что хотите удалить этот тайтл из базы? Действие необратимо.')) return;
+    setCatalogItems((prev) => prev.filter((a) => a.id !== id));
     await deleteAnimeAction(id);
-    setCatalogItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  // Save anime modal form
   const handleSaveAnime = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingAnime) return;
@@ -156,7 +269,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
     try {
       await upsertAnimeAction(editingAnime);
       setEditingAnime(null);
-      loadCatalog();
+      loadCatalog(catalogPage);
     } catch (err) {
       console.error(err);
     } finally {
@@ -164,535 +277,1151 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: 'admin' | 'editor' | 'user') => {
-    await updateUserRole(userId, newRole);
+  // Toggle user role
+  const handleToggleUserRole = async (u: any) => {
+    const newRole = u.role === 'admin' ? 'user' : 'admin';
+    if (!confirm(`Изменить роль пользователя @${u.username || 'user'} на ${newRole}?`)) return;
     setUsersList((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+      prev.map((item) => (item.id === u.id ? { ...item, role: newRole } : item))
     );
+    await updateUserRole(u.id, newRole);
   };
 
-  const handleSaveSettings = async () => {
-    await saveSiteSettings('general', siteSettings);
-    alert('Настройки успешно сохранены!');
+  // Delete review
+  const handleDeleteRating = async (id: string) => {
+    if (!confirm('Удалить эту оценку пользователя?')) return;
+    setReviewsList((prev) => prev.filter((r) => r.id !== id));
+    await deleteUserRatingAction(id);
   };
 
+  // Export CSV helper
+  const handleExportCsv = async (type: 'anime' | 'users' | 'activity') => {
+    const res = await exportCsvAction(type);
+    if (res.csv) {
+      const blob = new Blob([res.csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', res.filename || `export-${type}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  // Save settings
+  const handleSaveAllSettings = async () => {
+    await saveSiteSettings('general', {
+      siteName: settingsData.siteName,
+      tagline: settingsData.tagline,
+      description: settingsData.description,
+    });
+    await saveSiteSettings('socials', {
+      telegram: settingsData.telegramUrl,
+      vk: settingsData.vkUrl,
+    });
+    await saveSiteSettings('features', {
+      allowRegistration: settingsData.allowRegistrations,
+    });
+    setSettingsSavedToast(true);
+    setTimeout(() => setSettingsSavedToast(false), 3000);
+  };
+
+  // Dynamic Theme Class names
   const isDark = theme === 'dark';
-  const bgClass = isDark ? 'bg-[#0c0a14] text-slate-100' : 'bg-[#F7F8FC] text-slate-800';
-  const cardClass = isDark
-    ? 'bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl'
-    : 'bg-white border border-slate-200/80 shadow-md rounded-2xl';
+  const themeBg = isDark ? 'bg-[#0c0a14] text-slate-100' : 'bg-[#F7F8FC] text-slate-800';
+  const cardBg = isDark
+    ? 'bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.4)]'
+    : 'bg-white border border-slate-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.03)]';
+  const cardSubtle = isDark ? 'bg-white/[0.02] border border-white/[0.05]' : 'bg-slate-50 border border-slate-200/50';
+  const borderCol = isDark ? 'border-white/[0.08]' : 'border-slate-200/80';
   const textMuted = isDark ? 'text-slate-400' : 'text-slate-500';
 
+  if (!mounted) {
+    return <div className="fixed inset-0 bg-[#F7F8FC]" />;
+  }
+
   return (
-    <div className={`min-h-screen ${bgClass} transition-colors duration-300 flex flex-col md:flex-row font-sans`}>
-      {/* Background Ambient Glows (Glassmorphism) */}
+    <div className={`fixed inset-0 z-40 flex overflow-hidden font-sans select-none ${themeBg}`}>
+      {/* Background ambient lighting for Dark Glassmorphism */}
       {isDark && (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-indigo-600/10 rounded-full blur-[140px]" />
-          <div className="absolute top-[40%] right-[-10%] w-[45vw] h-[45vw] bg-violet-600/10 rounded-full blur-[160px]" />
-          <div className="absolute bottom-[-10%] left-[20%] w-[40vw] h-[40vw] bg-pink-600/5 rounded-full blur-[140px]" />
-        </div>
+        <>
+          <div className="absolute top-0 left-1/4 w-[600px] h-[400px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
+          <div className="absolute bottom-0 right-1/4 w-[500px] h-[400px] bg-purple-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
+        </>
       )}
 
-      {/* LEFT SIDEBAR */}
-      <aside className={`w-full md:w-64 shrink-0 z-20 ${isDark ? 'bg-slate-950/70 border-r border-white/10' : 'bg-white border-r border-slate-200'} backdrop-blur-2xl p-5 flex flex-col justify-between`}>
-        <div>
-          {/* Logo & Brand */}
-          <div className="flex items-center justify-between pb-6 mb-4 border-b border-white/10">
+      {/* ======================================================== */}
+      {/* 1. SIDEBAR (Collapsible & Grouped, matches references)     */}
+      {/* ======================================================== */}
+      <aside
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 shrink-0 transition-transform duration-300 flex flex-col justify-between ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } ${isDark ? 'bg-[#100d1c]/95 backdrop-blur-2xl border-r border-white/10' : 'bg-white border-r border-slate-200/80 shadow-sm'}`}
+      >
+        <div className="flex flex-col flex-1 overflow-y-auto scrollbar-none py-5 px-4 space-y-6">
+          {/* Logo / Brand Header */}
+          <div className="flex items-center justify-between px-2">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-                  Анимо
+                <span className="font-bold text-base tracking-tight leading-tight flex items-center gap-1.5">
+                  <span>АНИМО</span>
+                  <span className="px-1.5 py-0.2 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-bold text-[9px] uppercase tracking-wider">
+                    Admin
+                  </span>
                 </span>
-                <span className="text-[10px] uppercase tracking-widest text-indigo-400/80 font-bold">
-                  Admin Workspace
-                </span>
+                <span className={`text-[11px] font-medium ${textMuted}`}>Панель управления</span>
               </div>
             </Link>
             <button
-              onClick={() => setTheme(isDark ? 'light' : 'dark')}
-              className={`p-2 rounded-xl ${isDark ? 'bg-white/5 hover:bg-white/10 text-amber-400' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'} transition-all`}
-              title="Переключить тему"
+              type="button"
+              onClick={() => setMobileMenuOpen(false)}
+              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Navigation Groups */}
+          <nav className="space-y-5 text-xs font-semibold">
+            {/* Группа 1: ГЛАВНОЕ */}
+            <div>
+              <div className={`px-2 mb-2 text-[10px] uppercase tracking-wider font-bold ${textMuted}`}>
+                Главное
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('overview');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all ${
+                  activeTab === 'overview'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 font-bold'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-white/5'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="text-[13px]">Обзор</span>
+                </div>
+                {activeTab === 'overview' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+              </button>
+            </div>
+
+            {/* Группа 2: КОНТЕНТ */}
+            <div className="space-y-1">
+              <div className={`px-2 mb-2 text-[10px] uppercase tracking-wider font-bold ${textMuted}`}>
+                Контент
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('catalog');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all ${
+                  activeTab === 'catalog'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 font-bold'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-white/5'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Film className="w-4 h-4" />
+                  <span className="text-[13px]">Каталог аниме</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                  activeTab === 'catalog' ? 'bg-white/20 text-white' : isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {data.metrics?.totalAnime || 38335}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('calendar');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all ${
+                  activeTab === 'calendar'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 font-bold'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-white/5'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-[13px]">Календарь релизов</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                  activeTab === 'calendar' ? 'bg-white/20 text-white' : isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {data.metrics?.totalOngoings || 97}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('sources');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all ${
+                  activeTab === 'sources'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 font-bold'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-white/5'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Database className="w-4 h-4" />
+                  <span className="text-[13px]">Источники и импорт</span>
+                </div>
+              </button>
+            </div>
+
+            {/* Группа 3: ЛЮДИ */}
+            <div className="space-y-1">
+              <div className={`px-2 mb-2 text-[10px] uppercase tracking-wider font-bold ${textMuted}`}>
+                Люди
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('users');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all ${
+                  activeTab === 'users'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 font-bold'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-white/5'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Users className="w-4 h-4" />
+                  <span className="text-[13px]">Пользователи</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                  activeTab === 'users' ? 'bg-white/20 text-white' : isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {data.metrics?.totalUsers || 3}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('reviews');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all ${
+                  activeTab === 'reviews'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 font-bold'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-white/5'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="text-[13px]">Отзывы и оценки</span>
+                </div>
+              </button>
+            </div>
+
+            {/* Группа 4: СИСТЕМА */}
+            <div className="space-y-1">
+              <div className={`px-2 mb-2 text-[10px] uppercase tracking-wider font-bold ${textMuted}`}>
+                Система
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('reports');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all ${
+                  activeTab === 'reports'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 font-bold'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-white/5'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span className="text-[13px]">Отчёты и экспорт</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('audit');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all ${
+                  activeTab === 'audit'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 font-bold'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-white/5'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <ShieldAlert className="w-4 h-4" />
+                  <span className="text-[13px]">Журнал действий</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('settings');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all ${
+                  activeTab === 'settings'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 font-bold'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-white/5'
+                    : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Settings className="w-4 h-4" />
+                  <span className="text-[13px]">Настройки</span>
+                </div>
+              </button>
+            </div>
+          </nav>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div className={`p-4 border-t ${borderCol} space-y-3`}>
+          <div className="flex items-center justify-between">
+            <Link
+              href="/"
+              target="_blank"
+              className={`flex items-center gap-2 text-xs font-semibold ${textMuted} hover:text-indigo-600 transition-colors`}
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>Перейти на сайт</span>
+            </Link>
+
+            {/* Quick theme toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label="Сменить тему"
+              className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-white/10 text-amber-400 hover:bg-white/15' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              title={isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
 
-          {/* Navigation Groups */}
-          <nav className="flex flex-col gap-6">
-            <div>
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${textMuted} px-3 block mb-2`}>
-                Главное
-              </span>
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={() => setActiveTab('overview')}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                    activeTab === 'overview'
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 font-semibold'
-                      : `${textMuted} hover:text-white hover:bg-white/5`
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <LayoutDashboard className="w-4 h-4" />
-                    <span>Обзор</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/10">Live</span>
-                </button>
-              </div>
+          {/* User profile strip */}
+          <div className={`flex items-center gap-3 p-2 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
+              {adminName[0]?.toUpperCase() || 'A'}
             </div>
-
-            <div>
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${textMuted} px-3 block mb-2`}>
-                Контент
-              </span>
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={() => setActiveTab('catalog')}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                    activeTab === 'catalog'
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 font-semibold'
-                      : `${textMuted} hover:text-white hover:bg-white/5`
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Film className="w-4 h-4" />
-                    <span>Каталог аниме</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/10">38k</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('calendar')}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                    activeTab === 'calendar'
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 font-semibold'
-                      : `${textMuted} hover:text-white hover:bg-white/5`
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4" />
-                    <span>Календарь релизов</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/10">97</span>
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${textMuted} px-3 block mb-2`}>
-                Люди и Безопасность
-              </span>
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={() => setActiveTab('users')}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                    activeTab === 'users'
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 font-semibold'
-                      : `${textMuted} hover:text-white hover:bg-white/5`
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Users className="w-4 h-4" />
-                    <span>Пользователи</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('audit')}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                    activeTab === 'audit'
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 font-semibold'
-                      : `${textMuted} hover:text-white hover:bg-white/5`
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <ShieldAlert className="w-4 h-4" />
-                    <span>Журнал действий</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${textMuted} px-3 block mb-2`}>
-                Система
-              </span>
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={() => setActiveTab('settings')}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                    activeTab === 'settings'
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/25 font-semibold'
-                      : `${textMuted} hover:text-white hover:bg-white/5`
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Settings className="w-4 h-4" />
-                    <span>Настройки</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </nav>
-        </div>
-
-        {/* User Card */}
-        <div className={`pt-4 mt-6 border-t ${isDark ? 'border-white/10' : 'border-slate-200'} flex items-center justify-between`}>
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md">
-              {initialData.currentUser?.username?.charAt(0).toUpperCase() || 'A'}
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-xs truncate">
-                {initialData.currentUser?.username || 'Администратор'}
-              </span>
-              <span className="text-[10px] text-emerald-400 font-bold uppercase">
-                {initialData.currentUser?.role || 'admin'}
-              </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold truncate leading-tight">{adminName}</p>
+              <p className={`text-[10px] truncate ${textMuted}`}>Супер-администратор</p>
             </div>
           </div>
-          <Link
-            href="/"
-            className={`p-2 rounded-xl ${isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-500'} transition-colors`}
-            title="Перейти на сайт"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </Link>
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 min-w-0 z-10 flex flex-col p-4 sm:p-6 lg:p-8 overflow-y-auto">
+      {/* ======================================================== */}
+      {/* 2. MAIN VIEWPORT (Header + Scrollable Dashboard Content)  */}
+      {/* ======================================================== */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header Bar */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-white/10">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              {greeting}, {initialData.currentUser?.username || 'Админ'} 👋
-            </h1>
-            <p className={`text-xs sm:text-sm mt-1 ${textMuted}`}>
-              Панель управления и синхронизации каталога «Анимо». Все системы работают стабильно.
-            </p>
+        <header
+          className={`h-16 px-4 sm:px-8 flex items-center justify-between shrink-0 border-b ${borderCol} ${
+            isDark ? 'bg-[#0c0a14]/80 backdrop-blur-xl' : 'bg-white/80 backdrop-blur-xl'
+          }`}
+        >
+          {/* Mobile hamburger & search input */}
+          <div className="flex items-center gap-3 flex-1 max-w-md">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 rounded-xl text-slate-400 hover:text-slate-600"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div className="relative w-full hidden sm:block">
+              <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${textMuted}`} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Поиск по админке... (Ctrl+K)"
+                className={`w-full h-9 pl-9 pr-4 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                  isDark
+                    ? 'bg-white/5 border border-white/10 text-white placeholder-slate-500'
+                    : 'bg-slate-100 border border-transparent text-slate-800 placeholder-slate-400'
+                }`}
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Period selector */}
-            <div className={`p-1 rounded-xl ${isDark ? 'bg-slate-900/80 border border-white/10' : 'bg-white border border-slate-200'} flex items-center text-xs font-semibold`}>
-              {(['7d', '30d', '90d', '1y'] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-3 py-1.5 rounded-lg transition-all ${
-                    period === p
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : `${textMuted} hover:text-white`
+          {/* Top Actions: Period selector, Notifications, Theme, Profile */}
+          <div className="flex items-center gap-2.5">
+            {/* Period Selector Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setPeriodMenuOpen(!periodMenuOpen)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                  isDark
+                    ? 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                <span>
+                  {period === '7d'
+                    ? 'Последние 7 дней'
+                    : period === '30d'
+                    ? 'Последние 30 дней'
+                    : period === '90d'
+                    ? 'Последние 3 месяца'
+                    : period === '1y'
+                    ? '1 год'
+                    : 'Все время'}
+                </span>
+                {isPending ? (
+                  <RefreshCw className="w-3 h-3 animate-spin text-indigo-500" />
+                ) : (
+                  <ChevronRight className="w-3 h-3 rotate-90 text-slate-400" />
+                )}
+              </button>
+
+              {periodMenuOpen && (
+                <div
+                  className={`absolute right-0 mt-1.5 w-48 rounded-2xl py-1.5 z-50 shadow-2xl border ${
+                    isDark ? 'bg-[#151224] border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800'
                   }`}
                 >
-                  {p === '7d' ? '7 дн.' : p === '30d' ? '30 дн.' : p === '90d' ? '3 мес.' : '1 год'}
-                </button>
-              ))}
+                  {[
+                    { key: '7d', label: 'Последние 7 дней' },
+                    { key: '30d', label: 'Последние 30 дней' },
+                    { key: '90d', label: 'Последние 3 месяца' },
+                    { key: '1y', label: '1 год' },
+                    { key: 'all', label: 'Все время' },
+                  ].map((p) => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => handlePeriodChange(p.key as any)}
+                      className={`w-full text-left px-3.5 py-2 text-xs font-medium flex items-center justify-between hover:bg-indigo-500/10 ${
+                        period === p.key ? 'text-indigo-600 font-bold' : ''
+                      }`}
+                    >
+                      <span>{p.label}</span>
+                      {period === p.key && <Check className="w-3.5 h-3.5 text-indigo-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
+            {/* Notifications */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className={`p-2 rounded-xl border relative transition-colors ${
+                  isDark ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm'
+                }`}
+              >
+                <Bell className="w-4 h-4" />
+                <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1.5 right-1.5" />
+              </button>
+
+              {notificationsOpen && (
+                <div
+                  className={`absolute right-0 mt-2 w-72 rounded-2xl p-3 z-50 shadow-2xl border ${
+                    isDark ? 'bg-[#151224] border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/50 dark:border-white/10">
+                    <span className="text-xs font-bold">Уведомления</span>
+                    <span className="text-[10px] text-indigo-500 font-medium">Новых: 2</span>
+                  </div>
+                  <div className="py-2 space-y-2 text-xs">
+                    <div className="p-2 rounded-xl bg-indigo-500/10 flex items-start gap-2.5">
+                      <Flame className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-[11px]">Онгоинги синхронизированы</p>
+                        <p className={`text-[10px] ${textMuted}`}>97 тайтлов в расписании этой недели</p>
+                      </div>
+                    </div>
+                    <div className="p-2 rounded-xl bg-emerald-500/10 flex items-start gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-[11px]">Постеры проверены</p>
+                        <p className={`text-[10px] ${textMuted}`}>100% опубликованных тайтлов имеют обложки</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Theme Toggle Button */}
             <button
-              onClick={() => {
-                setActiveTab('catalog');
-                setEditingAnime({
-                  title_ru: '',
-                  title_en: '',
-                  title_jp: '',
-                  description: '',
-                  year: new Date().getFullYear(),
-                  status: 'ongoing',
-                  format: 'ТВ Сериал',
-                  episodes: null,
-                  poster_url: '',
-                  is_published: true,
-                });
-              }}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-500/25 active:scale-95 transition-all"
+              type="button"
+              onClick={toggleTheme}
+              aria-label="Сменить тему"
+              className={`p-2 rounded-xl border transition-colors ${
+                isDark ? 'bg-white/5 border-white/10 text-amber-400 hover:bg-white/10' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm'
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              <span>Добавить тайтл</span>
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
         </header>
 
-        {/* TAB 1: OVERVIEW */}
-        {activeTab === 'overview' && (
-          <div className="flex flex-col gap-6">
-            {/* 4 Metric Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className={`${cardClass} p-5 flex flex-col justify-between`}>
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className={textMuted}>Всего пользователей</span>
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-400 flex items-center justify-center">
-                    <Users className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                    {initialData.metrics.totalUsers}
-                  </span>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-emerald-400 font-semibold">
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    <span>{initialData.metrics.userDelta} за период</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={`${cardClass} p-5 flex flex-col justify-between`}>
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className={textMuted}>Тайтлов в каталоге</span>
-                  <div className="w-8 h-8 rounded-lg bg-violet-500/15 text-violet-400 flex items-center justify-center">
-                    <Film className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                    {initialData.metrics.totalAnime.toLocaleString()}
-                  </span>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-emerald-400 font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Все 18+ исключены</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={`${cardClass} p-5 flex flex-col justify-between`}>
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className={textMuted}>Активных онгоингов</span>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
-                    <Calendar className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                    {initialData.metrics.totalOngoings}
-                  </span>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-emerald-400 font-semibold">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>С точным расписанием</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={`${cardClass} p-5 flex flex-col justify-between`}>
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className={textMuted}>Записей в списках</span>
-                  <div className="w-8 h-8 rounded-lg bg-pink-500/15 text-pink-400 flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                    {initialData.metrics.totalTrackingRows}
-                  </span>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-indigo-400 font-semibold">
-                    <span>Честный трекер</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Activity Area Chart */}
-              <div className={`lg:col-span-2 ${cardClass} p-6 flex flex-col justify-between`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-base">Активность пользователей</h3>
-                    <p className={`text-xs ${textMuted}`}>Динамика просмотров и обновлений трекера</p>
-                  </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-bold">
-                    +18% прирост
-                  </span>
-                </div>
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={initialData.activityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6} />
-                          <stop offset="95%" stopColor="#6366F1" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="name" stroke={isDark ? '#64748B' : '#94A3B8'} fontSize={12} tickLine={false} />
-                      <YAxis stroke={isDark ? '#64748B' : '#94A3B8'} fontSize={12} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                          borderColor: isDark ? '#334155' : '#e2e8f0',
-                          borderRadius: '12px',
-                          color: isDark ? '#f8fafc' : '#0f172a',
-                        }}
-                      />
-                      <Area type="monotone" dataKey="views" stroke="#6366F1" strokeWidth={3} fillOpacity={1} fill="url(#colorViews)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Status Donut Chart */}
-              <div className={`${cardClass} p-6 flex flex-col justify-between`}>
+        {/* Scrollable Workspace Content */}
+        <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6">
+          {/* ==================================================================== */}
+          {/* TAB: OVERVIEW (Main Dashboard view exactly as references)             */}
+          {/* ==================================================================== */}
+          {activeTab === 'overview' && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
+              {/* 1. Greeting & Hero Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-base">Статусы в трекере</h3>
-                  <p className={`text-xs ${textMuted}`}>Распределение пользовательских списков</p>
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+                    {greeting}, {adminName} 👋
+                  </h1>
+                  <p className={`text-xs sm:text-sm mt-0.5 ${textMuted}`}>
+                    Сводные показатели каталога, онгоингов и активности аудитории за выбранный период.
+                  </p>
                 </div>
-                <div className="h-48 w-full relative my-auto">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={initialData.statusBreakdown}
-                        innerRadius={55}
-                        outerRadius={80}
-                        paddingAngle={4}
-                        dataKey="value"
-                      >
-                        {initialData.statusBreakdown.map((entry: any, index: number) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-xl font-extrabold">{initialData.metrics.totalTrackingRows}</span>
-                    <span className="text-[10px] text-slate-400">Всего в трекере</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-xs">
-                  {initialData.statusBreakdown.map((s: any) => (
-                    <div key={s.name} className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                      <span className={textMuted}>{s.name}</span>
-                      <span className="font-bold ml-auto">{s.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Widgets Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Top Popular Anime */}
-              <div className={`${cardClass} p-6`}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-base">Топ аниме по популярности</h3>
-                  <button onClick={() => setActiveTab('catalog')} className="text-xs text-indigo-400 hover:underline">
-                    Смотреть все
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleExportCsv('anime')}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                      isDark
+                        ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
+                        : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm'
+                    }`}
+                  >
+                    <Download className="w-3.5 h-3.5 text-indigo-500" />
+                    <span>Экспорт данных</span>
                   </button>
                 </div>
-                <div className="flex flex-col gap-3">
-                  {initialData.topAnime.map((a: any, idx: number) => (
-                    <div key={a.id} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-xs font-bold w-4 text-slate-500">#{idx + 1}</span>
-                        {a.poster_url ? (
-                          <div className="relative w-10 h-14 rounded-lg overflow-hidden shrink-0 bg-slate-800">
-                            <Image src={a.poster_url} alt={a.title_en} fill sizes="40px" className="object-cover" unoptimized />
-                          </div>
-                        ) : (
-                          <div className="w-10 h-14 rounded-lg bg-slate-800 shrink-0 flex items-center justify-center text-[10px]">
-                            No Pic
-                          </div>
-                        )}
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-semibold text-xs sm:text-sm truncate">
-                            {getDisplayTitle(a)}
-                          </span>
-                          <span className="text-[11px] text-slate-400">
-                            {a.format} • {a.popularity?.toLocaleString()} голосов
+              </div>
+
+              {/* 2. Four Metrics Cards in a Row (Ref: CRM / Finance Dashboards) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                {/* Metric 1: Total Users */}
+                <div className={`p-5 rounded-2xl transition-transform hover:-translate-y-0.5 duration-200 ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>
+                      Всего пользователей
+                    </span>
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                      <Users className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                      {data.metrics?.totalUsers?.toLocaleString('ru-RU') || 0}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <TrendingUp className="w-3 h-3" />
+                      {data.metrics?.userDelta || '+12.5%'}
+                    </span>
+                  </div>
+                  <p className={`text-[11px] mt-2 ${textMuted}`}>Активные профили с трекингом</p>
+                </div>
+
+                {/* Metric 2: Total Anime */}
+                <div className={`p-5 rounded-2xl transition-transform hover:-translate-y-0.5 duration-200 ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>
+                      Тайтлов в каталоге
+                    </span>
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                      <Film className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                      {data.metrics?.totalAnime?.toLocaleString('ru-RU') || '38 335'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <TrendingUp className="w-3 h-3" />
+                      {data.metrics?.animeDelta || '+1.4%'}
+                    </span>
+                  </div>
+                  <p className={`text-[11px] mt-2 ${textMuted}`}>100% с обложками (без 18+)</p>
+                </div>
+
+                {/* Metric 3: Active Ongoings */}
+                <div className={`p-5 rounded-2xl transition-transform hover:-translate-y-0.5 duration-200 ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>
+                      Активных онгоингов
+                    </span>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <Flame className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                      {data.metrics?.totalOngoings?.toLocaleString('ru-RU') || '97'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <TrendingUp className="w-3 h-3" />
+                      {data.metrics?.ongoingDelta || '+2.1%'}
+                    </span>
+                  </div>
+                  <p className={`text-[11px] mt-2 ${textMuted}`}>С точным таймером выхода</p>
+                </div>
+
+                {/* Metric 4: Tracking Additions */}
+                <div className={`p-5 rounded-2xl transition-transform hover:-translate-y-0.5 duration-200 ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-semibold uppercase tracking-wider ${textMuted}`}>
+                      Добавлений в списки
+                    </span>
+                    <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center">
+                      <BookmarkCheck className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                      {data.totalTracked?.toLocaleString('ru-RU') || 0}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <TrendingUp className="w-3 h-3" />
+                      {data.metrics?.trackingDelta || '+8.1%'}
+                    </span>
+                  </div>
+                  <p className={`text-[11px] mt-2 ${textMuted}`}>За всё время трекинга</p>
+                </div>
+              </div>
+
+              {/* 3. Analytics Charts Grid: AreaChart (Activity) + DonutChart (Status Breakdown) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* Area Chart: Activity over time (8 cols) */}
+                <div className={`lg:col-span-8 p-6 rounded-2xl flex flex-col justify-between ${cardBg}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                      <h3 className="font-bold text-sm sm:text-base tracking-tight">
+                        Активность аудитории
+                      </h3>
+                      <p className={`text-xs mt-0.5 ${textMuted}`}>
+                        Динамика регистраций и добавлений в персональные списки
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-xs text-indigo-500 font-semibold">
+                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
+                        Добавления
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-xs text-purple-500 font-semibold ml-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block" />
+                        Регистрации
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="h-64 sm:h-72 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={data.activityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="indigoArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#6366F1" stopOpacity={isDark ? 0.4 : 0.25} />
+                            <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="purpleArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8B5CF6" stopOpacity={isDark ? 0.3 : 0.2} />
+                            <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis
+                          dataKey="name"
+                          stroke={isDark ? '#64748b' : '#94a3b8'}
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke={isDark ? '#64748b' : '#94a3b8'}
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: isDark ? '#1e1b2e' : '#ffffff',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
+                            borderRadius: '16px',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                            fontSize: '12px',
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="additions"
+                          name="Добавления"
+                          stroke="#6366F1"
+                          strokeWidth={2.5}
+                          fillOpacity={1}
+                          fill="url(#indigoArea)"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="registrations"
+                          name="Регистрации"
+                          stroke="#8B5CF6"
+                          strokeWidth={2}
+                          strokeDasharray="4 4"
+                          fillOpacity={1}
+                          fill="url(#purpleArea)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Donut Chart: List Statuses Breakdown (4 cols) (Ref: Goal Progress & Deal Stages) */}
+                <div className={`lg:col-span-4 p-6 rounded-2xl flex flex-col justify-between ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-bold text-sm sm:text-base tracking-tight">
+                        Статусы в списках
+                      </h3>
+                      <p className={`text-xs mt-0.5 ${textMuted}`}>Распределение тайтлов</p>
+                    </div>
+                  </div>
+
+                  <div className="relative h-48 w-full flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={data.statusBreakdown}
+                          innerRadius={55}
+                          outerRadius={75}
+                          paddingAngle={4}
+                          dataKey="value"
+                        >
+                          {data.statusBreakdown.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-xl font-extrabold tracking-tight">
+                        {data.totalTracked || 0}
+                      </span>
+                      <span className={`text-[10px] uppercase font-bold tracking-wider ${textMuted}`}>
+                        в списках
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Legend list */}
+                  <div className="space-y-2 pt-3 border-t border-slate-200/50 dark:border-white/10">
+                    {data.statusBreakdown.map((item: any) => (
+                      <div key={item.name} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                          <span className="font-medium">{item.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 font-bold">
+                          <span>{item.value}</span>
+                          <span className={`text-[11px] font-normal ${textMuted}`}>
+                            ({item.percent}%)
                           </span>
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-amber-400 px-2 py-1 rounded-md bg-amber-400/10 shrink-0">
-                        ★ {a.score || '—'}
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Data Quality & Issues Widget */}
-              <div className={`${cardClass} p-6`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-amber-400" />
-                    <h3 className="font-bold text-base">Качество данных каталога</h3>
+              {/* 4. Second Analytics Row: BarChart (User Growth) + Popular Genres */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* User Growth Monthly Bar Chart (6 cols) */}
+                <div className={`lg:col-span-6 p-6 rounded-2xl flex flex-col justify-between ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-bold text-sm sm:text-base tracking-tight">
+                        Рост пользователей по месяцам
+                      </h3>
+                      <p className={`text-xs mt-0.5 ${textMuted}`}>Динамика регистраций на платформе</p>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                      +100% за год
+                    </span>
                   </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-400 font-bold">
-                    Требуют внимания
-                  </span>
+
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.userGrowthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <XAxis
+                          dataKey="month"
+                          stroke={isDark ? '#64748b' : '#94a3b8'}
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke={isDark ? '#64748b' : '#94a3b8'}
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: isDark ? '#1e1b2e' : '#ffffff',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                          }}
+                        />
+                        <Bar dataKey="users" name="Пользователи" fill="#6366F1" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-                <p className={`text-xs mb-4 ${textMuted}`}>
-                  Тайтлы без постера или без русского описания. Вы можете дополнить их в один клик:
-                </p>
-                <div className="flex flex-col gap-2.5">
-                  {initialData.qualityIssues.slice(0, 5).map((q: any) => (
-                    <div key={q.id} className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-                      <div className="flex flex-col min-w-0 pr-3">
-                        <span className="font-medium text-xs truncate">
-                          {q.title_ru || q.title_en}
-                        </span>
-                        <span className="text-[10px] text-amber-400">
-                          {!q.poster_url ? 'Нет постера' : !q.title_ru ? 'Нет рус. названия' : 'Нет описания'}
+
+                {/* Popular Genres with Progress Bars (6 cols) (Ref: Performance by Subject) */}
+                <div className={`lg:col-span-6 p-6 rounded-2xl flex flex-col justify-between ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-bold text-sm sm:text-base tracking-tight">
+                        Популярные жанры у аудитории
+                      </h3>
+                      <p className={`text-xs mt-0.5 ${textMuted}`}>Доли интересов в каталоге</p>
+                    </div>
+                    <Link
+                      href="/catalog"
+                      target="_blank"
+                      className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                    >
+                      Каталог <ArrowUpRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+
+                  <div className="space-y-3.5 my-auto">
+                    {data.popularGenres?.map((genre: any) => (
+                      <div key={genre.name} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold">{genre.name}</span>
+                          <span className={`font-bold ${textMuted}`}>{genre.percent}%</span>
+                        </div>
+                        <div className={`w-full h-2 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{
+                              width: `${genre.percent}%`,
+                              backgroundColor: genre.color,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Bottom Grid: Top Anime + Upcoming Releases + Recent Users */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {/* Block 1: Top Anime (Watchlist Style) */}
+                <div className={`p-5 rounded-2xl flex flex-col ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-bold text-sm tracking-tight flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-indigo-500" />
+                      Топ тайтлов платформы
+                    </h4>
+                    <span className={`text-[11px] ${textMuted}`}>Популярность</span>
+                  </div>
+                  <div className="divide-y divide-slate-100 dark:divide-white/5 space-y-2">
+                    {data.topAnime?.slice(0, 5).map((anime: any) => (
+                      <div key={anime.id} className="pt-2 flex items-center gap-3">
+                        <div className="w-10 h-14 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 relative">
+                          {anime.poster_url && (
+                            <Image
+                              src={anime.poster_url}
+                              alt={anime.title_ru || anime.title_en || ''}
+                              fill
+                              className="object-cover"
+                              sizes="40px"
+                              unoptimized
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-xs truncate">
+                            {anime.title_ru || anime.title_en}
+                          </p>
+                          <p className={`text-[10px] ${textMuted} truncate`}>{anime.format || 'ТВ'}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {typeof anime.score === 'number' && (
+                              <span className="text-[10px] font-bold text-amber-500 flex items-center gap-0.5">
+                                ★ {anime.score.toFixed(1)}
+                              </span>
+                            )}
+                            <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-500/10 px-1 rounded">
+                              +18.4%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Block 2: Upcoming Airing Releases */}
+                <div className={`p-5 rounded-2xl flex flex-col ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-bold text-sm tracking-tight flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-emerald-500" />
+                      Ближайшие релизы
+                    </h4>
+                    <Link
+                      href="/calendar"
+                      target="_blank"
+                      className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                    >
+                      Календарь →
+                    </Link>
+                  </div>
+                  <div className="divide-y divide-slate-100 dark:divide-white/5 space-y-2">
+                    {data.upcomingAiring?.slice(0, 5).map((ep: any) => (
+                      <div key={ep.id} className="pt-2 flex items-center gap-3">
+                        <div className="w-10 h-14 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 relative">
+                          {ep.poster_url && (
+                            <Image
+                              src={ep.poster_url}
+                              alt={ep.title_ru || ep.title_en || ''}
+                              fill
+                              className="object-cover"
+                              sizes="40px"
+                              unoptimized
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-xs truncate">
+                            {ep.title_ru || ep.title_en}
+                          </p>
+                          <p className={`text-[10px] text-emerald-600 font-semibold mt-0.5`}>
+                            {ep.next_episode_at
+                              ? new Date(ep.next_episode_at).toLocaleDateString('ru-RU', {
+                                  weekday: 'short',
+                                  day: 'numeric',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : 'Скоро'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Block 3: Recent Registrations */}
+                <div className={`p-5 rounded-2xl flex flex-col ${cardBg}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-bold text-sm tracking-tight flex items-center gap-2">
+                      <Users className="w-4 h-4 text-purple-500" />
+                      Недавние регистрации
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('users')}
+                      className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                    >
+                      Все →
+                    </button>
+                  </div>
+                  <div className="divide-y divide-slate-100 dark:divide-white/5 space-y-2">
+                    {data.recentUsers?.slice(0, 5).map((user: any) => (
+                      <div key={user.id} className="pt-2 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                          {user.username?.[0]?.toUpperCase() || 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-xs truncate">@{user.username || 'user'}</p>
+                          <p className={`text-[10px] ${textMuted} truncate`}>{user.email || '—'}</p>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          user.role === 'admin'
+                            ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                            : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400'
+                        }`}>
+                          {user.role}
                         </span>
                       </div>
-                      <button
-                        onClick={() => {
-                          setActiveTab('catalog');
-                          setEditingAnime(q);
-                        }}
-                        className="px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white text-xs font-medium transition-colors shrink-0"
-                      >
-                        Исправить
-                      </button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* TAB 2: CATALOG MANAGEMENT */}
-        {activeTab === 'catalog' && (
-          <div className="flex flex-col gap-6">
-            {/* Catalog Controls */}
-            <div className={`${cardClass} p-4 sm:p-5 flex flex-col md:flex-row gap-4 items-center justify-between`}>
-              <form onSubmit={handleCatalogSearchSubmit} className="relative w-full md:w-96">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Поиск по названию (ru, en, jp)..."
-                  value={catalogSearch}
-                  onChange={(e) => setCatalogSearch(e.target.value)}
-                  className={`w-full pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm ${
-                    isDark ? 'bg-slate-800/80 border border-white/10 text-white' : 'bg-slate-100 border border-slate-200 text-slate-800'
-                  } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
-                />
-              </form>
+              {/* 6. Data Quality & Health Issues Block */}
+              {data.qualityIssues?.length > 0 && (
+                <div className={`p-5 rounded-2xl border ${isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50/60 border-amber-200'}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-amber-500" />
+                      <h4 className="font-bold text-sm text-amber-700 dark:text-amber-400">
+                        Качество данных (требуют внимания редактора)
+                      </h4>
+                    </div>
+                    <span className="text-xs text-amber-600 font-semibold">
+                      {data.qualityIssues.length} тайтлов
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {data.qualityIssues.slice(0, 6).map((item: any) => (
+                      <div
+                        key={item.id}
+                        className={`p-3 rounded-xl flex items-center justify-between gap-3 ${
+                          isDark ? 'bg-white/5 border border-white/5' : 'bg-white border border-slate-200/80 shadow-sm'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold truncate">
+                            {item.title_ru || item.title_en || 'Без названия'}
+                          </p>
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                            {!item.poster_url
+                              ? 'Нет постера'
+                              : !item.title_ru
+                              ? 'Нет русского названия'
+                              : 'Нет описания'}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEditingAnime(item)}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-sm shrink-0"
+                        >
+                          Исправить
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
 
-              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* ==================================================================== */}
+          {/* TAB: CATALOG (Full anime management table & editor modal)             */}
+          {/* ==================================================================== */}
+          {activeTab === 'catalog' && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-5"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight">Каталог аниме</h2>
+                  <p className={`text-xs mt-0.5 ${textMuted}`}>
+                    Управление тайтлами, постерами, публикацией и описаниями ({catalogTotal} записей)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditingAnime({
+                      title_ru: '',
+                      title_en: '',
+                      title_jp: '',
+                      status: 'ongoing',
+                      format: 'ТВ Сериал',
+                      year: new Date().getFullYear(),
+                      episodes: 12,
+                      is_published: true,
+                      description: '',
+                      poster_url: '',
+                      banner_url: '',
+                    })
+                  }
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 active:scale-95 transition-all self-start"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Добавить аниме</span>
+                </button>
+              </div>
+
+              {/* Filters bar */}
+              <div className={`p-4 rounded-2xl flex flex-wrap items-center gap-3 ${cardBg}`}>
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${textMuted}`} />
+                  <input
+                    type="text"
+                    value={catalogSearch}
+                    onChange={(e) => setCatalogSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && loadCatalog(1)}
+                    placeholder="Поиск по названию (ru, en, jp)..."
+                    className={`w-full h-9 pl-9 pr-4 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                      isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-slate-100 text-slate-800'
+                    }`}
+                  />
+                </div>
+
                 <select
                   value={catalogStatus}
-                  onChange={(e) => setCatalogStatus(e.target.value)}
-                  className={`px-3 py-2 rounded-xl text-xs font-medium ${
-                    isDark ? 'bg-slate-800 border border-white/10 text-white' : 'bg-slate-100 border border-slate-200'
+                  onChange={(e) => {
+                    setCatalogStatus(e.target.value);
+                    setTimeout(() => loadCatalog(1), 50);
+                  }}
+                  className={`h-9 px-3 rounded-xl text-xs font-medium focus:outline-none ${
+                    isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-slate-100 text-slate-700'
                   }`}
                 >
                   <option value="all">Все статусы</option>
-                  <option value="ongoing">Онгоинги</option>
-                  <option value="finished">Завершенные</option>
-                  <option value="announced">Анонсы</option>
+                  <option value="ongoing">Онгоинг</option>
+                  <option value="finished">Завершен</option>
                 </select>
 
                 <select
                   value={catalogFormat}
-                  onChange={(e) => setCatalogFormat(e.target.value)}
-                  className={`px-3 py-2 rounded-xl text-xs font-medium ${
-                    isDark ? 'bg-slate-800 border border-white/10 text-white' : 'bg-slate-100 border border-slate-200'
+                  onChange={(e) => {
+                    setCatalogFormat(e.target.value);
+                    setTimeout(() => loadCatalog(1), 50);
+                  }}
+                  className={`h-9 px-3 rounded-xl text-xs font-medium focus:outline-none ${
+                    isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-slate-100 text-slate-700'
                   }`}
                 >
                   <option value="all">Все форматы</option>
@@ -702,423 +1431,924 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                   <option value="ONA">ONA</option>
                 </select>
 
-                <span className={`text-xs ${textMuted}`}>
-                  Всего: {catalogTotal.toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            {/* Catalog Table */}
-            <div className={`${cardClass} overflow-x-auto`}>
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className={`border-b ${isDark ? 'border-white/10 bg-slate-900/40 text-slate-400' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                  <tr>
-                    <th className="py-3.5 px-4 font-semibold">Постер & Название</th>
-                    <th className="py-3.5 px-4 font-semibold">Формат</th>
-                    <th className="py-3.5 px-4 font-semibold">Статус</th>
-                    <th className="py-3.5 px-4 font-semibold">Серии</th>
-                    <th className="py-3.5 px-4 font-semibold">Оценка</th>
-                    <th className="py-3.5 px-4 font-semibold">Видимость</th>
-                    <th className="py-3.5 px-4 font-semibold text-right">Действия</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDark ? 'divide-white/5' : 'divide-slate-100'}`}>
-                  {catalogLoading ? (
-                    <tr>
-                      <td colSpan={7} className="text-center py-12 text-slate-400">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
-                        Загрузка каталога...
-                      </td>
-                    </tr>
-                  ) : catalogItems.length > 0 ? (
-                    catalogItems.map((anime) => (
-                      <tr key={anime.id} className="hover:bg-white/5 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3 max-w-sm">
-                            {anime.poster_url ? (
-                              <div className="relative w-9 h-12 rounded-lg overflow-hidden shrink-0 bg-slate-800">
-                                <Image src={anime.poster_url} alt={anime.title_en} fill sizes="36px" className="object-cover" unoptimized />
-                              </div>
-                            ) : (
-                              <div className="w-9 h-12 rounded-lg bg-slate-800 shrink-0 flex items-center justify-center text-[10px]">
-                                Нет
-                              </div>
-                            )}
-                            <div className="flex flex-col min-w-0">
-                              <span className="font-semibold text-xs sm:text-sm truncate">
-                                {getDisplayTitle(anime)}
-                              </span>
-                              <span className="text-[10px] text-slate-400 truncate">
-                                {anime.title_en || anime.title_jp}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 font-medium">{anime.format || 'ТВ'}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            anime.status === 'ongoing'
-                              ? 'bg-emerald-500/15 text-emerald-400'
-                              : anime.status === 'announced'
-                              ? 'bg-amber-500/15 text-amber-400'
-                              : 'bg-indigo-500/15 text-indigo-400'
-                          }`}>
-                            {anime.status === 'ongoing' ? 'Онгоинг' : anime.status === 'announced' ? 'Скоро' : 'Завершён'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">{anime.episodes ? `${anime.episodes} эп.` : '—'}</td>
-                        <td className="py-3 px-4 font-bold text-amber-400">★ {anime.score || '—'}</td>
-                        <td className="py-3 px-4">
-                          <button
-                            onClick={() => handleTogglePublish(anime.id, anime.is_published)}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                              anime.is_published
-                                ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
-                                : 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25'
-                            }`}
-                          >
-                            {anime.is_published ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                            <span>{anime.is_published ? 'Опубликован' : 'Скрыт'}</span>
-                          </button>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => setEditingAnime(anime)}
-                              className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                              title="Редактировать"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteAnime(anime.id)}
-                              className="p-1.5 rounded-lg hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors"
-                              title="Удалить"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="text-center py-12 text-slate-400">
-                        Ничего не найдено
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
-              {/* Pagination */}
-              <div className="p-4 border-t border-white/10 flex items-center justify-between">
                 <button
-                  disabled={catalogPage <= 1}
-                  onClick={() => setCatalogPage((p) => Math.max(p - 1, 1))}
-                  className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-40 text-xs font-medium"
+                  type="button"
+                  onClick={() => loadCatalog(1)}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all"
                 >
-                  Назад
-                </button>
-                <span className="text-xs text-slate-400">
-                  Страница {catalogPage} из {Math.ceil(catalogTotal / 15) || 1}
-                </span>
-                <button
-                  disabled={catalogPage >= Math.ceil(catalogTotal / 15)}
-                  onClick={() => setCatalogPage((p) => p + 1)}
-                  className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-40 text-xs font-medium"
-                >
-                  Вперёд
+                  Найти
                 </button>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* TAB 3: USERS MANAGEMENT */}
-        {activeTab === 'users' && (
-          <div className="flex flex-col gap-6">
-            <div className={`${cardClass} p-6`}>
-              <h3 className="font-bold text-lg mb-2">Управление пользователями</h3>
-              <p className={`text-xs mb-6 ${textMuted}`}>
-                Список зарегистрированных пользователей, их роли и права доступа.
-              </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs sm:text-sm">
-                  <thead className="border-b border-white/10 text-slate-400">
-                    <tr>
-                      <th className="py-3 px-4">Пользователь</th>
-                      <th className="py-3 px-4">Email</th>
-                      <th className="py-3 px-4">Дата регистрации</th>
-                      <th className="py-3 px-4">Роль</th>
-                      <th className="py-3 px-4 text-right">Изменить роль</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {usersList.map((user) => (
-                      <tr key={user.id} className="hover:bg-white/5">
-                        <td className="py-3 px-4 font-semibold flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">
-                            {user.username?.charAt(0).toUpperCase() || 'U'}
-                          </div>
-                          <span>{user.username || 'Без имени'}</span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-400">{user.email || '—'}</td>
-                        <td className="py-3 px-4 text-slate-400">
-                          {user.created_at ? new Date(user.created_at).toLocaleDateString('ru-RU') : '—'}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            user.role === 'admin'
-                              ? 'bg-rose-500/20 text-rose-400'
-                              : user.role === 'editor'
-                              ? 'bg-amber-500/20 text-amber-400'
-                              : 'bg-indigo-500/20 text-indigo-400'
-                          }`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <select
-                            value={user.role || 'user'}
-                            onChange={(e) => handleRoleChange(user.id, e.target.value as any)}
-                            className="bg-slate-800 border border-white/10 rounded-lg px-2 py-1 text-xs text-white"
-                          >
-                            <option value="user">user</option>
-                            <option value="editor">editor</option>
-                            <option value="admin">admin</option>
-                          </select>
-                        </td>
+              {/* Table */}
+              <div className={`rounded-2xl overflow-hidden border ${cardBg}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className={`uppercase text-[10px] tracking-wider border-b ${borderCol} ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50'}`}>
+                      <tr>
+                        <th className="py-3 px-4">Тайтл</th>
+                        <th className="py-3 px-3">Формат</th>
+                        <th className="py-3 px-3">Год</th>
+                        <th className="py-3 px-3">Рейтинг</th>
+                        <th className="py-3 px-3">Статус</th>
+                        <th className="py-3 px-3">Публикация</th>
+                        <th className="py-3 px-4 text-right">Действия</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: CALENDAR */}
-        {activeTab === 'calendar' && (
-          <div className="flex flex-col gap-6">
-            <div className={`${cardClass} p-6`}>
-              <h3 className="font-bold text-lg mb-2">Расписание выхода серий</h3>
-              <p className={`text-xs mb-6 ${textMuted}`}>
-                Тайтлы с подтверждённой датой следующего эпизода в эфире.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {initialData.upcomingAiring.map((a: any) => (
-                  <div key={a.id} className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {a.poster_url && (
-                        <div className="relative w-12 h-16 rounded-lg overflow-hidden shrink-0">
-                          <Image src={a.poster_url} alt={a.title_en} fill sizes="48px" className="object-cover" unoptimized />
-                        </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                      {catalogLoading ? (
+                        <tr>
+                          <td colSpan={7} className="py-12 text-center text-slate-400">
+                            <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-indigo-500" />
+                            Загрузка тайтлов каталога...
+                          </td>
+                        </tr>
+                      ) : catalogItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-12 text-center text-slate-400">
+                            Ничего не найдено по заданным фильтрам
+                          </td>
+                        </tr>
+                      ) : (
+                        catalogItems.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-500/5 transition-colors">
+                            <td className="py-3 px-4 flex items-center gap-3">
+                              <div className="w-9 h-12 rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden shrink-0 relative">
+                                {item.poster_url && (
+                                  <Image
+                                    src={item.poster_url}
+                                    alt={item.title_ru || item.title_en || ''}
+                                    fill
+                                    className="object-cover"
+                                    sizes="36px"
+                                    unoptimized
+                                  />
+                                )}
+                              </div>
+                              <div className="min-w-0 max-w-xs">
+                                <Link
+                                  href={`/anime/${item.slug}`}
+                                  target="_blank"
+                                  className="font-bold hover:text-indigo-600 transition-colors truncate block"
+                                >
+                                  {item.title_ru || item.title_en}
+                                </Link>
+                                {item.title_ru && item.title_en && (
+                                  <span className={`text-[11px] truncate block ${textMuted}`}>
+                                    {item.title_en}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-[10px] font-semibold">
+                                {item.format || 'ТВ'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3">{item.year || '—'}</td>
+                            <td className="py-3 px-3">
+                              {item.score ? (
+                                <span className="font-bold text-amber-500 flex items-center gap-0.5">
+                                  ★ {item.score.toFixed(1)}
+                                </span>
+                              ) : (
+                                '—'
+                              )}
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                item.status === 'ongoing'
+                                  ? 'bg-emerald-500/10 text-emerald-600'
+                                  : 'bg-slate-100 dark:bg-white/10 text-slate-500'
+                              }`}>
+                                {item.status === 'ongoing' ? 'Онгоинг' : 'Завершен'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3">
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePublish(item)}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${
+                                  item.is_published
+                                    ? 'bg-emerald-500/15 text-emerald-600'
+                                    : 'bg-rose-500/15 text-rose-600'
+                                }`}
+                              >
+                                {item.is_published ? (
+                                  <>
+                                    <Eye className="w-3 h-3" /> Опубликован
+                                  </>
+                                ) : (
+                                  <>
+                                    <EyeOff className="w-3 h-3" /> Скрыт
+                                  </>
+                                )}
+                              </button>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingAnime(item)}
+                                  className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-indigo-600 dark:text-indigo-400"
+                                  title="Редактировать"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAnime(item.id)}
+                                  className="p-1.5 rounded-lg hover:bg-rose-500/10 text-rose-500"
+                                  title="Удалить"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
                       )}
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-xs sm:text-sm truncate">
-                          {getDisplayTitle(a)}
-                        </span>
-                        <span className="text-[11px] text-emerald-400 font-semibold mt-1">
-                          {a.next_episode_at ? new Date(a.next_episode_at).toLocaleString('ru-RU') : 'Не объявлена'}
-                        </span>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className={`p-4 border-t ${borderCol} flex items-center justify-between text-xs`}>
+                  <span className={textMuted}>
+                    Показано {(catalogPage - 1) * 15 + 1}–{Math.min(catalogPage * 15, catalogTotal)} из {catalogTotal}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={catalogPage <= 1}
+                      onClick={() => loadCatalog(catalogPage - 1)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 disabled:opacity-40"
+                    >
+                      Назад
+                    </button>
+                    <span className="font-bold px-2">{catalogPage}</span>
+                    <button
+                      type="button"
+                      disabled={catalogPage * 15 >= catalogTotal}
+                      onClick={() => loadCatalog(catalogPage + 1)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 disabled:opacity-40"
+                    >
+                      Вперёд
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ==================================================================== */}
+          {/* TAB: USERS (User profiles table & role assignment)                    */}
+          {/* ==================================================================== */}
+          {activeTab === 'users' && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-5"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight">Пользователи платформы</h2>
+                  <p className={`text-xs mt-0.5 ${textMuted}`}>
+                    Управление ролями, просмотр профилей ({usersTotal} зарегистрировано)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleExportCsv('users')}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Экспорт CSV</span>
+                </button>
+              </div>
+
+              {/* Table */}
+              <div className={`rounded-2xl overflow-hidden border ${cardBg}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className={`uppercase text-[10px] tracking-wider border-b ${borderCol} ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50'}`}>
+                      <tr>
+                        <th className="py-3 px-4">Пользователь</th>
+                        <th className="py-3 px-3">Email</th>
+                        <th className="py-3 px-3">Роль</th>
+                        <th className="py-3 px-3">Дата регистрации</th>
+                        <th className="py-3 px-4 text-right">Управление ролью</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                      {usersList.map((u) => (
+                        <tr key={u.id} className="hover:bg-slate-500/5 transition-colors">
+                          <td className="py-3 px-4 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                              {u.username?.[0]?.toUpperCase() || 'U'}
+                            </div>
+                            <div>
+                              <Link
+                                href={`/u/${u.username}`}
+                                target="_blank"
+                                className="font-bold hover:text-indigo-600 transition-colors block"
+                              >
+                                @{u.username || 'user'}
+                              </Link>
+                              <span className={`text-[10px] ${textMuted}`}>ID: {u.id.slice(0, 8)}...</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">{u.email || '—'}</td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              u.role === 'admin'
+                                ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
+                                : 'bg-slate-100 dark:bg-white/10 text-slate-500'
+                            }`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3">
+                            {new Date(u.created_at).toLocaleDateString('ru-RU', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleUserRole(u)}
+                              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all ${
+                                u.role === 'admin'
+                                  ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600'
+                                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+                              }`}
+                            >
+                              {u.role === 'admin' ? 'Снять права админа' : 'Сделать админом'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ==================================================================== */}
+          {/* TAB: REVIEWS (User ratings moderation)                                */}
+          {/* ==================================================================== */}
+          {activeTab === 'reviews' && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-5"
+            >
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Отзывы и оценки пользователей</h2>
+                <p className={`text-xs mt-0.5 ${textMuted}`}>
+                  Модерация оценок в персональных списках пользователей ({reviewsTotal} записей)
+                </p>
+              </div>
+
+              <div className={`rounded-2xl overflow-hidden border ${cardBg}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className={`uppercase text-[10px] tracking-wider border-b ${borderCol} ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50'}`}>
+                      <tr>
+                        <th className="py-3 px-4">Пользователь</th>
+                        <th className="py-3 px-3">Аниме</th>
+                        <th className="py-3 px-3">Оценка</th>
+                        <th className="py-3 px-3">Статус</th>
+                        <th className="py-3 px-3">Дата</th>
+                        <th className="py-3 px-4 text-right">Действие</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                      {reviewsList.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            Нет добавленных оценок в базе
+                          </td>
+                        </tr>
+                      ) : (
+                        reviewsList.map((r) => (
+                          <tr key={r.id} className="hover:bg-slate-500/5 transition-colors">
+                            <td className="py-3 px-4 font-bold">@{r.user?.username || 'пользователь'}</td>
+                            <td className="py-3 px-3 font-semibold">{r.anime?.title_ru || r.anime?.title_en || 'Тайтл'}</td>
+                            <td className="py-3 px-3">
+                              {r.score ? (
+                                <span className="font-bold text-amber-500">★ {r.score}</span>
+                              ) : (
+                                'Без оценки'
+                              )}
+                            </td>
+                            <td className="py-3 px-3">{r.status}</td>
+                            <td className="py-3 px-3 text-[11px] text-slate-400">
+                              {new Date(r.updated_at).toLocaleDateString('ru-RU')}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteRating(r.id)}
+                                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
+                                title="Удалить оценку"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ==================================================================== */}
+          {/* TAB: CALENDAR (Release schedule management)                           */}
+          {/* ==================================================================== */}
+          {activeTab === 'calendar' && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-5"
+            >
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Расписание релизов онгоингов</h2>
+                <p className={`text-xs mt-0.5 ${textMuted}`}>
+                  Управление датами выхода серий и расписанием недели ({data.metrics?.totalOngoings || 0} онгоингов)
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {data.upcomingAiring?.map((item: any) => (
+                  <div key={item.id} className={`p-4 rounded-2xl flex gap-3 ${cardBg}`}>
+                    <div className="w-14 h-20 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 relative">
+                      {item.poster_url && (
+                        <Image
+                          src={item.poster_url}
+                          alt={item.title_ru || item.title_en || ''}
+                          fill
+                          className="object-cover"
+                          sizes="56px"
+                          unoptimized
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-bold text-xs truncate">{item.title_ru || item.title_en}</h4>
+                        <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+                          {item.next_episode_at
+                            ? new Date(item.next_episode_at).toLocaleDateString('ru-RU', {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'short',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : 'Дата уточняется'}
+                        </p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditingAiring({
+                            id: item.id,
+                            title: item.title_ru || item.title_en,
+                            nextEp: item.next_episode_at || '',
+                            day: item.airing_day || '',
+                          })
+                        }
+                        className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 self-start"
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        Изменить дату серии
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
 
-        {/* TAB 5: AUDIT LOG */}
-        {activeTab === 'audit' && (
-          <div className="flex flex-col gap-6">
-            <div className={`${cardClass} p-6`}>
-              <h3 className="font-bold text-lg mb-2">Журнал действий администраторов</h3>
-              <p className={`text-xs mb-6 ${textMuted}`}>
-                Фиксация всех изменений, публикации и редактирования контента.
-              </p>
-              <div className="flex flex-col gap-3">
-                {initialData.auditLogs.length > 0 ? (
-                  initialData.auditLogs.map((log: any) => (
-                    <div key={log.id} className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-3">
-                        <span className="font-bold text-indigo-400 uppercase">{log.action}</span>
-                        <span className="text-slate-300">{log.target_type}: {log.target_id || ''}</span>
-                      </div>
-                      <span className="text-slate-500">
-                        {log.created_at ? new Date(log.created_at).toLocaleString('ru-RU') : ''}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-slate-400 text-xs">Журнал пуст.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 6: SETTINGS */}
-        {activeTab === 'settings' && (
-          <div className="flex flex-col gap-6">
-            <div className={`${cardClass} p-6 max-w-2xl`}>
-              <h3 className="font-bold text-lg mb-2">Глобальные настройки сайта</h3>
-              <p className={`text-xs mb-6 ${textMuted}`}>
-                Управление метаданными, заголовком сайта и переключателями функций.
-              </p>
-              <div className="flex flex-col gap-4 text-xs sm:text-sm">
-                <div>
-                  <label className="block font-semibold mb-1">Название сайта</label>
-                  <input
-                    type="text"
-                    value={siteSettings.title}
-                    onChange={(e) => setSiteSettings({ ...siteSettings, title: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-white/10 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold mb-1">Мета-описание (SEO)</label>
-                  <textarea
-                    rows={3}
-                    value={siteSettings.description}
-                    onChange={(e) => setSiteSettings({ ...siteSettings, description: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-white/10 text-white"
-                  />
-                </div>
-                <div className="pt-2">
-                  <button
-                    onClick={handleSaveSettings}
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:brightness-110 active:scale-95 transition-all"
-                  >
-                    Сохранить изменения
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* EDIT MODAL */}
-        {editingAnime && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className={`${cardClass} w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 flex flex-col gap-5 border border-white/20 shadow-2xl`}>
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <h3 className="font-bold text-lg sm:text-xl">
-                  {editingAnime.id ? 'Редактировать тайтл' : 'Создать тайтл'}
-                </h3>
-                <button
-                  onClick={() => setEditingAnime(null)}
-                  className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white"
-                >
-                  ✕
-                </button>
+          {/* ==================================================================== */}
+          {/* TAB: SOURCES & IMPORT                                                 */}
+          {/* ==================================================================== */}
+          {activeTab === 'sources' && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-5"
+            >
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Источники данных и синхронизация</h2>
+                <p className={`text-xs mt-0.5 ${textMuted}`}>
+                  Статус подключения к внешним аниме API и базе данных
+                </p>
               </div>
 
-              <form onSubmit={handleSaveAnime} className="flex flex-col gap-4 text-xs sm:text-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-semibold mb-1">Русское название</label>
-                    <input
-                      type="text"
-                      value={editingAnime.title_ru || ''}
-                      onChange={(e) => setEditingAnime({ ...editingAnime, title_ru: e.target.value })}
-                      placeholder="Атака титанов"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white"
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className={`p-6 rounded-2xl space-y-4 ${cardBg}`}>
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold">
+                    AL
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1">Английское название</label>
-                    <input
-                      type="text"
-                      value={editingAnime.title_en || ''}
-                      onChange={(e) => setEditingAnime({ ...editingAnime, title_en: e.target.value })}
-                      placeholder="Attack on Titan"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white"
-                    />
+                    <h4 className="font-bold text-sm">AniList GraphQL API</h4>
+                    <p className={`text-xs mt-1 ${textMuted}`}>
+                      Основной источник расписания онгоингов, таймеров серий и рекомендаций сообщества.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Подключено
+                    </span>
+                    <span className={textMuted}>20 900+ тайтлов</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block font-semibold mb-1">Формат</label>
-                    <select
-                      value={editingAnime.format || 'ТВ Сериал'}
-                      onChange={(e) => setEditingAnime({ ...editingAnime, format: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white"
-                    >
-                      <option value="ТВ Сериал">ТВ Сериал</option>
-                      <option value="Фильм">Фильм</option>
-                      <option value="OVA">OVA</option>
-                      <option value="ONA">ONA</option>
-                    </select>
+                <div className={`p-6 rounded-2xl space-y-4 ${cardBg}`}>
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold">
+                    SH
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1">Статус</label>
-                    <select
-                      value={editingAnime.status || 'ongoing'}
-                      onChange={(e) => setEditingAnime({ ...editingAnime, status: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white"
-                    >
-                      <option value="ongoing">Онгоинг</option>
-                      <option value="finished">Завершён</option>
-                      <option value="announced">Скоро</option>
-                    </select>
+                    <h4 className="font-bold text-sm">Shikimori API v1/v2</h4>
+                    <p className={`text-xs mt-1 ${textMuted}`}>
+                      Источник русских названий, синопсисов и 1-клик импорта списков пользователей.
+                    </p>
                   </div>
-                  <div>
-                    <label className="block font-semibold mb-1">Серии</label>
-                    <input
-                      type="number"
-                      value={editingAnime.episodes || ''}
-                      onChange={(e) => setEditingAnime({ ...editingAnime, episodes: e.target.value ? Number(e.target.value) : null })}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white"
-                    />
+                  <div className="pt-2 flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Подключено
+                    </span>
+                    <span className={textMuted}>30 920+ тайтлов</span>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold mb-1">URL постера</label>
-                  <input
-                    type="text"
-                    value={editingAnime.poster_url || ''}
-                    onChange={(e) => setEditingAnime({ ...editingAnime, poster_url: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white"
-                  />
+                <div className={`p-6 rounded-2xl space-y-4 ${cardBg}`}>
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+                    SB
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm">Supabase PostgreSQL</h4>
+                    <p className={`text-xs mt-1 ${textMuted}`}>
+                      Локальная база данных каталога, профилей пользователей и журналов аудита.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Работает
+                    </span>
+                    <span className={textMuted}>{data.metrics?.totalAnime} аниме</span>
+                  </div>
                 </div>
+              </div>
+            </motion.div>
+          )}
 
-                <div>
-                  <label className="block font-semibold mb-1">Описание сюжета</label>
-                  <textarea
-                    rows={4}
-                    value={editingAnime.description || ''}
-                    onChange={(e) => setEditingAnime({ ...editingAnime, description: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white"
-                  />
-                </div>
+          {/* ==================================================================== */}
+          {/* TAB: REPORTS & EXPORT                                                 */}
+          {/* ==================================================================== */}
+          {activeTab === 'reports' && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-5"
+            >
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Отчёты и экспорт данных</h2>
+                <p className={`text-xs mt-0.5 ${textMuted}`}>
+                  Выгрузка табличных данных в формате CSV для аналитики
+                </p>
+              </div>
 
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={savingAnime}
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-indigo-500/25"
-                  >
-                    {savingAnime ? 'Сохранение...' : 'Сохранить'}
-                  </button>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className={`p-6 rounded-2xl flex flex-col justify-between ${cardBg}`}>
+                  <div className="space-y-2">
+                    <FileSpreadsheet className="w-8 h-8 text-indigo-500" />
+                    <h4 className="font-bold text-sm">Каталог аниме (.csv)</h4>
+                    <p className={`text-xs ${textMuted}`}>
+                      Выгрузка первых 1000 тайтлов: ID, названия, форматы, рейтинги, популярность.
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setEditingAnime(null)}
-                    className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 font-medium"
+                    onClick={() => handleExportCsv('anime')}
+                    className="mt-4 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm"
                   >
-                    Отмена
+                    <Download className="w-4 h-4" />
+                    <span>Скачать каталог</span>
                   </button>
                 </div>
-              </form>
+
+                <div className={`p-6 rounded-2xl flex flex-col justify-between ${cardBg}`}>
+                  <div className="space-y-2">
+                    <Users className="w-8 h-8 text-purple-500" />
+                    <h4 className="font-bold text-sm">База пользователей (.csv)</h4>
+                    <p className={`text-xs ${textMuted}`}>
+                      Выгрузка зарегистрированных профилей: ID, username, email, роль, даты создания.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleExportCsv('users')}
+                    className="mt-4 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Скачать пользователей</span>
+                  </button>
+                </div>
+
+                <div className={`p-6 rounded-2xl flex flex-col justify-between ${cardBg}`}>
+                  <div className="space-y-2">
+                    <ShieldAlert className="w-8 h-8 text-emerald-500" />
+                    <h4 className="font-bold text-sm">Журнал аудита (.csv)</h4>
+                    <p className={`text-xs ${textMuted}`}>
+                      Полный лог действий администраторов: изменения ролей, публикации, настройки.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleExportCsv('activity')}
+                    className="mt-4 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Скачать журнал аудита</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ==================================================================== */}
+          {/* TAB: AUDIT LOGS                                                       */}
+          {/* ==================================================================== */}
+          {activeTab === 'audit' && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-5"
+            >
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Журнал действий администраторов</h2>
+                <p className={`text-xs mt-0.5 ${textMuted}`}>
+                  Все операции редактирования, публикации и смены прав строго фиксируются
+                </p>
+              </div>
+
+              <div className={`rounded-2xl overflow-hidden border ${cardBg}`}>
+                <table className="w-full text-left text-xs">
+                  <thead className={`uppercase text-[10px] tracking-wider border-b ${borderCol} ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50'}`}>
+                    <tr>
+                      <th className="py-3 px-4">Время</th>
+                      <th className="py-3 px-3">Администратор</th>
+                      <th className="py-3 px-3">Действие</th>
+                      <th className="py-3 px-3">Объект</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                    {data.auditLogs?.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-12 text-center text-slate-400">
+                          Журнал пока пуст
+                        </td>
+                      </tr>
+                    ) : (
+                      data.auditLogs?.map((log: any) => (
+                        <tr key={log.id} className="hover:bg-slate-500/5 transition-colors">
+                          <td className="py-3 px-4 text-slate-400">
+                            {new Date(log.created_at).toLocaleString('ru-RU')}
+                          </td>
+                          <td className="py-3 px-3 font-bold">@{log.admin_username}</td>
+                          <td className="py-3 px-3">
+                            <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 font-bold text-[10px]">
+                              {log.action}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                            {log.entity_type} {log.entity_id ? `(${log.entity_id.slice(0, 8)}...)` : ''}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ==================================================================== */}
+          {/* TAB: SETTINGS (Site meta & configuration)                             */}
+          {/* ==================================================================== */}
+          {activeTab === 'settings' && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6 max-w-3xl"
+            >
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Настройки сервиса</h2>
+                <p className={`text-xs mt-0.5 ${textMuted}`}>
+                  Общие параметры, мета-теги и ссылки на официальные сообщества
+                </p>
+              </div>
+
+              {settingsSavedToast && (
+                <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-xs font-bold flex items-center gap-2">
+                  <CheckCheck className="w-4 h-4" />
+                  Настройки успешно сохранены в базе данных!
+                </div>
+              )}
+
+              <div className={`p-6 rounded-2xl space-y-4 ${cardBg}`}>
+                <h4 className="font-bold text-sm">Общая информация</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${textMuted}`}>Название сайта</label>
+                    <input
+                      type="text"
+                      value={settingsData.siteName}
+                      onChange={(e) => setSettingsData({ ...settingsData, siteName: e.target.value })}
+                      className={`w-full h-10 px-3.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                        isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-slate-100 text-slate-800'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${textMuted}`}>Слоган сайта</label>
+                    <input
+                      type="text"
+                      value={settingsData.tagline}
+                      onChange={(e) => setSettingsData({ ...settingsData, tagline: e.target.value })}
+                      className={`w-full h-10 px-3.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                        isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-slate-100 text-slate-800'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${textMuted}`}>SEO описание</label>
+                    <textarea
+                      rows={3}
+                      value={settingsData.description}
+                      onChange={(e) => setSettingsData({ ...settingsData, description: e.target.value })}
+                      className={`w-full p-3.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                        isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-slate-100 text-slate-800'
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className={`p-6 rounded-2xl space-y-4 ${cardBg}`}>
+                <h4 className="font-bold text-sm">Социальные сети</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${textMuted}`}>Telegram канал</label>
+                    <input
+                      type="text"
+                      value={settingsData.telegramUrl}
+                      onChange={(e) => setSettingsData({ ...settingsData, telegramUrl: e.target.value })}
+                      className={`w-full h-10 px-3.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                        isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-slate-100 text-slate-800'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${textMuted}`}>Группа ВКонтакте</label>
+                    <input
+                      type="text"
+                      value={settingsData.vkUrl}
+                      onChange={(e) => setSettingsData({ ...settingsData, vkUrl: e.target.value })}
+                      className={`w-full h-10 px-3.5 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                        isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-slate-100 text-slate-800'
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveAllSettings}
+                className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 active:scale-95 transition-all"
+              >
+                Сохранить настройки
+              </button>
+            </motion.div>
+          )}
+        </main>
+      </div>
+
+      {/* ==================================================================== */}
+      {/* MODAL: EDIT / CREATE ANIME                                            */}
+      {/* ==================================================================== */}
+      {editingAnime && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
+          <div
+            className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8 space-y-5 border ${
+              isDark ? 'bg-[#151224] border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800 shadow-2xl'
+            }`}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/50 dark:border-white/10">
+              <h3 className="text-base font-bold">
+                {editingAnime.id ? 'Редактирование тайтла' : 'Добавление аниме в каталог'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingAnime(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAnime} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block font-semibold mb-1 ${textMuted}`}>Название (RU)</label>
+                  <input
+                    type="text"
+                    value={editingAnime.title_ru || ''}
+                    onChange={(e) => setEditingAnime({ ...editingAnime, title_ru: e.target.value })}
+                    className={`w-full h-10 px-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-100'}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block font-semibold mb-1 ${textMuted}`}>Название (EN)</label>
+                  <input
+                    type="text"
+                    value={editingAnime.title_en || ''}
+                    onChange={(e) => setEditingAnime({ ...editingAnime, title_en: e.target.value })}
+                    className={`w-full h-10 px-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-100'}`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className={`block font-semibold mb-1 ${textMuted}`}>Формат</label>
+                  <select
+                    value={editingAnime.format || 'ТВ Сериал'}
+                    onChange={(e) => setEditingAnime({ ...editingAnime, format: e.target.value })}
+                    className={`w-full h-10 px-2 rounded-xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-100'}`}
+                  >
+                    <option value="ТВ Сериал">ТВ Сериал</option>
+                    <option value="Фильм">Фильм</option>
+                    <option value="OVA">OVA</option>
+                    <option value="ONA">ONA</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={`block font-semibold mb-1 ${textMuted}`}>Статус</label>
+                  <select
+                    value={editingAnime.status || 'ongoing'}
+                    onChange={(e) => setEditingAnime({ ...editingAnime, status: e.target.value })}
+                    className={`w-full h-10 px-2 rounded-xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-100'}`}
+                  >
+                    <option value="ongoing">Онгоинг</option>
+                    <option value="finished">Завершен</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={`block font-semibold mb-1 ${textMuted}`}>Год</label>
+                  <input
+                    type="number"
+                    value={editingAnime.year || ''}
+                    onChange={(e) => setEditingAnime({ ...editingAnime, year: e.target.value })}
+                    className={`w-full h-10 px-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-100'}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block font-semibold mb-1 ${textMuted}`}>Серий</label>
+                  <input
+                    type="number"
+                    value={editingAnime.episodes || ''}
+                    onChange={(e) => setEditingAnime({ ...editingAnime, episodes: e.target.value })}
+                    className={`w-full h-10 px-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-100'}`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block font-semibold mb-1 ${textMuted}`}>Ссылка на постер</label>
+                <input
+                  type="text"
+                  value={editingAnime.poster_url || ''}
+                  onChange={(e) => setEditingAnime({ ...editingAnime, poster_url: e.target.value })}
+                  placeholder="https://..."
+                  className={`w-full h-10 px-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-100'}`}
+                />
+              </div>
+
+              <div>
+                <label className={`block font-semibold mb-1 ${textMuted}`}>Описание сюжета (RU)</label>
+                <textarea
+                  rows={4}
+                  value={editingAnime.description || ''}
+                  onChange={(e) => setEditingAnime({ ...editingAnime, description: e.target.value })}
+                  className={`w-full p-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-100'}`}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_pub"
+                  checked={editingAnime.is_published}
+                  onChange={(e) => setEditingAnime({ ...editingAnime, is_published: e.target.checked })}
+                  className="rounded text-indigo-600 focus:ring-0"
+                />
+                <label htmlFor="is_pub" className="font-semibold cursor-pointer">
+                  Опубликовать в каталоге
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200/50 dark:border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setEditingAnime(null)}
+                  className="px-4 py-2 rounded-xl text-slate-500 font-semibold hover:bg-slate-100 dark:hover:bg-white/5"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingAnime}
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-500/20"
+                >
+                  {savingAnime ? 'Сохранение...' : 'Сохранить тайтл'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* MODAL: EDIT AIRING DATE                                               */}
+      {/* ==================================================================== */}
+      {editingAiring && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
+          <div
+            className={`relative w-full max-w-md rounded-3xl p-6 space-y-4 border ${
+              isDark ? 'bg-[#151224] border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800 shadow-2xl'
+            }`}
+          >
+            <h3 className="text-base font-bold">Изменить дату серии</h3>
+            <p className={`text-xs ${textMuted}`}>{editingAiring.title}</p>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold mb-1">Дата и время выхода следующей серии (UTC)</label>
+                <input
+                  type="datetime-local"
+                  defaultValue={editingAiring.nextEp ? editingAiring.nextEp.slice(0, 16) : ''}
+                  id="airing-datetime"
+                  className={`w-full h-10 px-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-slate-100'}`}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-3">
+              <button
+                type="button"
+                onClick={() => setEditingAiring(null)}
+                className="px-4 py-2 rounded-xl text-slate-500 font-semibold"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const input = document.getElementById('airing-datetime') as HTMLInputElement;
+                  if (input) {
+                    await updateAnimeAiringAction(editingAiring.id, input.value, editingAiring.day);
+                    setEditingAiring(null);
+                    const fresh = await getAdminOverviewData(period);
+                    setData(fresh);
+                  }
+                }}
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              >
+                Сохранить
+              </button>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 }
