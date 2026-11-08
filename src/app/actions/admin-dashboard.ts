@@ -517,6 +517,20 @@ export async function exportCsvAction(type: 'anime' | 'users' | 'activity') {
   return { success: true, csv: header + rows, filename: `audit-logs-${Date.now()}.csv` };
 }
 
+function normalizeAiringDay(day: string | null | undefined): string | null {
+  if (!day) return null;
+  const d = day.trim().toLowerCase();
+  if (['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].includes(d)) return d;
+  if (d.startsWith('пон')) return 'пн';
+  if (d.startsWith('вто')) return 'вт';
+  if (d.startsWith('сре')) return 'ср';
+  if (d.startsWith('чет')) return 'чт';
+  if (d.startsWith('пят')) return 'пт';
+  if (d.startsWith('суб')) return 'сб';
+  if (d.startsWith('вос')) return 'вс';
+  return null;
+}
+
 export async function updateAnimeAiringAction(
   animeId: string,
   nextEpisodeAt: string | null,
@@ -526,11 +540,13 @@ export async function updateAnimeAiringAction(
   if ('error' in auth) return { error: auth.error };
   const { supabase } = auth;
 
+  const validDay = normalizeAiringDay(airingDay);
+
   const { error } = await supabase
     .from('anime')
     .update({
       next_episode_at: nextEpisodeAt ? new Date(nextEpisodeAt).toISOString() : null,
-      airing_day: airingDay || null,
+      airing_day: validDay,
       updated_at: new Date().toISOString(),
     })
     .eq('id', animeId);

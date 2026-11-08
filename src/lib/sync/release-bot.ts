@@ -168,15 +168,8 @@ function mapSeason(season: string | null): string | null {
 }
 
 function getAiringDay(airingAtSeconds: number): string {
-  const days = [
-    'Воскресенье',
-    'Понедельник',
-    'Вторник',
-    'Среда',
-    'Четверг',
-    'Пятница',
-    'Суббота',
-  ];
+  // Matches postgres check constraint: CHECK (airing_day = ANY (ARRAY['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']))
+  const days = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
   const date = new Date(airingAtSeconds * 1000);
   return days[date.getDay()];
 }
