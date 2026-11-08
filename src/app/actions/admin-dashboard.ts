@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { runReleaseAutoSync, BotSyncResult } from '@/lib/sync/release-bot';
 
 export async function verifyAdmin() {
   const supabase = await createClient();
@@ -540,4 +541,40 @@ export async function updateAnimeAiringAction(
   revalidatePath('/admin');
   revalidatePath('/calendar');
   return { success: true };
+}
+
+export async function triggerReleaseBotAction(limit = 50): Promise<
+  | { success: true; data: BotSyncResult }
+  | { success: false; error: string }
+> {
+  const auth = await verifyAdmin();
+  if ('error' in auth && auth.error) return { success: false, error: auth.error };
+  if (!('supabase' in auth)) return { success: false, error: 'Unauthorized' };
+
+  try {
+    const data = await runReleaseAutoSync({
+      limit,
+      triggerSource: auth.profile?.username || 'admin_panel',
+    });
+    revalidatePath('/admin');
+    revalidatePath('/calendar');
+    revalidatePath('/');
+    return { success: true, data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Ошибка авто-синхронизации' };
+  }
+}
+
+export async function fetchReleaseBotStats() {
+  const auth = await verifyAdmin();
+  if ('error' in auth) return null;
+  const { supabase } = auth;
+
+  const { data } = await supabase
+    .from('site_settings')
+    .select('value, updated_at')
+    .eq('key', 'release_bot_stats')
+    .maybeSingle();
+
+  return data ? { ...data.value, updatedAt: data.updated_at } : null;
 }

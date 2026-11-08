@@ -56,6 +56,9 @@ import {
   HelpCircle,
   Sliders,
   CheckCheck,
+  Bot,
+  Zap,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   fetchAdminCatalog,
@@ -68,6 +71,7 @@ import {
   saveSiteSettings,
   exportCsvAction,
   getAdminOverviewData,
+  triggerReleaseBotAction,
 } from '@/app/actions/admin-dashboard';
 import { upsertAnimeAction, toggleAnimePublishAction, deleteAnimeAction } from '@/app/actions/admin';
 import { getDisplayTitle } from '@/lib/format';
@@ -125,6 +129,48 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
 
   // Calendar edit states
   const [editingAiring, setEditingAiring] = useState<{ id: string; title: string; nextEp: string; day: string } | null>(null);
+
+  // Auto-Bot states
+  const [isBotRunning, setIsBotRunning] = useState(false);
+  const [botToast, setBotToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [botStats, setBotStats] = useState<{
+    scanned?: number;
+    updated?: number;
+    added?: number;
+    skippedAdult?: number;
+    timestamp?: string;
+  } | null>(null);
+
+  const handleRunBot = async () => {
+    setIsBotRunning(true);
+    try {
+      const res = await triggerReleaseBotAction(50);
+      if (res.success && res.data) {
+        setBotStats(res.data);
+        setBotToast({
+          message: `Робот успешно обновил релизы! Обновлено: ${res.data.updated}, Добавлено: ${res.data.added}, 18+ отфильтровано: ${res.data.skippedAdult}`,
+          type: 'success',
+        });
+        setTimeout(() => setBotToast(null), 6000);
+        const fresh = await getAdminOverviewData(period);
+        setData(fresh);
+      } else {
+        setBotToast({
+          message: ('error' in res ? res.error : 'Ошибка синхронизации') || 'Сбой',
+          type: 'error',
+        });
+        setTimeout(() => setBotToast(null), 5000);
+      }
+    } catch (err: any) {
+      setBotToast({
+        message: err?.message || 'Ошибка сети при запуске робота',
+        type: 'error',
+      });
+      setTimeout(() => setBotToast(null), 5000);
+    } finally {
+      setIsBotRunning(false);
+    }
+  };
 
   // Settings tab states
   const [settingsData, setSettingsData] = useState<any>({
@@ -1779,8 +1825,85 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="space-y-5"
+              className="space-y-6"
             >
+              {/* Auto-Bot Banner Card */}
+              <div className={`p-6 rounded-2xl border transition-all ${cardBg} ${borderCol} relative overflow-hidden shadow-sm`}>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+                  <div className="space-y-2 max-w-2xl">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/25 shrink-0">
+                        <Bot className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base flex flex-wrap items-center gap-2">
+                          Авто-робот синхронизации новинок 24/7
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Активен (каждые 4 часа)
+                          </span>
+                        </h3>
+                        <p className={`text-xs ${textMuted}`}>
+                          Автономный планировщик Vercel Cron. Сам забирает новые серии с AniList и Shikimori, обновляет таймеры и выкладывает на сайт без ручного труда.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium border border-emerald-500/20">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        Фильтр 18+: Строгий (Hentai, Rx, 18+ блокируются 100%)
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-medium border border-indigo-500/20">
+                        <Zap className="w-3.5 h-3.5 text-indigo-500" />
+                        AniList + Shikimori API
+                      </span>
+                      {botStats?.timestamp && (
+                        <span className={`text-[11px] ${textMuted} flex items-center gap-1`}>
+                          <Clock className="w-3 h-3" />
+                          Посл. запуск: {new Date(botStats.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full lg:w-auto">
+                    <button
+                      type="button"
+                      disabled={isBotRunning}
+                      onClick={handleRunBot}
+                      className="px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isBotRunning ? 'animate-spin' : ''}`} />
+                      {isBotRunning ? 'Робот сканирует новинки...' : 'Запустить синхронизацию сейчас'}
+                    </button>
+                  </div>
+                </div>
+
+                {botStats && (
+                  <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-800/60 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-center">
+                      <span className={`text-[10px] block font-medium ${textMuted}`}>Просканировано</span>
+                      <span className="text-sm font-bold">{botStats.scanned || 0}</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-center">
+                      <span className={`text-[10px] block font-medium ${textMuted}`}>Обновлено серий</span>
+                      <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{botStats.updated || 0}</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-center">
+                      <span className={`text-[10px] block font-medium ${textMuted}`}>Добавлено тайтлов</span>
+                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">+{botStats.added || 0}</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-center">
+                      <span className={`text-[10px] block font-medium ${textMuted}`}>18+ отфильтровано</span>
+                      <span className="text-sm font-bold text-rose-500">🚫 {botStats.skippedAdult || 0}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <h2 className="text-xl font-bold tracking-tight">Расписание релизов онгоингов</h2>
                 <p className={`text-xs mt-0.5 ${textMuted}`}>
@@ -2349,6 +2472,36 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
           </div>
         </div>
       )}
+
+      {/* Floating Auto-Bot Toast Notification */}
+      <AnimatePresence>
+        {botToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className={`fixed bottom-6 right-6 z-50 max-w-md px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-semibold backdrop-blur-md border ${
+              botToast.type === 'success'
+                ? 'bg-emerald-600/95 text-white border-emerald-400/30 shadow-emerald-500/25'
+                : 'bg-rose-600/95 text-white border-rose-400/30 shadow-rose-500/25'
+            }`}
+          >
+            {botToast.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-white" />
+            ) : (
+              <AlertCircle className="w-5 h-5 shrink-0 text-white" />
+            )}
+            <span className="flex-1 leading-snug">{botToast.message}</span>
+            <button
+              type="button"
+              onClick={() => setBotToast(null)}
+              className="p-1 rounded-lg hover:bg-white/20 text-white/80 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
