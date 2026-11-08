@@ -356,3 +356,167 @@ export async function fetchHomeAiringSchedule(
     return [];
   }
 }
+
+const RECOMMENDATIONS_QUERY = `
+query ($id: Int) {
+  Media(id: $id, type: ANIME) {
+    recommendations(sort: RATING_DESC, perPage: 10) {
+      nodes {
+        rating
+        mediaRecommendation {
+          id
+          title {
+            english
+            romaji
+            native
+          }
+          coverImage {
+            extraLarge
+            large
+          }
+          format
+          episodes
+          averageScore
+          popularity
+          genres
+          isAdult
+        }
+      }
+    }
+  }
+}
+`;
+
+/**
+ * Fetches truly similar anime based on official community recommendations from AniList,
+ * cross-referenced with Supabase for Russian titles and slugs, with a high-quality popularity fallback.
+ */
+export async function fetchSimilarAnime(
+  anime: { id: string; anilist_id?: number | null; format?: string | null; anime_genres?: any[] },
+  limit = 5
+): Promise<any[]> {
+  const similar: any[] = [];
+  const seenIds = new Set<string>([anime.id]);
+
+  // 1. Try AniList Community Recommendations first
+  if (anime.anilist_id) {
+    try {
+      const res = await fetch(ANILIST_GRAPHQL_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          query: RECOMMENDATIONS_QUERY,
+          variables: { id: anime.anilist_id },
+        }),
+        next: { revalidate: 86400 }, // 24 hours cache
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const recNodes = json.data?.Media?.recommendations?.nodes || [];
+        const validMedia = recNodes
+          .map((n: any) => n.mediaRecommendation)
+          .filter((m: any) => m && !m.isAdult && m.id !== anime.anilist_id);
+
+        const anilistIds = validMedia.map((m: any) => m.id);
+
+        if (anilistIds.length > 0) {
+          const supabase = getPublicSupabaseClient();
+          const { data: dbMatches } = supabase
+            ? await supabase
+                .from('anime')
+                .select('*, anime_genres(genres(*))')
+                .in('anilist_id', anilistIds)
+                .eq('is_published', true)
+                .eq('is_adult', false)
+                .not('poster_url', 'is', null)
+                .neq('poster_url', '')
+            : { data: null };
+
+          const dbMap = new Map<number, any>();
+          dbMatches?.forEach((item: any) => dbMap.set(item.anilist_id, item));
+
+          for (const m of validMedia) {
+            const dbItem = dbMap.get(m.id);
+            if (dbItem && !seenIds.has(dbItem.id)) {
+              seenIds.add(dbItem.id);
+              similar.push(dbItem);
+            } else if (!dbItem && (m.coverImage?.extraLarge || m.coverImage?.large)) {
+              const titleEn = m.title?.english || m.title?.romaji || 'Anime';
+              const syntheticId = String(m.id);
+              if (!seenIds.has(syntheticId)) {
+                seenIds.add(syntheticId);
+                similar.push({
+                  id: syntheticId,
+                  slug: `${titleEn.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${m.id}`,
+                  title_en: titleEn,
+                  title_ru: null,
+                  title_jp: m.title?.native || null,
+                  poster_url: m.coverImage?.extraLarge || m.coverImage?.large,
+                  banner_url: null,
+                  score: m.averageScore ? Number((m.averageScore / 10).toFixed(1)) : null,
+                  popularity: m.popularity || 0,
+                  format: mapFormatRu(m.format),
+                  status: 'finished',
+                  episodes: m.episodes || null,
+                  year: null,
+                  season: null,
+                  studio: null,
+                  is_adult: false,
+                  is_published: true,
+                  anime_genres: [],
+                });
+              }
+            }
+            if (similar.length >= limit) break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching AniList recommendations:', e);
+    }
+  }
+
+  // 2. High-quality database fallback if fewer than limit was found
+  if (similar.length < limit) {
+    const rawGenreIds = anime.anime_genres?.map((ag: any) => ag.genre_id).filter(Boolean) || [];
+    const needed = limit - similar.length;
+    const supabase = getPublicSupabaseClient();
+
+    if (supabase) {
+      let fbQuery = supabase
+        .from('anime')
+        .select('*, anime_genres!inner(genre_id, genres!inner(*))')
+        .eq('is_published', true)
+        .eq('is_adult', false)
+        .not('poster_url', 'is', null)
+        .neq('poster_url', '')
+        .not('id', 'in', `(${Array.from(seenIds).map((id) => `"${id}"`).join(',')})`);
+
+      if (rawGenreIds.length > 0) {
+        fbQuery = fbQuery.in('anime_genres.genre_id', rawGenreIds);
+      }
+      if (anime.format) {
+        fbQuery = fbQuery.eq('format', anime.format);
+      }
+
+      const { data: dbFallbacks } = await fbQuery
+        .order('popularity', { ascending: false, nullsFirst: false })
+        .limit(needed);
+
+      if (dbFallbacks) {
+        dbFallbacks.forEach((item: any) => {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            similar.push(item);
+          }
+        });
+      }
+    }
+  }
+
+  return similar.slice(0, limit);
+}

@@ -46,7 +46,9 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
     .from('anime')
     .select(selectQuery, { count: 'exact' })
     .eq('is_published', true)
-    .eq('is_adult', false);
+    .eq('is_adult', false)
+    .not('poster_url', 'is', null)
+    .neq('poster_url', '');
 
   if (hasGenreFilter) {
     queryBuilder = queryBuilder.eq('anime_genres.genres.slug', params.genre);
@@ -141,6 +143,8 @@ export async function fetchCatalogStats() {
     .from('anime')
     .select('*', { count: 'exact', head: true })
     .eq('is_published', true)
+    .not('poster_url', 'is', null)
+    .neq('poster_url', '')
     .not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`);
 
   const { count: ongoingCount } = await supabase
@@ -148,6 +152,8 @@ export async function fetchCatalogStats() {
     .select('*', { count: 'exact', head: true })
     .eq('is_published', true)
     .eq('status', 'ongoing')
+    .not('poster_url', 'is', null)
+    .neq('poster_url', '')
     .not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`);
 
   return {

@@ -11,6 +11,7 @@ import { AnimeCard } from '@/components/anime/AnimeCard';
 import { AiringCountdown } from '@/components/anime/AiringCountdown';
 import { WatchStatusTracker } from '@/components/anime/WatchStatusTracker';
 import { WhereToWatch } from '@/components/anime/WhereToWatch';
+import { fetchSimilarAnime } from '@/lib/anilist';
 
 export const revalidate = 3600; // Кеширование страниц аниме на Vercel Edge на 1 час (ISR)
 
@@ -119,8 +120,8 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
     .filter(Boolean) as Genre[];
   const firstGenreId = genres[0]?.id;
 
-  // Параллельный запрос сохранённого статуса и похожих аниме
-  const [recordRes, relatedRes] = await Promise.all([
+  // Параллельный запрос сохранённого статуса и настоящих похожих аниме (AniList Community + Fallback)
+  const [recordRes, relatedAnime] = await Promise.all([
     user
       ? supabase
           .from('user_anime')
@@ -129,27 +130,10 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
           .eq('anime_id', anime.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    firstGenreId
-      ? supabase
-          .from('anime')
-          .select('*, anime_genres!inner(genre_id, genres!inner(*))')
-          .eq('anime_genres.genre_id', firstGenreId)
-          .neq('id', anime.id)
-          .eq('is_published', true)
-          .eq('is_adult', false)
-          .limit(5)
-      : supabase
-          .from('anime')
-          .select('*, anime_genres(genres(*))')
-          .neq('id', anime.id)
-          .eq('is_published', true)
-          .eq('is_adult', false)
-          .order('score', { ascending: false, nullsFirst: false })
-          .limit(5),
+    fetchSimilarAnime(anime, 5),
   ]);
 
   const userAnimeRecord = recordRes.data;
-  const relatedAnime: Anime[] = (relatedRes.data as Anime[]) || [];
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://animo-virid.vercel.app';
   const pageUrl = `${baseUrl}/anime/${anime.slug || anime.id}`;
 
