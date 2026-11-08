@@ -1,7 +1,17 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { translateGenre, sortAndFormatGenres } from './genres';
+import { sanitizeRussianTitle } from './format';
 
 const ANILIST_GRAPHQL_ENDPOINT = 'https://graphql.anilist.co';
+
+function getPublicSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createSupabaseClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 export interface CalendarAiringItem {
   id: number;
@@ -142,11 +152,13 @@ export async function fetchCalendarAiringSchedule(): Promise<CalendarAiringItem[
 
     // Cross-reference with Supabase to obtain Russian titles and database slugs
     const anilistIds = Array.from(new Set(validSchedules.map((s) => s.media.id)));
-    const supabase = await createClient();
-    const { data: dbAnime } = await supabase
-      .from('anime')
-      .select('id, slug, title_ru, title_en, anilist_id, poster_url')
-      .in('anilist_id', anilistIds);
+    const supabase = getPublicSupabaseClient();
+    const { data: dbAnime } = supabase
+      ? await supabase
+          .from('anime')
+          .select('id, slug, title_ru, title_en, anilist_id, poster_url')
+          .in('anilist_id', anilistIds)
+      : { data: null };
 
     const dbMap = new Map<number, any>();
     dbAnime?.forEach((a) => {
@@ -205,13 +217,50 @@ export interface UpcomingAiringCardItem {
   format: string;
   episode_num: number;
   popularity: number;
+  airingAt?: number;
 }
+
+const POPULAR_RELEASING_MEDIA_QUERY = `
+query {
+  Page(perPage: 50) {
+    media(
+      type: ANIME,
+      status: RELEASING,
+      sort: POPULARITY_DESC,
+      isAdult: false,
+      format_in: [TV, TV_SHORT, ONA, OVA]
+    ) {
+      id
+      title {
+        romaji
+        english
+        native
+      }
+      coverImage {
+        extraLarge
+        large
+      }
+      format
+      genres
+      popularity
+      episodes
+      nextAiringEpisode {
+        airingAt
+        episode
+      }
+    }
+  }
+}
+`;
 
 /**
  * Fetches popular upcoming episodes for the home page «Выходит сейчас» block.
+ * Step 1: Fetches top ongoing series by popularity first (Page 50, media query).
+ * Step 2: Filters to titles with nextAiringEpisode in the upcoming 7 days, excluding adult/hentai/ecchi.
+ * Step 3: Takes top 12 by popularity, then sorts them chronologically by airingAt ascending.
  */
 export async function fetchHomeAiringSchedule(
-  minPopularity = 5000,
+  _minPopularity = 5000,
   limit = 12
 ): Promise<UpcomingAiringCardItem[]> {
   try {
@@ -222,11 +271,10 @@ export async function fetchHomeAiringSchedule(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify({
-        query: AIRING_SCHEDULE_QUERY,
-        variables: { start: nowSec, end: endSec, page: 1 },
+        query: POPULAR_RELEASING_MEDIA_QUERY,
       }),
       next: { revalidate: 1800 },
     });
@@ -236,65 +284,71 @@ export async function fetchHomeAiringSchedule(
     }
 
     const json = await res.json();
-    const schedules = json.data?.Page?.airingSchedules || [];
+    const mediaList = json.data?.Page?.media || [];
 
-    const seenMedia = new Set<number>();
-    const valid = schedules.filter((s: any) => {
-      const m = s.media;
+    // Filter to anime airing in next 7 days, excluding adult/hentai/ecchi and without image
+    const valid = mediaList.filter((m: any) => {
       if (!m || m.isAdult) return false;
       if (m.genres && (m.genres.includes('Hentai') || m.genres.includes('Ecchi'))) return false;
-      if (!ALLOWED_AIRING_FORMATS.includes(m.format)) return false;
       if (!m.coverImage?.extraLarge && !m.coverImage?.large) return false;
-      if (!s.airingAt || s.airingAt <= nowSec) return false; // Strictly upcoming
-      if (seenMedia.has(m.id)) return false; // Deduplicate to unique anime
-      seenMedia.add(m.id);
-      return true;
+      if (!m.nextAiringEpisode?.airingAt || !m.nextAiringEpisode?.episode) return false;
+      const airAt = m.nextAiringEpisode.airingAt;
+      return airAt > nowSec && airAt <= endSec;
     });
 
-    // Cross reference with DB for Russian titles
-    const anilistIds = Array.from(new Set(valid.map((s: any) => s.media.id)));
-    const supabase = await createClient();
-    const { data: dbAnime } = await supabase
-      .from('anime')
-      .select('id, slug, title_ru, title_en, anilist_id, studio, poster_url')
-      .in('anilist_id', anilistIds);
+    // 1. Pick top-N by popularity first
+    const topPopular = valid
+      .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+      .slice(0, limit);
+
+    // Cross reference with DB for Russian titles and slugs
+    const anilistIds = topPopular.map((m: any) => m.id);
+    const supabase = getPublicSupabaseClient();
+    const { data: dbAnime } = supabase
+      ? await supabase
+          .from('anime')
+          .select('id, slug, title_ru, title_en, anilist_id, studio, poster_url')
+          .in('anilist_id', anilistIds)
+      : { data: null };
 
     const dbMap = new Map<number, any>();
     dbAnime?.forEach((a) => {
       if (a.anilist_id) dbMap.set(a.anilist_id, a);
     });
 
-    // Map and filter by popularity
-    const items: UpcomingAiringCardItem[] = valid
-      .map((s: any) => {
-        const m = s.media;
-        const dbItem = dbMap.get(m.id);
-        const titleEn = m.title?.english || m.title?.romaji || 'Anime';
-        const titleRu = dbItem?.title_ru || null;
-        const displayTitle = titleRu || titleEn;
-        const slug =
-          dbItem?.slug ||
-          `${titleEn.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${m.id}`;
-        const posterUrl =
-          dbItem?.poster_url || m.coverImage?.extraLarge || m.coverImage?.large;
-        const airDateIso = new Date(s.airingAt * 1000).toISOString();
+    // Map to UpcomingAiringCardItem
+    const items: UpcomingAiringCardItem[] = topPopular.map((m: any) => {
+      const dbItem = dbMap.get(m.id);
+      const sanitizedRu = sanitizeRussianTitle(dbItem?.title_ru);
+      const titleRu = sanitizedRu || null;
+      const titleEn = m.title?.english || m.title?.romaji || 'Anime';
+      const displayTitle = titleRu || titleEn;
+      const slug =
+        dbItem?.slug ||
+        `${titleEn.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${m.id}`;
+      const posterUrl =
+        dbItem?.poster_url || m.coverImage?.extraLarge || m.coverImage?.large;
+      const airAt = m.nextAiringEpisode.airingAt;
+      const airDateIso = new Date(airAt * 1000).toISOString();
 
-        return {
-          id: dbItem?.id || String(m.id),
-          slug,
-          title: displayTitle,
-          titleRu,
-          titleEn,
-          studio: dbItem?.studio || null,
-          next_episode_at: airDateIso,
-          poster_url: posterUrl,
-          format: mapFormatRu(m.format),
-          episode_num: s.episode,
-          popularity: m.popularity || 0,
-        };
-      })
-      .sort((a: UpcomingAiringCardItem, b: UpcomingAiringCardItem) => b.popularity - a.popularity)
-      .slice(0, limit);
+      return {
+        id: dbItem?.id || String(m.id),
+        slug,
+        title: displayTitle,
+        titleRu,
+        titleEn,
+        studio: dbItem?.studio || null,
+        next_episode_at: airDateIso,
+        poster_url: posterUrl,
+        format: mapFormatRu(m.format),
+        episode_num: m.nextAiringEpisode.episode,
+        popularity: m.popularity || 0,
+        airingAt: airAt,
+      };
+    });
+
+    // 2. Sort chronologically: airingAt ascending (earliest upcoming broadcast first)
+    items.sort((a, b) => (a.airingAt || 0) - (b.airingAt || 0));
 
     return items;
   } catch (err) {
