@@ -201,6 +201,17 @@ export async function importFromMalXml(xmlContent: string): Promise<ImportResult
     return { success: false, error: 'Файл или текст экспорта пуст' };
   }
 
+  // Strict 5 MB payload limit & executable file blocking
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+  if (xmlContent.length > MAX_FILE_SIZE) {
+    return { success: false, error: 'Размер загружаемого файла превышает допустимый лимит 5 МБ' };
+  }
+
+  // Check for malicious executable signatures
+  if (xmlContent.startsWith('MZ') || xmlContent.startsWith('\x7fELF') || xmlContent.includes('<?php')) {
+    return { success: false, error: 'Недопустимый формат файла. Разрешены только текстовые файлы экспорта (.xml)' };
+  }
+
   try {
     const items: ImportRateItem[] = [];
 

@@ -45,6 +45,21 @@ export function ImportAnimeModal({ isOpen, onClose, onSuccess }: ImportAnimeModa
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check size limit: max 5 MB
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setError('Размер файла превышает лимит 5 МБ. Выберите меньший файл.');
+      return;
+    }
+
+    // Check extension
+    const validExtensions = ['.xml', '.txt', '.json'];
+    const hasValidExt = validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext));
+    if (!hasValidExt) {
+      setError('Недопустимый формат файла. Разрешены только XML-файлы экспорта (.xml)');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccessResult(null);

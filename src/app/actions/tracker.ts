@@ -19,6 +19,25 @@ export async function setAnimeWatchStatus(
     return { error: 'unauthorized' };
   }
 
+  // Strict Server-Side Input Validation
+  const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(animeId);
+  if (!isValidUuid) {
+    return { error: 'invalid_anime_id' };
+  }
+
+  const validStatuses = ['now', 'plan', 'done', 'dropped'];
+  if (status !== null && !validStatuses.includes(status)) {
+    return { error: 'invalid_status' };
+  }
+
+  if (score !== undefined && score !== null && (typeof score !== 'number' || score < 1 || score > 10)) {
+    return { error: 'invalid_score' };
+  }
+
+  if (progress !== undefined && (typeof progress !== 'number' || progress < 0 || progress > 20000)) {
+    return { error: 'invalid_progress' };
+  }
+
   if (status === null) {
     const { error } = await supabase
       .from('user_anime')
@@ -84,6 +103,16 @@ export async function setAnimeScore(animeId: string, score: number | null) {
     return { error: 'unauthorized' };
   }
 
+  // Strict Server-Side Input Validation
+  const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(animeId);
+  if (!isValidUuid) {
+    return { error: 'invalid_anime_id' };
+  }
+
+  if (score !== null && (typeof score !== 'number' || score < 1 || score > 10)) {
+    return { error: 'invalid_score' };
+  }
+
   const { data: existing } = await supabase
     .from('user_anime')
     .select('status, progress')
@@ -131,6 +160,16 @@ export async function setAnimeProgress(animeId: string, progress: number) {
 
   if (!user) {
     return { error: 'unauthorized' };
+  }
+
+  // Strict Server-Side Input Validation
+  const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(animeId);
+  if (!isValidUuid) {
+    return { error: 'invalid_anime_id' };
+  }
+
+  if (typeof progress !== 'number' || progress < 0 || progress > 20000) {
+    return { error: 'invalid_progress' };
   }
 
   const { data, error } = await supabase

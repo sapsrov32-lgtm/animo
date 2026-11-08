@@ -37,7 +37,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https: https://*.anilist.co https://*.myanimelist.net https://*.shikimori.one https://*.shikimori.me https://images.unsplash.com https://lh3.googleusercontent.com https://*.supabase.co https://i.ytimg.com",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graphql.anilist.co https://shikimori.one https://shikimori.me",
       "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://accounts.google.com",
       "object-src 'none'",
       "base-uri 'self'",
@@ -57,6 +57,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "s4.anilist.co" },
       { protocol: "https", hostname: "cdn.myanimelist.net" },

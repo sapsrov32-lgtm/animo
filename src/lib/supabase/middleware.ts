@@ -16,6 +16,7 @@ export async function updateSession(request: NextRequest) {
         maxAge: TWO_YEARS_IN_SECONDS,
         sameSite: 'lax',
         path: '/',
+        secure: process.env.NODE_ENV === 'production',
       },
       cookies: {
         getAll() {
@@ -32,6 +33,7 @@ export async function updateSession(request: NextRequest) {
               maxAge: TWO_YEARS_IN_SECONDS,
               sameSite: 'lax',
               path: '/',
+              secure: process.env.NODE_ENV === 'production',
             })
           );
         },
