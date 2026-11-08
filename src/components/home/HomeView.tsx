@@ -111,7 +111,7 @@ export function HomeView({
               <AnimeCard
                 key={anime.id}
                 anime={anime}
-                badge={idx === 0 ? '#1 В трендах' : undefined}
+                badge={idx === 0 ? '#1 в топе' : undefined}
                 badgeType={idx === 0 ? 'trend' : 'default'}
               />
             ))}

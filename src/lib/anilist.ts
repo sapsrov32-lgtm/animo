@@ -238,13 +238,16 @@ export async function fetchHomeAiringSchedule(
     const json = await res.json();
     const schedules = json.data?.Page?.airingSchedules || [];
 
+    const seenMedia = new Set<number>();
     const valid = schedules.filter((s: any) => {
       const m = s.media;
       if (!m || m.isAdult) return false;
       if (m.genres && (m.genres.includes('Hentai') || m.genres.includes('Ecchi'))) return false;
       if (!ALLOWED_AIRING_FORMATS.includes(m.format)) return false;
       if (!m.coverImage?.extraLarge && !m.coverImage?.large) return false;
-      if (!s.airingAt) return false;
+      if (!s.airingAt || s.airingAt <= nowSec) return false; // Strictly upcoming
+      if (seenMedia.has(m.id)) return false; // Deduplicate to unique anime
+      seenMedia.add(m.id);
       return true;
     });
 
@@ -290,7 +293,6 @@ export async function fetchHomeAiringSchedule(
           popularity: m.popularity || 0,
         };
       })
-      .filter((item: UpcomingAiringCardItem) => item.popularity >= minPopularity)
       .sort((a: UpcomingAiringCardItem, b: UpcomingAiringCardItem) => b.popularity - a.popularity)
       .slice(0, limit);
 

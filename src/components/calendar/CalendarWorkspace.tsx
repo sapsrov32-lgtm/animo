@@ -21,27 +21,36 @@ const WEEKDAYS = [
   { key: 'вс', label: 'Вс', full: 'Воскресенье' },
 ];
 
+const formatLocalDateKey = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 export function CalendarWorkspace({
   schedules,
   userAnimeMap,
   isLoggedIn,
 }: CalendarWorkspaceProps) {
   // 1. Client timezone detection & live clock
-  const [userTimezone, setUserTimezone] = useState<string>('Определение пояса...');
+  const [mounted, setMounted] = useState(false);
+  const [userTimezone, setUserTimezone] = useState<string>('');
   const [localTime, setLocalTime] = useState<string>('');
   const [tokyoTime, setTokyoTime] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const offsetMinutes = -new Date().getTimezoneOffset();
       const offsetHours = offsetMinutes / 60;
       const sign = offsetHours >= 0 ? '+' : '';
       const formattedOffset = `UTC${sign}${offsetHours}`;
-      setUserTimezone(`${tz} (${formattedOffset})`);
+      setUserTimezone(`${tz}, ${formattedOffset}`);
     } catch {
-      setUserTimezone('Ваш часовой пояс');
+      setUserTimezone('UTC');
     }
 
     const updateClock = () => {
@@ -68,54 +77,67 @@ export function CalendarWorkspace({
     return () => clearInterval(interval);
   }, []);
 
-  // 2. Week calculation in user's browser timezone
+  // 2. Week calculation strictly in user's browser local timezone: Monday 00:00:00 to Sunday 23:59:59
   const today = useMemo(() => new Date(), []);
   const todayDayIndex = (today.getDay() + 6) % 7; // 0=Mon, ..., 6=Sun
-  const todayKey = WEEKDAYS[todayDayIndex].key;
+  const todayDateKey = useMemo(() => formatLocalDateKey(today), [today]);
 
-  const [activeDay, setActiveDay] = useState<string>(todayKey);
+  const monday = useMemo(() => {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - todayDayIndex, 0, 0, 0, 0);
+    return d;
+  }, [today, todayDayIndex]);
+
+  const sundayEnd = useMemo(() => {
+    const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6, 23, 59, 59, 999);
+    return d;
+  }, [monday]);
+
+  const weekDates = useMemo(() => {
+    return WEEKDAYS.map((w, i) => {
+      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i, 0, 0, 0, 0);
+      const dateKey = formatLocalDateKey(d);
+      return {
+        ...w,
+        dateKey,
+        dateNumber: d.getDate(),
+        isToday: dateKey === todayDateKey,
+      };
+    });
+  }, [monday, todayDateKey]);
+
+  const [activeDay, setActiveDay] = useState<string>(todayDateKey);
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const [filterMode, setFilterMode] = useState<'all' | 'watchlist'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Calculate dates for Monday through Sunday
-  const weekDates = useMemo(() => {
-    const monday = new Date(today);
-    const diff = today.getDate() - todayDayIndex;
-    monday.setDate(diff);
-    monday.setHours(0, 0, 0, 0);
-
-    return WEEKDAYS.map((w, i) => {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      return {
-        ...w,
-        dateNumber: d.getDate(),
-        isToday: w.key === todayKey,
-      };
+  // 3. Map schedules strictly by local date YYYY-MM-DD within this week only
+  const { groupedAnime, validWeekSchedules } = useMemo(() => {
+    const groups: Record<string, CalendarAiringItem[]> = {};
+    weekDates.forEach((w) => {
+      groups[w.dateKey] = [];
     });
-  }, [today, todayDayIndex, todayKey]);
 
-  // 3. Map schedules to user's local day & sort by airingAt, then popularity
-  const groupedAnime = useMemo(() => {
-    const groups: Record<string, CalendarAiringItem[]> = {
-      пн: [],
-      вт: [],
-      ср: [],
-      чт: [],
-      пт: [],
-      сб: [],
-      вс: [],
-    };
+    const validList: CalendarAiringItem[] = [];
 
     schedules.forEach((item) => {
       if (!item.airingAt) return;
       const airDate = new Date(item.airingAt * 1000);
-      const dayIdx = (airDate.getDay() + 6) % 7;
-      const dayKey = WEEKDAYS[dayIdx]?.key;
 
-      if (dayKey && groups[dayKey]) {
-        groups[dayKey].push(item);
+      // Filter out any episode outside Monday 00:00 to Sunday 23:59:59 in viewer's local timezone
+      if (airDate.getTime() < monday.getTime() || airDate.getTime() > sundayEnd.getTime()) {
+        return;
+      }
+
+      const itemDateKey = formatLocalDateKey(airDate);
+      if (groups[itemDateKey]) {
+        // Prevent duplicate entries for the same media & episode
+        const already = groups[itemDateKey].some(
+          (existing) => existing.mediaId === item.mediaId && existing.episode === item.episode
+        );
+        if (!already) {
+          groups[itemDateKey].push(item);
+          validList.push(item);
+        }
       }
     });
 
@@ -129,18 +151,18 @@ export function CalendarWorkspace({
       });
     });
 
-    return groups;
-  }, [schedules]);
+    return { groupedAnime: groups, validWeekSchedules: validList };
+  }, [schedules, monday, sundayEnd, weekDates]);
 
-  // 4. Counts from filtered schedule
-  const todayCount = groupedAnime[todayKey]?.length || 0;
+  // 4. Counts from filtered current-week schedule
+  const todayCount = (groupedAnime[todayDateKey] || []).length;
   const uniqueMediaCount = useMemo(() => {
-    return new Set(schedules.map((s) => s.mediaId)).size;
-  }, [schedules]);
+    return new Set(validWeekSchedules.map((s) => s.mediaId)).size;
+  }, [validWeekSchedules]);
 
   const watchlistCount = useMemo(() => {
-    return schedules.filter((s) => s.dbId && userAnimeMap[s.dbId]).length;
-  }, [schedules, userAnimeMap]);
+    return validWeekSchedules.filter((s) => s.dbId && userAnimeMap[s.dbId]).length;
+  }, [validWeekSchedules, userAnimeMap]);
 
   // 5. Filter items
   const filterList = (list: CalendarAiringItem[]) => {
@@ -163,14 +185,14 @@ export function CalendarWorkspace({
   // 6. User watchlist items for sidebar
   const userUpcomingAnime = useMemo(() => {
     const seen = new Set<number>();
-    return schedules.filter((s) => {
+    return validWeekSchedules.filter((s) => {
       if (s.dbId && userAnimeMap[s.dbId] && !seen.has(s.mediaId)) {
         seen.add(s.mediaId);
         return true;
       }
       return false;
     });
-  }, [schedules, userAnimeMap]);
+  }, [validWeekSchedules, userAnimeMap]);
 
   // 7. Export .ics calendar generator
   const handleExportIcs = () => {
@@ -182,7 +204,7 @@ export function CalendarWorkspace({
       'METHOD:PUBLISH',
     ];
 
-    schedules.forEach((item) => {
+    validWeekSchedules.forEach((item) => {
       if (item.airingAt) {
         const start = new Date(item.airingAt * 1000);
         const end = new Date(start.getTime() + 30 * 60 * 1000);
@@ -256,7 +278,7 @@ export function CalendarWorkspace({
                   Календарь выхода серий
                 </h1>
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Точное расписание трансляций онгоингов в Японии с автоматическим пересчётом на ваше местное время ({userTimezone}). Никаких пиратских плееров — только проверенное расписание.
+                  Точное расписание трансляций онгоингов в Японии с автоматическим пересчётом на ваше местное время{mounted && userTimezone ? ` (${userTimezone})` : ''}. Никаких пиратских плееров — только проверенное расписание.
                 </p>
               </div>
 
@@ -369,12 +391,16 @@ export function CalendarWorkspace({
                 </div>
               </div>
 
-              {/* Timezone & Search */}
+              {/* Timezone (with skeleton while loading) & Search */}
               <div className="flex flex-wrap items-center gap-space-sm">
                 <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container-high text-on-surface font-body-sm text-body-sm border border-outline-variant/30">
                   <span className="material-symbols-outlined text-primary text-[18px]">schedule</span>
                   <span className="text-outline">Часовой пояс:</span>
-                  <span className="font-semibold text-on-surface">{userTimezone}</span>
+                  {!mounted || !userTimezone ? (
+                    <span className="inline-block w-28 h-4 bg-surface-container-highest rounded animate-pulse" />
+                  ) : (
+                    <span className="font-semibold text-on-surface">{userTimezone}</span>
+                  )}
                 </div>
 
                 <div className="relative flex-1 sm:w-64">
@@ -398,14 +424,14 @@ export function CalendarWorkspace({
             <section className="sticky top-16 z-30 py-space-xs bg-surface/90 backdrop-blur-xl">
               <div className="grid grid-cols-7 gap-space-xs sm:gap-space-sm p-space-xs rounded-2xl bg-surface-container-low shadow-md overflow-x-auto border border-outline-variant/20">
                 {weekDates.map((day) => {
-                  const isActive = activeDay === day.key;
-                  const dayAnimeCount = filterList(groupedAnime[day.key] || []).length;
+                  const isActive = activeDay === day.dateKey;
+                  const dayAnimeCount = filterList(groupedAnime[day.dateKey] || []).length;
 
                   return (
                     <button
-                      key={day.key}
+                      key={day.dateKey}
                       type="button"
-                      onClick={() => setActiveDay(day.key)}
+                      onClick={() => setActiveDay(day.dateKey)}
                       className={`relative flex flex-col items-center justify-between p-2 sm:p-3 rounded-xl text-left transition-all ${
                         isActive
                           ? 'bg-gradient-to-br from-primary-container/40 via-surface-container-highest to-surface-container-high shadow-lg border border-primary/40'
@@ -465,8 +491,8 @@ export function CalendarWorkspace({
                         <span className="material-symbols-outlined text-[20px]">calendar_today</span>
                       </span>
                       <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
-                        {WEEKDAYS.find((w) => w.key === activeDay)?.full}
-                        {activeDay === todayKey && (
+                        {weekDates.find((w) => w.dateKey === activeDay)?.full}
+                        {activeDay === todayDateKey && (
                           <span className="ml-2 text-secondary font-medium font-body-sm text-body-sm">
                             (Сегодня)
                           </span>
@@ -501,7 +527,7 @@ export function CalendarWorkspace({
                     <div className="flex flex-col gap-space-md">
                       {activeDayAnime.map((item) => (
                         <CalendarCard
-                          key={item.id}
+                          key={`${item.id}-${item.episode}`}
                           item={item}
                           userStatus={item.dbId ? userAnimeMap[item.dbId]?.status : null}
                           userProgress={item.dbId ? userAnimeMap[item.dbId]?.progress : 0}
@@ -515,17 +541,17 @@ export function CalendarWorkspace({
               ) : (
                 /* Full Week View */
                 <div className="flex flex-col gap-space-xl">
-                  {WEEKDAYS.map((day) => {
-                    const dayAnime = filterList(groupedAnime[day.key] || []);
+                  {weekDates.map((day) => {
+                    const dayAnime = filterList(groupedAnime[day.dateKey] || []);
                     if (dayAnime.length === 0) return null;
 
                     return (
-                      <div key={day.key} className="flex flex-col gap-space-md">
+                      <div key={day.dateKey} className="flex flex-col gap-space-md">
                         <div className="flex items-center justify-between pb-space-xs border-b border-surface-container-highest">
                           <div className="flex items-center gap-space-sm">
                             <span
                               className={`flex items-center justify-center w-8 h-8 rounded-lg font-bold font-label-md ${
-                                day.key === todayKey
+                                day.dateKey === todayDateKey
                                   ? 'bg-secondary-container text-on-secondary-container'
                                   : 'bg-surface-container-high text-outline'
                               }`}
@@ -534,7 +560,7 @@ export function CalendarWorkspace({
                             </span>
                             <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
                               {day.full}
-                              {day.key === todayKey && (
+                              {day.dateKey === todayDateKey && (
                                 <span className="ml-2 text-secondary font-medium font-body-sm text-body-sm">
                                   · Сегодня
                                 </span>
@@ -549,7 +575,7 @@ export function CalendarWorkspace({
                         <div className="flex flex-col gap-space-md">
                           {dayAnime.map((item) => (
                             <CalendarCard
-                              key={item.id}
+                              key={`${item.id}-${item.episode}`}
                               item={item}
                               userStatus={item.dbId ? userAnimeMap[item.dbId]?.status : null}
                               userProgress={item.dbId ? userAnimeMap[item.dbId]?.progress : 0}
@@ -653,7 +679,7 @@ export function CalendarWorkspace({
                   <button
                     type="button"
                     onClick={handleExportIcs}
-                    className="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface transition-all text-left"
+                    className="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface transition-all text-left cursor-pointer"
                   >
                     <div className="flex items-center gap-space-sm">
                       <span className="material-symbols-outlined text-primary text-[20px]">event</span>
@@ -665,7 +691,7 @@ export function CalendarWorkspace({
                   <button
                     type="button"
                     onClick={handleShareLink}
-                    className="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface transition-all text-left"
+                    className="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface transition-all text-left cursor-pointer"
                   >
                     <div className="flex items-center gap-space-sm">
                       <span className="material-symbols-outlined text-secondary text-[20px]">link</span>
@@ -690,17 +716,17 @@ export function CalendarWorkspace({
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 p-2 bg-surface-container rounded-xl">
-                  <div className="flex flex-col p-2 bg-surface-container-high rounded-lg">
-                    <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider">
-                      Ваше местное
+                  <div className="flex flex-col p-2 bg-surface-container-high rounded-lg min-w-0">
+                    <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider truncate">
+                      {!mounted || !userTimezone ? 'Ваше местное' : userTimezone}
                     </span>
                     <span className="font-headline-sm text-headline-sm font-bold text-primary mt-1 font-mono">
                       {localTime || '—'}
                     </span>
                   </div>
 
-                  <div className="flex flex-col p-2 bg-surface-container-high rounded-lg">
-                    <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider">
+                  <div className="flex flex-col p-2 bg-surface-container-high rounded-lg min-w-0">
+                    <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider truncate">
                       Токио (JST, UTC+9)
                     </span>
                     <span className="font-headline-sm text-headline-sm font-bold text-secondary mt-1 font-mono">

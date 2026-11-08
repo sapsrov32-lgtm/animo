@@ -103,7 +103,7 @@ export function AiringCard({
             <span className="font-label-sm text-label-sm text-outline truncate">
               {studio || 'Аниме'}
             </span>
-            <AiringCountdown nextEpisodeAt={next_episode_at} mode="badge" />
+            <AiringCountdown nextEpisodeAt={next_episode_at} mode="badge" displayMode="home" />
           </div>
           <Link href={`/anime/${slug || id}`} prefetch={true}>
             <h3 className="font-headline-sm text-headline-sm text-on-surface truncate group-hover:text-primary transition-colors font-semibold">

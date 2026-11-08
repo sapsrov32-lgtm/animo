@@ -149,3 +149,86 @@ export function getAiringScheduleDisplay(isoDate: string | null | undefined): st
   const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1).replace('.', '');
   return `${capitalizedWeekday}, ${timeStr}`;
 }
+
+export function getEpisodeStatusBadge(
+  dateInput: string | number | null | undefined,
+  mode: 'calendar' | 'home' = 'calendar'
+): {
+  text: string;
+  isPast: boolean;
+  isToday: boolean;
+} {
+  if (!dateInput) {
+    return { text: 'Дата не объявлена', isPast: true, isToday: false };
+  }
+
+  const airDate = typeof dateInput === 'number' ? new Date(dateInput * 1000) : new Date(dateInput);
+  if (isNaN(airDate.getTime())) {
+    return { text: 'Дата не объявлена', isPast: true, isToday: false };
+  }
+
+  const now = new Date();
+  const diffMs = airDate.getTime() - now.getTime();
+
+  // Local start/end of day boundaries in user's browser timezone
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+  const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+  const tomorrowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 59, 999);
+
+  const isToday = airDate >= todayStart && airDate <= todayEnd;
+  const isYesterday = airDate >= yesterdayStart && airDate < todayStart;
+  const isTomorrow = airDate >= tomorrowStart && airDate <= tomorrowEnd;
+
+  const timeStr = airDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+  // PAST:
+  if (diffMs < 0) {
+    if (isToday) {
+      const hoursAgo = Math.floor(Math.abs(diffMs) / (3600 * 1000));
+      return { text: hoursAgo < 1 ? 'Вышла недавно' : `Вышла ${hoursAgo} ч. назад`, isPast: true, isToday: true };
+    }
+    if (isYesterday) {
+      return { text: 'Вышла вчера', isPast: true, isToday: false };
+    }
+    const daysAgo = Math.floor((todayStart.getTime() - airDate.getTime()) / (86400 * 1000)) + 1;
+    let daysAgoStr = `${daysAgo} дней назад`;
+    const lastDigit = daysAgo % 10;
+    const lastTwo = daysAgo % 100;
+    if (lastTwo >= 11 && lastTwo <= 19) {
+      daysAgoStr = `${daysAgo} дней назад`;
+    } else if (lastDigit === 1) {
+      daysAgoStr = `${daysAgo} день назад`;
+    } else if (lastDigit >= 2 && lastDigit <= 4) {
+      daysAgoStr = `${daysAgo} дня назад`;
+    }
+    return { text: `Вышла ${daysAgoStr}`, isPast: true, isToday: false };
+  }
+
+  // FUTURE:
+  if (isToday) {
+    if (mode === 'home') {
+      return { text: `Сегодня ${timeStr}`, isPast: false, isToday: true };
+    }
+    const hours = Math.floor(diffMs / 3600000);
+    const minutes = Math.floor((diffMs % 3600000) / 60000);
+    let remStr = '';
+    if (hours > 0 && minutes > 0) {
+      remStr = `${hours} ч ${minutes} мин`;
+    } else if (hours > 0) {
+      remStr = `${hours} ч`;
+    } else {
+      remStr = `${Math.max(1, minutes)} мин`;
+    }
+    return { text: `Через ${remStr}`, isPast: false, isToday: true };
+  }
+
+  if (isTomorrow) {
+    return { text: `Завтра ${timeStr}`, isPast: false, isToday: false };
+  }
+
+  const weekday = airDate.toLocaleDateString('ru-RU', { weekday: 'short' });
+  const capWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1).replace('.', '');
+  return { text: `${capWeekday} ${timeStr}`, isPast: false, isToday: false };
+}

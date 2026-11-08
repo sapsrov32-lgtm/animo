@@ -7,6 +7,24 @@ export const metadata: Metadata = {
   title: 'Календарь выхода серий — Анимо',
   description:
     'Точное интерактивное расписание выхода серий аниме-онгоингов по дням недели с автоматическим пересчётом на местное время зрителя.',
+  openGraph: {
+    title: 'Календарь выхода серий — Анимо',
+    description:
+      'Точное интерактивное расписание выхода серий аниме-онгоингов по дням недели с автоматическим пересчётом на местное время зрителя.',
+    url: 'https://animo-virid.vercel.app/calendar',
+    siteName: 'Анимо',
+    locale: 'ru_RU',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Календарь выхода серий — Анимо',
+    description:
+      'Точное интерактивное расписание выхода серий аниме-онгоингов по дням недели с автоматическим пересчётом на местное время зрителя.',
+  },
+  alternates: {
+    canonical: 'https://animo-virid.vercel.app/calendar',
+  },
 };
 
 // Cache schedule for 30 minutes (1800 seconds)

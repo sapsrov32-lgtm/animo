@@ -7,6 +7,24 @@ export const metadata: Metadata = {
   title: 'Что посмотреть? Интеллектуальный компас — Анимо',
   description:
     'Умный алгоритм персонального подбора аниме по 3 простым критериям: настроение, доступное время и желаемый сеттинг.',
+  openGraph: {
+    title: 'Что посмотреть? Интеллектуальный компас — Анимо',
+    description:
+      'Умный алгоритм персонального подбора аниме по 3 простым критериям: настроение, доступное время и желаемый сеттинг.',
+    url: 'https://animo-virid.vercel.app/recommend',
+    siteName: 'Анимо',
+    locale: 'ru_RU',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Что посмотреть? Интеллектуальный компас — Анимо',
+    description:
+      'Умный алгоритм персонального подбора аниме по 3 простым критериям: настроение, доступное время и желаемый сеттинг.',
+  },
+  alternates: {
+    canonical: 'https://animo-virid.vercel.app/recommend',
+  },
 };
 
 export const revalidate = 300; // cache for 5 minutes

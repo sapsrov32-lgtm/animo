@@ -1,34 +1,44 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { formatAiringTime, getAiringScheduleDisplay } from '@/lib/format';
+import { getEpisodeStatusBadge, formatAiringTime } from '@/lib/format';
 
 interface AiringCountdownProps {
-  nextEpisodeAt: string | null | undefined;
+  nextEpisodeAt: string | number | null | undefined;
   airingDay?: string | null;
   mode?: 'badge' | 'full';
+  displayMode?: 'calendar' | 'home';
 }
 
-export function AiringCountdown({ nextEpisodeAt, mode = 'badge' }: AiringCountdownProps) {
-  const [scheduleStr, setScheduleStr] = useState<string>('');
-  const [formatted, setFormatted] = useState<{
-    dayName: string;
-    timeStr: string;
-    remainingStr: string;
+export function AiringCountdown({
+  nextEpisodeAt,
+  mode = 'badge',
+  displayMode = 'calendar',
+}: AiringCountdownProps) {
+  const [status, setStatus] = useState<{
+    text: string;
     isPast: boolean;
-  } | null>(null);
+    isToday: boolean;
+  }>(() => getEpisodeStatusBadge(nextEpisodeAt, displayMode));
+
+  const [formatted, setFormatted] = useState(() =>
+    typeof nextEpisodeAt === 'string' ? formatAiringTime(nextEpisodeAt) : null
+  );
 
   useEffect(() => {
-    setFormatted(formatAiringTime(nextEpisodeAt));
-    setScheduleStr(getAiringScheduleDisplay(nextEpisodeAt));
-    const interval = setInterval(() => {
-      setFormatted(formatAiringTime(nextEpisodeAt));
-      setScheduleStr(getAiringScheduleDisplay(nextEpisodeAt));
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [nextEpisodeAt]);
+    const update = () => {
+      setStatus(getEpisodeStatusBadge(nextEpisodeAt, displayMode));
+      if (typeof nextEpisodeAt === 'string') {
+        setFormatted(formatAiringTime(nextEpisodeAt));
+      }
+    };
 
-  if (!formatted || !nextEpisodeAt) {
+    update();
+    const interval = setInterval(update, 30000); // 30 sec update
+    return () => clearInterval(interval);
+  }, [nextEpisodeAt, displayMode]);
+
+  if (!nextEpisodeAt) {
     return mode === 'full' ? (
       <div className="flex flex-col">
         <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
@@ -47,10 +57,19 @@ export function AiringCountdown({ nextEpisodeAt, mode = 'badge' }: AiringCountdo
   }
 
   if (mode === 'badge') {
+    const isPast = status.isPast;
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm shrink-0 font-medium">
-        <span className="material-symbols-outlined text-[14px]">schedule</span>
-        {scheduleStr || (formatted.isPast ? 'Вышла' : `через ${formatted.remainingStr}`)}
+      <span
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-label-sm text-label-sm shrink-0 font-medium ${
+          isPast
+            ? 'bg-surface-container-highest text-on-surface-variant'
+            : 'bg-tertiary-container/30 text-tertiary'
+        }`}
+      >
+        <span className="material-symbols-outlined text-[14px]">
+          {isPast ? 'check_circle' : 'schedule'}
+        </span>
+        <span>{status.text}</span>
       </span>
     );
   }
@@ -58,11 +77,13 @@ export function AiringCountdown({ nextEpisodeAt, mode = 'badge' }: AiringCountdo
   return (
     <div className="flex flex-col">
       <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-        {formatted.isPast
-          ? 'Серия уже вышла в эфир'
-          : `Выходит в ${formatted.dayName.toLowerCase()} в ${formatted.timeStr} (по вашему времени)`}
+        {status.isPast
+          ? status.text
+          : formatted
+          ? `Выходит в ${formatted.dayName.toLowerCase()} в ${formatted.timeStr} (по вашему времени)`
+          : status.text}
       </span>
-      {!formatted.isPast && (
+      {!status.isPast && formatted?.remainingStr && (
         <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">
           До следующего эпизода осталось:{' '}
           <span className="font-bold text-tertiary">{formatted.remainingStr}</span>

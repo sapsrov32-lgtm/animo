@@ -117,15 +117,8 @@ export function CalendarCard({
               </span>
             </div>
 
-            {/* Countdown / Aired status pill */}
-            {hasAired ? (
-              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">
-                <span className="material-symbols-outlined text-[14px] text-tertiary">check_circle</span>
-                <span>Вышло {timeDiffHours > 0 ? `${timeDiffHours} ч. назад` : 'недавно'}</span>
-              </div>
-            ) : (
-              <AiringCountdown nextEpisodeAt={airDate.toISOString()} mode="badge" />
-            )}
+            {/* Episode status badge */}
+            <AiringCountdown nextEpisodeAt={airDate.toISOString()} mode="badge" displayMode="calendar" />
           </div>
 
           {/* Anime Title & Secondary Title */}

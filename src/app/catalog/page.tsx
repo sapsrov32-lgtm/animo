@@ -5,6 +5,22 @@ import { fetchCatalogAnime, fetchAllGenres, fetchCatalogStats } from '@/app/acti
 export const metadata: Metadata = {
   title: 'Каталог аниме — Анимо',
   description: 'Полный каталог аниме на русском языке: поиск, фильтры по жанрам, годам и статусу, честные рейтинги без пиратства.',
+  openGraph: {
+    title: 'Каталог аниме — Анимо',
+    description: 'Полный каталог аниме на русском языке: поиск, фильтры по жанрам, годам и статусу, честные рейтинги без пиратства.',
+    url: 'https://animo-virid.vercel.app/catalog',
+    siteName: 'Анимо',
+    locale: 'ru_RU',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Каталог аниме — Анимо',
+    description: 'Полный каталог аниме на русском языке: поиск, фильтры по жанрам, годам и статусу, честные рейтинги без пиратства.',
+  },
+  alternates: {
+    canonical: 'https://animo-virid.vercel.app/catalog',
+  },
 };
 
 export default async function CatalogPage({
