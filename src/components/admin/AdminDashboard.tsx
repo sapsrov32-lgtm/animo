@@ -701,8 +701,8 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header Bar */}
         <header
-          className={`h-16 px-4 sm:px-8 flex items-center justify-between shrink-0 border-b ${borderCol} ${
-            isDark ? 'bg-[#0c0a14]/80 backdrop-blur-xl' : 'bg-white/80 backdrop-blur-xl'
+          className={`h-16 px-4 sm:px-8 flex items-center justify-between shrink-0 border-b relative z-30 ${borderCol} ${
+            isDark ? 'bg-[#0c0a14]/90 backdrop-blur-xl' : 'bg-white/90 backdrop-blur-xl'
           }`}
         >
           {/* Mobile hamburger & search input */}
@@ -734,7 +734,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
           {/* Top Actions: Period selector, Notifications, Theme, Profile */}
           <div className="flex items-center gap-2.5">
             {/* Period Selector Dropdown */}
-            <div className="relative">
+            <div className="relative z-40">
               <button
                 type="button"
                 onClick={() => setPeriodMenuOpen(!periodMenuOpen)}
@@ -764,36 +764,42 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
               </button>
 
               {periodMenuOpen && (
-                <div
-                  className={`absolute right-0 mt-1.5 w-48 rounded-2xl py-1.5 z-50 shadow-2xl border ${
-                    isDark ? 'bg-[#151224] border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800'
-                  }`}
-                >
-                  {[
-                    { key: '7d', label: 'Последние 7 дней' },
-                    { key: '30d', label: 'Последние 30 дней' },
-                    { key: '90d', label: 'Последние 3 месяца' },
-                    { key: '1y', label: '1 год' },
-                    { key: 'all', label: 'Все время' },
-                  ].map((p) => (
-                    <button
-                      key={p.key}
-                      type="button"
-                      onClick={() => handlePeriodChange(p.key as any)}
-                      className={`w-full text-left px-3.5 py-2 text-xs font-medium flex items-center justify-between hover:bg-indigo-500/10 ${
-                        period === p.key ? 'text-indigo-600 font-bold' : ''
-                      }`}
-                    >
-                      <span>{p.label}</span>
-                      {period === p.key && <Check className="w-3.5 h-3.5 text-indigo-500" />}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setPeriodMenuOpen(false)}
+                  />
+                  <div
+                    className={`absolute right-0 mt-1.5 w-48 rounded-2xl py-1.5 z-40 shadow-2xl border ${
+                      isDark ? 'bg-[#1b1730] border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800'
+                    }`}
+                  >
+                    {[
+                      { key: '7d', label: 'Последние 7 дней' },
+                      { key: '30d', label: 'Последние 30 дней' },
+                      { key: '90d', label: 'Последние 3 месяца' },
+                      { key: '1y', label: '1 год' },
+                      { key: 'all', label: 'Все время' },
+                    ].map((p) => (
+                      <button
+                        key={p.key}
+                        type="button"
+                        onClick={() => handlePeriodChange(p.key as any)}
+                        className={`w-full text-left px-3.5 py-2 text-xs font-medium flex items-center justify-between hover:bg-indigo-500/10 ${
+                          period === p.key ? 'text-indigo-400 font-bold' : ''
+                        }`}
+                      >
+                        <span>{p.label}</span>
+                        {period === p.key && <Check className="w-3.5 h-3.5 text-indigo-400" />}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
             {/* Notifications */}
-            <div className="relative">
+            <div className="relative z-50">
               <button
                 type="button"
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -933,7 +939,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
         </header>
 
         {/* Scrollable Workspace Content */}
-        <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6">
+        <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 relative z-10">
           {/* ==================================================================== */}
           {/* TAB: OVERVIEW (Main Dashboard view exactly as references)             */}
           {/* ==================================================================== */}
