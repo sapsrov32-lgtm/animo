@@ -159,7 +159,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
     anime.format === 'MOVIE';
 
   return (
-    <div className="flex flex-col w-full pb-16">
+    <div className="flex flex-col w-full pb-28 sm:pb-32">
       {/* Schema.org JSON-LD Structured Data for Search Engine Rich Snippets */}
       <script
         type="application/ld+json"
@@ -194,7 +194,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
       <div className="relative w-full -mt-16 overflow-hidden">
         {/* Atmospheric Artwork Layer */}
         <div
-          className="w-full min-h-[260px] sm:min-h-[360px] lg:h-[500px] bg-cover bg-center"
+          className="w-full min-h-[280px] sm:min-h-[360px] lg:h-[480px] bg-cover bg-center"
           style={{
             backgroundImage: `url('${anime.banner_url || anime.poster_url || ''}')`,
           }}
@@ -203,30 +203,30 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
           <div className="absolute inset-0 bg-radial-gradient from-transparent via-surface-container-lowest/50 to-surface-container-lowest" />
         </div>
 
-        {/* Breadcrumbs */}
-        <div className="absolute inset-0 pt-20 px-margin md:px-margin-tablet lg:px-margin-desktop max-w-[1440px] mx-auto flex flex-col justify-end pb-8 pointer-events-none">
-          <nav className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm pointer-events-auto mb-4 overflow-x-auto">
-            <Link href="/" className="hover:text-primary transition-colors flex items-center gap-1">
-              <span className="material-symbols-outlined text-[16px]">home</span>
+        {/* Breadcrumbs - positioned at top safely below header, never overlapped by poster */}
+        <div className="absolute top-0 inset-x-0 pt-20 px-margin md:px-margin-tablet lg:px-margin-desktop max-w-[1440px] mx-auto z-20">
+          <nav className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-xs sm:text-body-sm overflow-x-auto whitespace-nowrap py-1 scrollbar-none">
+            <Link href="/" className="hover:text-primary transition-colors flex items-center gap-1 shrink-0">
+              <span className="material-symbols-outlined text-[15px]">home</span>
               Главная
             </Link>
-            <span className="text-outline">/</span>
-            <Link href="/catalog" className="hover:text-primary transition-colors">
+            <span className="text-outline shrink-0">/</span>
+            <Link href="/catalog" className="hover:text-primary transition-colors shrink-0">
               Каталог
             </Link>
             {genres[0] && (
               <>
-                <span className="text-outline">/</span>
+                <span className="text-outline shrink-0">/</span>
                 <Link
                   href={`/catalog?genre=${genres[0].slug}`}
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-primary transition-colors shrink-0"
                 >
                   {genres[0].name_ru}
                 </Link>
               </>
             )}
-            <span className="text-outline">/</span>
-            <span className="text-primary truncate max-w-[240px] sm:max-w-none">
+            <span className="text-outline shrink-0">/</span>
+            <span className="text-primary truncate max-w-[160px] sm:max-w-xs md:max-w-md shrink-0">
               {displayTitle}
             </span>
           </nav>
@@ -234,7 +234,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
       </div>
 
       {/* Primary Media Showcase Grid (Poster + Details) */}
-      <div className="relative w-full max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop -mt-24 lg:-mt-32 z-10">
+      <div className="relative w-full max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop -mt-16 sm:-mt-24 lg:-mt-32 z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg lg:gap-gutter-desktop items-start">
           
           {/* Left Column: Poster Canvas & Quick Stats */}
@@ -434,13 +434,13 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
 
             {/* Genre Tags Flow */}
             {genres.length > 0 && (
-              <div className="flex flex-wrap gap-2 items-center">
+              <div className="flex flex-wrap gap-2 items-center py-1">
                 <span className="font-label-md text-label-md text-outline mr-1">Жанры:</span>
                 {genres.map((g) => (
                   <Link
                     key={g.id}
                     href={`/catalog?genre=${g.slug}`}
-                    className="px-3 py-1 rounded-full bg-surface-container font-label-md text-label-md text-primary hover:bg-surface-container-high hover:text-primary-fixed transition-colors"
+                    className="px-3 py-1.5 rounded-full bg-surface-container font-label-md text-xs sm:text-label-md text-primary hover:bg-surface-container-high hover:text-primary-fixed transition-colors active:scale-95"
                   >
                     # {g.name_ru}
                   </Link>
