@@ -2,7 +2,11 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { runReleaseAutoSync, BotSyncResult } from '@/lib/sync/release-bot';
+import {
+  runReleaseAutoSync,
+  BotSyncResult,
+  checkAndTriggerScheduledSync,
+} from '@/lib/sync/release-bot';
 
 export async function verifyAdmin() {
   const supabase = await createClient();
@@ -277,6 +281,33 @@ export async function getAdminOverviewData(
     { name: 'Романтика', count: 510, percent: 12, color: '#F59E0B' },
   ];
 
+  // 8. Bot settings & background smart check
+  checkAndTriggerScheduledSync().catch(() => {});
+
+  const { data: botSettingsRows } = await supabase
+    .from('site_settings')
+    .select('key, value')
+    .in('key', ['release_bot_settings', 'release_bot_stats']);
+
+  const botSettings = {
+    scheduledTime: '04:00',
+    enabled: true,
+    timezone: 'Asia/Bishkek',
+    lastRun: null as string | null,
+    lastSummary: null as any,
+  };
+
+  botSettingsRows?.forEach((row) => {
+    if (row.key === 'release_bot_settings' && row.value) {
+      botSettings.scheduledTime = row.value.scheduledTime || '04:00';
+      botSettings.enabled = row.value.enabled ?? true;
+      botSettings.timezone = row.value.timezone || 'Asia/Bishkek';
+    } else if (row.key === 'release_bot_stats' && row.value) {
+      botSettings.lastRun = row.value.last_run || null;
+      botSettings.lastSummary = row.value.summary || null;
+    }
+  });
+
   return {
     currentUser: profile,
     metrics: {
@@ -299,6 +330,7 @@ export async function getAdminOverviewData(
     topAnime: topAnimePopular || [],
     auditLogs: auditLogs || [],
     qualityIssues: qualityIssues || [],
+    botSettings,
   };
 }
 
@@ -593,4 +625,33 @@ export async function fetchReleaseBotStats() {
     .maybeSingle();
 
   return data ? { ...data.value, updatedAt: data.updated_at } : null;
+}
+
+export async function saveBotScheduleAction(scheduledTime: string, enabled = true) {
+  const auth = await verifyAdmin();
+  if ('error' in auth && auth.error) return { success: false, error: auth.error };
+  if (!auth.supabase) return { success: false, error: 'Unauthorized' };
+
+  try {
+    const { supabase, profile } = auth;
+    await supabase.from('site_settings').upsert({
+      key: 'release_bot_settings',
+      value: {
+        scheduledTime,
+        enabled,
+        updatedBy: profile?.username || 'admin',
+      },
+      updated_at: new Date().toISOString(),
+    });
+
+    await logAdminAction('update_bot_schedule', 'system', 'release_bot', {
+      scheduledTime,
+      enabled,
+    });
+
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Ошибка сохранения расписания' };
+  }
 }

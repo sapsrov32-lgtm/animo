@@ -541,3 +541,71 @@ export async function runReleaseAutoSync(options?: {
   result.durationMs = Date.now() - startTime;
   return result;
 }
+
+export interface BotScheduleConfig {
+  enabled: boolean;
+  scheduledTime: string; // e.g. "04:00"
+  timezone?: string;
+}
+
+export async function getBotScheduleConfig(): Promise<BotScheduleConfig> {
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'release_bot_settings')
+      .maybeSingle();
+
+    if (data?.value) {
+      return {
+        enabled: data.value.enabled ?? true,
+        scheduledTime: data.value.scheduledTime || '04:00',
+        timezone: data.value.timezone || 'Asia/Bishkek',
+      };
+    }
+  } catch {}
+  return { enabled: true, scheduledTime: '04:00', timezone: 'Asia/Bishkek' };
+}
+
+export async function checkAndTriggerScheduledSync(): Promise<boolean> {
+  try {
+    const supabase = createAdminClient();
+    const { data: settingsRow } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'release_bot_settings')
+      .maybeSingle();
+
+    const config = settingsRow?.value || { enabled: true, scheduledTime: '04:00' };
+    if (!config.enabled) return false;
+
+    const { data: statsRow } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'release_bot_stats')
+      .maybeSingle();
+
+    const lastRunIso = statsRow?.value?.last_run;
+    const now = new Date();
+    const [schedH, schedM] = (config.scheduledTime || '04:00').split(':').map(Number);
+
+    const targetToday = new Date(now);
+    targetToday.setHours(schedH || 4, schedM || 0, 0, 0);
+
+    // If current time is past today's target time
+    if (now.getTime() >= targetToday.getTime()) {
+      const lastRunTime = lastRunIso ? new Date(lastRunIso).getTime() : 0;
+      // If we haven't synced today yet
+      if (lastRunTime < targetToday.getTime()) {
+        runReleaseAutoSync({ triggerSource: 'scheduled_auto_timer' }).catch((err) =>
+          console.error('Scheduled sync execution error:', err)
+        );
+        return true;
+      }
+    }
+  } catch (err) {
+    console.error('Error checking scheduled sync:', err);
+  }
+  return false;
+}

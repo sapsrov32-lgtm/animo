@@ -72,6 +72,7 @@ import {
   exportCsvAction,
   getAdminOverviewData,
   triggerReleaseBotAction,
+  saveBotScheduleAction,
 } from '@/app/actions/admin-dashboard';
 import { upsertAnimeAction, toggleAnimePublishAction, deleteAnimeAction } from '@/app/actions/admin';
 import { getDisplayTitle } from '@/lib/format';
@@ -169,6 +170,57 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
       setTimeout(() => setBotToast(null), 5000);
     } finally {
       setIsBotRunning(false);
+    }
+  };
+
+  // Schedule config states
+  const [scheduledTime, setScheduledTime] = useState(
+    initialData?.botSettings?.scheduledTime || '04:00'
+  );
+  const [isScheduleSaving, setIsScheduleSaving] = useState(false);
+  const [countdownText, setCountdownText] = useState('');
+
+  // Update live countdown to next scheduled sync
+  useEffect(() => {
+    const updateCountdown = () => {
+      const [h, m] = (scheduledTime || '04:00').split(':').map(Number);
+      const now = new Date();
+      const target = new Date(now);
+      target.setHours(h || 4, m || 0, 0, 0);
+      if (now.getTime() >= target.getTime()) {
+        target.setDate(target.getDate() + 1);
+      }
+      const diffMs = target.getTime() - now.getTime();
+      const diffH = Math.floor(diffMs / 3600000);
+      const diffM = Math.floor((diffMs % 3600000) / 60000);
+      setCountdownText(`${diffH} ч. ${diffM} мин.`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000);
+    return () => clearInterval(interval);
+  }, [scheduledTime]);
+
+  const handleSaveSchedule = async (newTime: string) => {
+    setScheduledTime(newTime);
+    setIsScheduleSaving(true);
+    try {
+      const res = await saveBotScheduleAction(newTime, true);
+      if (res.success) {
+        setBotToast({
+          message: `Время авто-синхронизации сохранено: ежедневно в ${newTime}`,
+          type: 'success',
+        });
+        setTimeout(() => setBotToast(null), 5000);
+      }
+    } catch {
+      setBotToast({
+        message: 'Не удалось сохранить расписание',
+        type: 'error',
+      });
+      setTimeout(() => setBotToast(null), 5000);
+    } finally {
+      setIsScheduleSaving(false);
     }
   };
 
@@ -1084,7 +1136,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                           </h3>
                           <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            В сети • Ежедневно (03:00 UTC)
+                            В сети • Ежедневно в {scheduledTime}
                           </span>
                         </div>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -1108,6 +1160,49 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                           ? `Посл. запуск: ${new Date(botStats.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
                           : 'Посл. запуск: сегодня'}
                       </span>
+                    </div>
+
+                    {/* Schedule Time Selector and Countdown Bar */}
+                    <div className="pt-2.5 border-t border-slate-200/60 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                          Время ежедневной синхронизации:
+                        </span>
+                        <select
+                          value={scheduledTime}
+                          onChange={(e) => handleSaveSchedule(e.target.value)}
+                          disabled={isScheduleSaving}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                            isDark
+                              ? 'bg-[#1b1730] border-indigo-500/30 text-indigo-300 hover:border-indigo-400'
+                              : 'bg-white border-slate-300 text-indigo-700 hover:border-indigo-500 shadow-sm'
+                          }`}
+                        >
+                          <option value="00:00" className="bg-slate-900 text-white">00:00 (В полночь)</option>
+                          <option value="02:00" className="bg-slate-900 text-white">02:00 (Глубокая ночь)</option>
+                          <option value="04:00" className="bg-slate-900 text-white">04:00 (Раннее утро — Рекомендуется)</option>
+                          <option value="06:00" className="bg-slate-900 text-white">06:00 (Утро)</option>
+                          <option value="08:00" className="bg-slate-900 text-white">08:00 (Утро)</option>
+                          <option value="10:00" className="bg-slate-900 text-white">10:00 (Утро)</option>
+                          <option value="12:00" className="bg-slate-900 text-white">12:00 (В полдень)</option>
+                          <option value="15:00" className="bg-slate-900 text-white">15:00 (Днём)</option>
+                          <option value="18:00" className="bg-slate-900 text-white">18:00 (Вечером)</option>
+                          <option value="21:00" className="bg-slate-900 text-white">21:00 (Вечером)</option>
+                        </select>
+                        {isScheduleSaving && (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          Следующий авто-запуск:
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-400 font-bold text-[11px] border border-indigo-500/25">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+                          В {scheduledTime} (через {countdownText || 'несколько часов'})
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -2013,7 +2108,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                           Авто-робот синхронизации новинок 24/7
                           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Активен (Ежедневно в 03:00 UTC)
+                            В сети • Ежедневно в {scheduledTime}
                           </span>
                         </h3>
                         <p className={`text-xs ${textMuted}`}>
@@ -2031,12 +2126,55 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                         <Zap className="w-3.5 h-3.5 text-indigo-500" />
                         AniList + Shikimori API
                       </span>
-                      {botStats?.timestamp && (
-                        <span className={`text-[11px] ${textMuted} flex items-center gap-1`}>
-                          <Clock className="w-3 h-3" />
-                          Посл. запуск: {new Date(botStats.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium ${isDark ? 'bg-white/5 text-slate-300 border border-white/10' : 'bg-slate-100 text-slate-700'}`}>
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        {botStats?.timestamp
+                          ? `Посл. запуск: ${new Date(botStats.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
+                          : 'Посл. запуск: сегодня'}
+                      </span>
+                    </div>
+
+                    {/* Schedule Time Selector and Countdown Bar */}
+                    <div className="pt-2.5 border-t border-slate-200/60 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                          Время ежедневной синхронизации:
                         </span>
-                      )}
+                        <select
+                          value={scheduledTime}
+                          onChange={(e) => handleSaveSchedule(e.target.value)}
+                          disabled={isScheduleSaving}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                            isDark
+                              ? 'bg-[#1b1730] border-indigo-500/30 text-indigo-300 hover:border-indigo-400'
+                              : 'bg-white border-slate-300 text-indigo-700 hover:border-indigo-500 shadow-sm'
+                          }`}
+                        >
+                          <option value="00:00" className="bg-slate-900 text-white">00:00 (В полночь)</option>
+                          <option value="02:00" className="bg-slate-900 text-white">02:00 (Глубокая ночь)</option>
+                          <option value="04:00" className="bg-slate-900 text-white">04:00 (Раннее утро — Рекомендуется)</option>
+                          <option value="06:00" className="bg-slate-900 text-white">06:00 (Утро)</option>
+                          <option value="08:00" className="bg-slate-900 text-white">08:00 (Утро)</option>
+                          <option value="10:00" className="bg-slate-900 text-white">10:00 (Утро)</option>
+                          <option value="12:00" className="bg-slate-900 text-white">12:00 (В полдень)</option>
+                          <option value="15:00" className="bg-slate-900 text-white">15:00 (Днём)</option>
+                          <option value="18:00" className="bg-slate-900 text-white">18:00 (Вечером)</option>
+                          <option value="21:00" className="bg-slate-900 text-white">21:00 (Вечером)</option>
+                        </select>
+                        {isScheduleSaving && (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          Следующий авто-запуск:
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-400 font-bold text-[11px] border border-indigo-500/25">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+                          В {scheduledTime} (через {countdownText || 'несколько часов'})
+                        </span>
+                      </div>
                     </div>
                   </div>
 
