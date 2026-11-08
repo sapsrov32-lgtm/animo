@@ -11,6 +11,7 @@ import { AnimeCard } from '@/components/anime/AnimeCard';
 import { AiringCountdown } from '@/components/anime/AiringCountdown';
 import { WatchStatusTracker } from '@/components/anime/WatchStatusTracker';
 import { WhereToWatch } from '@/components/anime/WhereToWatch';
+import { ShareButton } from '@/components/anime/ShareButton';
 import { fetchSimilarAnime } from '@/lib/anilist';
 
 export const revalidate = 3600; // Кеширование страниц аниме на Vercel Edge на 1 час (ISR)
@@ -332,15 +333,22 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
             
             {/* Titles Header */}
             <div className="flex flex-col gap-1">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                {anime.season && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm uppercase">
-                    {anime.season}
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  {anime.season && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm uppercase">
+                      {anime.season}
+                    </span>
+                  )}
+                  <span className="px-2.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm uppercase">
+                    {anime.format || 'ТВ СЕРИАЛ'}
                   </span>
-                )}
-                <span className="px-2.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm uppercase">
-                  {anime.format || 'ТВ СЕРИАЛ'}
-                </span>
+                </div>
+                <ShareButton
+                  title={displayTitle}
+                  description={anime.description || undefined}
+                  url={pageUrl}
+                />
               </div>
               <h1 className="font-headline-lg text-headline-sm sm:text-headline-lg md:text-display-hero md:font-display-hero text-on-surface tracking-tight leading-tight">
                 {displayTitle}

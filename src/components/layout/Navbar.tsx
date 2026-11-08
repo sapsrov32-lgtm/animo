@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { UserProfile } from '@/types';
 import { createClient } from '@/lib/supabase/client';
+import { quickSearchAnime, QuickSearchResult } from '@/app/actions/catalog';
+import { QuickSearchDropdown } from './QuickSearchDropdown';
 
 const NAV_ITEMS = [
   { label: 'Каталог', href: '/catalog' },
@@ -28,16 +30,70 @@ export function Navbar({ user, profile }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [results, setResults] = useState<QuickSearchResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
   const menuRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const desktopSearchContainerRef = useRef<HTMLDivElement>(null);
+  const desktopSearchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
   const isStaff = profile?.role === 'admin' || profile?.role === 'editor';
+
+  // Debounced search for QuickSearchDropdown
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setIsLoading(false);
+      setIsDropdownOpen(false);
+      setSelectedIndex(-1);
+      return;
+    }
+
+    setIsLoading(true);
+    setIsDropdownOpen(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const data = await quickSearchAnime(q, 5);
+        setResults(data);
+      } catch (err) {
+        console.error('Quick search error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Global keyboard shortcut: Ctrl+K / Cmd+K to focus search
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        desktopSearchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuOpen(false);
+      }
+      const target = event.target as Node;
+      const insideDesktop = desktopSearchContainerRef.current?.contains(target);
+      const insideMobile = mobileSearchContainerRef.current?.contains(target);
+      if (!insideDesktop && !insideMobile) {
+        setIsDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -46,21 +102,52 @@ export function Navbar({ user, profile }: NavbarProps) {
 
   // Focus input when mobile search is opened
   useEffect(() => {
-    if (mobileSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
+    if (mobileSearchOpen && mobileSearchInputRef.current) {
+      mobileSearchInputRef.current.focus();
     }
   }, [mobileSearchOpen]);
 
-  // Close mobile search on route change
+  // Close mobile search & dropdown on route change
   useEffect(() => {
     setMobileSearchOpen(false);
+    setIsDropdownOpen(false);
   }, [pathname]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSelectAnime = useCallback((item: QuickSearchResult) => {
+    setIsDropdownOpen(false);
+    setMobileSearchOpen(false);
+    router.push(`/anime/${item.slug || item.id}`);
+  }, [router]);
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (selectedIndex >= 0 && selectedIndex < results.length) {
+      handleSelectAnime(results[selectedIndex]);
+      return;
+    }
     if (searchQuery.trim()) {
-      router.push(`/catalog?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsDropdownOpen(false);
       setMobileSearchOpen(false);
+      router.push(`/catalog?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isDropdownOpen || results.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+    } else if (e.key === 'Enter') {
+      if (selectedIndex >= 0 && selectedIndex < results.length) {
+        e.preventDefault();
+        handleSelectAnime(results[selectedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      setIsDropdownOpen(false);
     }
   };
 
@@ -115,18 +202,47 @@ export function Navbar({ user, profile }: NavbarProps) {
         {/* Search & Actions */}
         <div className="flex items-center gap-2 sm:gap-space-md">
           {/* Desktop Search bar */}
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center relative w-56 lg:w-72">
-            <span className="material-symbols-outlined absolute left-3 text-outline text-[18px] pointer-events-none">
-              search
-            </span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Найти аниме... (⌘K)"
-              className="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container-low/90 border border-outline-variant/30 text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
+          <div ref={desktopSearchContainerRef} className="hidden md:block relative w-60 lg:w-80">
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+              <span className="material-symbols-outlined absolute left-3 text-outline text-[18px] pointer-events-none">
+                search
+              </span>
+              <input
+                ref={desktopSearchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (searchQuery.trim().length >= 2) setIsDropdownOpen(true);
+                }}
+                onKeyDown={handleInputKeyDown}
+                placeholder="Найти аниме... (⌘K)"
+                className="w-full h-10 pl-9 pr-8 rounded-xl bg-surface-container-low/90 border border-outline-variant/30 text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setIsDropdownOpen(false);
+                  }}
+                  className="absolute right-2.5 text-outline hover:text-on-surface text-[16px] flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                </button>
+              )}
+            </form>
+
+            <QuickSearchDropdown
+              query={searchQuery}
+              results={results}
+              isLoading={isLoading}
+              isOpen={isDropdownOpen}
+              selectedIndex={selectedIndex}
+              onSelect={handleSelectAnime}
+              onViewAll={handleSearchSubmit}
             />
-          </form>
+          </div>
 
           {/* Mobile Search Toggle Button */}
           <button
@@ -264,16 +380,23 @@ export function Navbar({ user, profile }: NavbarProps) {
 
       {/* Mobile Slide-Down Search Overlay */}
       {mobileSearchOpen && (
-        <div className="md:hidden border-t border-outline-variant/20 bg-surface-container-low px-4 py-3 animate-fadeIn">
+        <div
+          ref={mobileSearchContainerRef}
+          className="md:hidden border-t border-outline-variant/20 bg-surface-container-low px-4 py-3 animate-fadeIn relative"
+        >
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <span className="material-symbols-outlined absolute left-3.5 text-outline text-[20px] pointer-events-none">
               search
             </span>
             <input
-              ref={searchInputRef}
+              ref={mobileSearchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => {
+                if (searchQuery.trim().length >= 2) setIsDropdownOpen(true);
+              }}
+              onKeyDown={handleInputKeyDown}
               placeholder="Название аниме..."
               className="w-full h-11 pl-10 pr-24 rounded-xl bg-surface-container text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary/40"
             />
@@ -284,6 +407,16 @@ export function Navbar({ user, profile }: NavbarProps) {
               Найти
             </button>
           </form>
+
+          <QuickSearchDropdown
+            query={searchQuery}
+            results={results}
+            isLoading={isLoading}
+            isOpen={isDropdownOpen}
+            selectedIndex={selectedIndex}
+            onSelect={handleSelectAnime}
+            onViewAll={handleSearchSubmit}
+          />
         </div>
       )}
     </header>

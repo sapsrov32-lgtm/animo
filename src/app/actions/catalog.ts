@@ -161,3 +161,43 @@ export async function fetchCatalogStats() {
     ongoing: ongoingCount || 0,
   };
 }
+
+export interface QuickSearchResult {
+  id: string;
+  slug: string;
+  title_ru?: string | null;
+  title_en?: string | null;
+  format?: string | null;
+  year?: number | null;
+  score?: number | null;
+  poster_url?: string | null;
+  status: string;
+}
+
+export async function quickSearchAnime(query: string, limit = 5): Promise<QuickSearchResult[]> {
+  const sanitized = (query || '').replace(/[,()]/g, ' ').trim();
+  if (sanitized.length < 2) return [];
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('anime')
+    .select('id, slug, title_ru, title_en, format, year, score, poster_url, status')
+    .eq('is_published', true)
+    .eq('is_adult', false)
+    .not('poster_url', 'is', null)
+    .neq('poster_url', '')
+    .not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`)
+    .or(`title_ru.ilike.%${sanitized}%,title_en.ilike.%${sanitized}%,title_jp.ilike.%${sanitized}%`)
+    .order('popularity', { ascending: false, nullsFirst: false })
+    .order('score', { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error in quickSearchAnime:', error);
+    return [];
+  }
+
+  return (data as QuickSearchResult[]) || [];
+}
+

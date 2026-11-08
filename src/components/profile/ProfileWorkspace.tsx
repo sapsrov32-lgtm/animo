@@ -9,6 +9,7 @@ import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
 import { StoryCard } from './StoryCard';
 import { setAnimeProgress, setAnimeWatchStatus } from '@/app/actions/tracker';
 import { createClient } from '@/lib/supabase/client';
+import { ImportAnimeModal } from './ImportAnimeModal';
 
 interface ProfileWorkspaceProps {
   profile: UserProfile | null;
@@ -22,6 +23,7 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
   const [items, setItems] = useState<UserAnime[]>(initialItems);
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   // Group counts
   const countNow = items.filter((i) => i.status === 'now').length;
@@ -119,14 +121,38 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
     }
   };
 
+  const publicProfileUrl = profile?.username
+    ? `${typeof window !== 'undefined' ? window.location.origin : 'https://animo-virid.vercel.app'}/u/${encodeURIComponent(profile.username)}`
+    : '';
+
   const handleShare = async () => {
+    const url = publicProfileUrl || (typeof window !== 'undefined' ? window.location.href : '');
+    const title = `Мой профиль и списки аниме @${profile?.username || ''} на Анимо`;
+
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title,
+          text: `Смотри мои списки аниме и оценки на сайте Анимо!`,
+          url,
+        });
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(url);
       setCopyFeedback(true);
       setTimeout(() => setCopyFeedback(false), 2000);
     } catch {
       // ignore
     }
+  };
+
+  const handleImportSuccess = () => {
+    router.refresh();
   };
 
   const handleSignOut = async () => {
@@ -229,6 +255,31 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
                       </span>
                       Участник клуба с {formattedJoinDate || 'недавнего времени'} • Персональный трекер
                     </p>
+
+                    {/* Public Profile Link Pill */}
+                    {profile.username && (
+                      <div className="flex items-center gap-2 mt-1 px-3 py-1.5 rounded-xl bg-surface-container/60 border border-outline-variant/20 max-w-fit">
+                        <span className="material-symbols-outlined text-[16px] text-primary">link</span>
+                        <span className="font-body-sm text-xs text-outline">Публичный профиль:</span>
+                        <Link
+                          href={`/u/${encodeURIComponent(profile.username)}`}
+                          target="_blank"
+                          className="font-label-sm text-xs font-semibold text-primary hover:underline"
+                        >
+                          /u/{profile.username}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={handleShare}
+                          className="text-outline hover:text-on-surface ml-1 p-0.5 rounded transition-colors"
+                          title="Скопировать ссылку на профиль"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">
+                            {copyFeedback ? 'done' : 'content_copy'}
+                          </span>
+                        </button>
+                      </div>
+                    )}
 
                     {/* Quick Metric Strip */}
                     <div className="flex flex-wrap items-center gap-2 pt-2">
@@ -364,13 +415,24 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
             </button>
           </div>
 
-          <Link
-            href="/catalog"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-primary hover:bg-surface-container font-label-md text-label-md transition-colors self-start md:self-auto"
-          >
-            <span className="material-symbols-outlined text-[18px]">add_circle</span>
-            <span>Добавить из каталога</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+            <button
+              type="button"
+              onClick={() => setImportModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 font-label-md text-label-md transition-all active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[18px]">cloud_download</span>
+              <span>Импорт списков</span>
+            </button>
+
+            <Link
+              href="/catalog"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-primary hover:bg-surface-container font-label-md text-label-md transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">add_circle</span>
+              <span>Добавить из каталога</span>
+            </Link>
+          </div>
         </div>
 
         {/* Two-Column Grid: Left (Story Card & Detailed Stats) & Right (Anime List) */}
@@ -603,6 +665,12 @@ export function ProfileWorkspace({ profile, initialItems }: ProfileWorkspaceProp
 
         </div>
       </div>
+
+      <ImportAnimeModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onSuccess={handleImportSuccess}
+      />
     </div>
   );
 }
