@@ -189,7 +189,7 @@ export function WhereToWatch({
             </h2>
             <p className="font-body-xs text-xs text-outline">
               {loading
-                ? 'Поиск легальных онлайн-кинотеатров...'
+                ? 'Поиск...'
                 : links.length > 0
                 ? `${links.length} легальных сервисов для просмотра`
                 : 'Пока нет легальных источников'}

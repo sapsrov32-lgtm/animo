@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Anime } from '@/types';
 import { RecommendCard } from './RecommendCard';
 import { setAnimeWatchStatus } from '@/app/actions/tracker';
@@ -180,27 +180,38 @@ export function RecommendWorkspace({
   initialMood,
 }: RecommendWorkspaceProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Selected criteria state (initialized from URL ?mood=; time and setting are NOT pre-selected)
-  const [selectedMood, setSelectedMood] = useState<string>(() =>
-    normalizeMoodId(initialMood)
-  );
+  const [selectedMood, setSelectedMood] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      const urlMood = sp.get('mood');
+      if (urlMood) return normalizeMoodId(urlMood);
+    }
+    return normalizeMoodId(initialMood);
+  });
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedSetting, setSelectedSetting] = useState<string | null>(null);
 
   const [addingAll, setAddingAll] = useState(false);
   const [addAllFeedback, setAddAllFeedback] = useState(false);
 
-  // Sync state if initialMood changes
+  // Sync state whenever URL query changes (handles client navigation, back/forward)
   useEffect(() => {
-    if (initialMood) {
-      setSelectedMood(normalizeMoodId(initialMood));
+    const urlMood = searchParams?.get('mood');
+    if (urlMood) {
+      setSelectedMood(normalizeMoodId(urlMood));
     }
-  }, [initialMood]);
+  }, [searchParams]);
 
   const handleMoodSelect = (moodId: string) => {
     setSelectedMood(moodId);
-    router.replace(`/recommend?mood=${moodId}`, { scroll: false });
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      sp.set('mood', moodId);
+      router.replace(`/recommend?${sp.toString()}`, { scroll: false });
+    }
   };
 
   // Real Filtering Logic with Graceful Fallback
@@ -410,7 +421,6 @@ export function RecommendWorkspace({
   const progressPercent = selectedCount === 1 ? 33 : selectedCount === 2 ? 67 : 100;
 
   const handleRestart = () => {
-    handleMoodSelect('mindgame');
     setSelectedTime(null);
     setSelectedSetting(null);
   };

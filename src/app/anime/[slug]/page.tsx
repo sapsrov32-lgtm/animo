@@ -173,7 +173,8 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
 
   const userAnimeRecord = recordRes.data;
   const baseUrl = 'https://animo-virid.vercel.app';
-  const pageUrl = `${baseUrl}/anime/${slug}`;
+  const canonicalUrl = `${baseUrl}/anime/${slug}`;
+  const pageUrl = canonicalUrl;
 
   const cleanedSynopsis = cleanDescription(anime.description);
   const hasRussianDescription = isRussianText(cleanedSynopsis);
@@ -191,95 +192,112 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
     ? posterRaw.startsWith('http')
       ? posterRaw
       : `${baseUrl}${posterRaw}`
-    : undefined;
+    : `${baseUrl}/og-image.jpg`;
+
+  const seoTitle = `${displayTitle} — описание, рейтинг, серии | Анимо`;
+  const seoDescription = extractSeoDescription(anime, displayTitle);
 
   return (
     <div className="flex flex-col w-full pb-[calc(80px+env(safe-area-inset-bottom))] lg:pb-32">
-      {/* Schema.org JSON-LD Structured Data for Search Engine Rich Snippets (Breadcrumbs & Media with AggregateRating) */}
+      {/* Native Head Document Metadata (hoisted to <head> by React 19) */}
+      <title>{seoTitle}</title>
+      <meta name="description" content={seoDescription} />
+      <link rel="canonical" href={canonicalUrl} />
+      <meta property="og:title" content={seoTitle} />
+      <meta property="og:description" content={seoDescription} />
+      <meta property="og:url" content={canonicalUrl} />
+      <meta property="og:image" content={posterAbsoluteUrl} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={seoTitle} />
+      <meta name="twitter:description" content={seoDescription} />
+      <meta name="twitter:image" content={posterAbsoluteUrl} />
+
+      {/* Schema.org JSON-LD Structured Data for Search Engine Rich Snippets */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
-            '@graph': [
+            '@type': isMovieFormat ? 'Movie' : 'TVSeries',
+            name: displayTitle,
+            alternateName: secondaryTitle || undefined,
+            description: seoDescription,
+            image: posterAbsoluteUrl,
+            url: canonicalUrl,
+            datePublished: anime.year ? `${anime.year}-01-01` : undefined,
+            numberOfEpisodes: anime.episodes || undefined,
+            genre: genres.map((g) => g.name_ru),
+            inLanguage: 'ru',
+            countryOfOrigin: {
+              '@type': 'Country',
+              name: 'JP',
+            },
+            contentRating: 'PG-13',
+            ...(anime.studio
+              ? {
+                  productionCompany: {
+                    '@type': 'Organization',
+                    name: anime.studio,
+                  },
+                }
+              : {}),
+            ...(typeof anime.score === 'number' && anime.score > 0
+              ? {
+                  aggregateRating: {
+                    '@type': 'AggregateRating',
+                    ratingValue: anime.score.toFixed(1),
+                    bestRating: '10',
+                    worstRating: '1',
+                    ratingCount: Math.max(50, anime.popularity || 150).toString(),
+                  },
+                }
+              : {}),
+          }),
+        }}
+      />
+      {/* Schema.org BreadcrumbList */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
               {
-                '@type': isMovieFormat ? 'Movie' : 'TVSeries',
-                '@id': `${pageUrl}#media`,
-                name: displayTitle,
-                alternateName: secondaryTitle || undefined,
-                description: extractSeoDescription(anime, displayTitle),
-                image: posterAbsoluteUrl,
-                url: pageUrl,
-                datePublished: anime.year ? `${anime.year}-01-01` : undefined,
-                numberOfEpisodes: anime.episodes || undefined,
-                genre: genres.map((g) => g.name_ru),
-                inLanguage: 'ru',
-                countryOfOrigin: {
-                  '@type': 'Country',
-                  name: 'JP',
-                },
-                contentRating: 'PG-13',
-                ...(anime.studio
-                  ? {
-                      productionCompany: {
-                        '@type': 'Organization',
-                        name: anime.studio,
-                      },
-                    }
-                  : {}),
-                ...(typeof anime.score === 'number' && anime.score > 0
-                  ? {
-                      aggregateRating: {
-                        '@type': 'AggregateRating',
-                        ratingValue: anime.score.toFixed(1),
-                        bestRating: '10',
-                        worstRating: '1',
-                        ratingCount: Math.max(50, anime.popularity || 150).toString(),
-                      },
-                    }
-                  : {}),
+                '@type': 'ListItem',
+                position: 1,
+                name: 'Главная',
+                item: baseUrl,
               },
               {
-                '@type': 'BreadcrumbList',
-                '@id': `${pageUrl}#breadcrumb`,
-                itemListElement: [
-                  {
-                    '@type': 'ListItem',
-                    position: 1,
-                    name: 'Главная',
-                    item: baseUrl,
-                  },
-                  {
-                    '@type': 'ListItem',
-                    position: 2,
-                    name: 'Каталог',
-                    item: `${baseUrl}/catalog`,
-                  },
-                  ...(genres[0]
-                    ? [
-                        {
-                          '@type': 'ListItem',
-                          position: 3,
-                          name: genres[0].name_ru,
-                          item: `${baseUrl}/catalog?genre=${genres[0].slug}`,
-                        },
-                        {
-                          '@type': 'ListItem',
-                          position: 4,
-                          name: displayTitle,
-                          item: pageUrl,
-                        },
-                      ]
-                    : [
-                        {
-                          '@type': 'ListItem',
-                          position: 3,
-                          name: displayTitle,
-                          item: pageUrl,
-                        },
-                      ]),
-                ],
+                '@type': 'ListItem',
+                position: 2,
+                name: 'Каталог',
+                item: `${baseUrl}/catalog`,
               },
+              ...(genres[0]
+                ? [
+                    {
+                      '@type': 'ListItem',
+                      position: 3,
+                      name: genres[0].name_ru,
+                      item: `${baseUrl}/catalog?genre=${genres[0].slug}`,
+                    },
+                    {
+                      '@type': 'ListItem',
+                      position: 4,
+                      name: displayTitle,
+                      item: canonicalUrl,
+                    },
+                  ]
+                : [
+                    {
+                      '@type': 'ListItem',
+                      position: 3,
+                      name: displayTitle,
+                      item: canonicalUrl,
+                    },
+                  ]),
             ],
           }),
         }}

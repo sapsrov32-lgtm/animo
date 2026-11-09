@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { RecommendWorkspace } from '@/components/recommend/RecommendWorkspace';
@@ -111,12 +112,14 @@ export default async function RecommendPage({
           }),
         }}
       />
-      <RecommendWorkspace
-        allAnime={allAnime}
-        userAnimeMap={userAnimeMap}
-        isLoggedIn={Boolean(user)}
-        initialMood={initialMood}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-surface" />}>
+        <RecommendWorkspace
+          allAnime={allAnime}
+          userAnimeMap={userAnimeMap}
+          isLoggedIn={Boolean(user)}
+          initialMood={initialMood}
+        />
+      </Suspense>
     </>
   );
 }
