@@ -642,7 +642,11 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                 <div className="p-3 rounded-xl bg-surface-container">
                   <span className="text-outline font-label-sm text-label-sm block">Сезон выхода</span>
                   <span className="font-title-card text-title-card text-on-surface font-semibold">
-                    {anime.season ? `${anime.season}${anime.year ? ` ${anime.year}` : ''}` : anime.year || '—'}
+                    {anime.season && anime.season !== 'UNDEFINED'
+                      ? (anime.year && !anime.season.includes(String(anime.year)) && !/\b\d{4}\b/.test(anime.season)
+                          ? `${anime.season} ${anime.year}`
+                          : anime.season)
+                      : (anime.year || '—')}
                   </span>
                 </div>
                 <div className="p-3 rounded-xl bg-surface-container">

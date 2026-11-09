@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { WatchStatus } from '@/types';
 import { setAnimeWatchStatus } from '@/app/actions/tracker';
+import { sortStreamingLinksByCountry } from '@/lib/watch-providers';
 
 export interface StreamingLink {
   id: number;
@@ -37,12 +38,45 @@ export function WhereToWatch({
   isLoggedIn = false,
   initialWatchStatus = null,
 }: WhereToWatchProps) {
+  const [rawLinks, setRawLinks] = useState<StreamingLink[]>([]);
   const [links, setLinks] = useState<StreamingLink[]>([]);
+  const [userCountry, setUserCountry] = useState<string | null>(null);
   const [trailer, setTrailer] = useState<TrailerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [showStreamingList, setShowStreamingList] = useState(true);
   const [inPlan, setInPlan] = useState(initialWatchStatus === 'plan');
   const [planLoading, setPlanLoading] = useState(false);
+
+  // Client-side geo detection without blocking SSR/caching or layout shifts
+  useEffect(() => {
+    let isMounted = true;
+    async function detectCountry() {
+      try {
+        const res = await fetch('/api/geo', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (isMounted && json?.country) {
+            setUserCountry(json.country);
+          }
+        }
+      } catch {
+        // Fallback silently to DEFAULT priority
+      }
+    }
+    detectCountry();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Re-sort links when country or rawLinks change
+  useEffect(() => {
+    if (rawLinks.length > 0) {
+      setLinks(sortStreamingLinksByCountry(rawLinks, userCountry));
+    } else {
+      setLinks([]);
+    }
+  }, [rawLinks, userCountry]);
 
   useEffect(() => {
     let isMounted = true;
@@ -117,7 +151,7 @@ export function WhereToWatch({
           }
 
           if (Array.isArray(media.externalLinks)) {
-            const streaming = media.externalLinks
+            const streaming: StreamingLink[] = media.externalLinks
               .filter((l: any) => l.type === 'STREAMING')
               .map((l: any) => ({
                 id: l.id,
@@ -126,7 +160,8 @@ export function WhereToWatch({
                 icon: l.icon,
                 color: l.color,
               }));
-            setLinks(streaming);
+            setRawLinks(streaming);
+            setLinks(sortStreamingLinksByCountry(streaming, userCountry));
           }
         }
       } catch (err: any) {
@@ -234,15 +269,15 @@ export function WhereToWatch({
       {links.length > 0 && showStreamingList && (
         <div className="mt-2 pt-4 border-t border-outline-variant/20 flex flex-col gap-3 animate-fadeIn">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {links.map((link) => (
+            {links.map((link, index) => (
               <a
-                key={link.id}
+                key={`${link.id}-${link.site}`}
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer sponsored"
                 className="min-h-[48px] px-4 py-3 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 hover:border-primary/40 flex items-center justify-between gap-3 text-on-surface group transition-all active:scale-[0.98]"
               >
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   {link.icon ? (
                     <div className="w-6 h-6 rounded-md overflow-hidden relative shrink-0 bg-black/20 flex items-center justify-center">
                       <Image
@@ -262,9 +297,16 @@ export function WhereToWatch({
                       {link.site.slice(0, 1)}
                     </div>
                   )}
-                  <span className="font-title-card text-sm font-semibold truncate group-hover:text-primary transition-colors">
-                    {link.site}
-                  </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0 flex-1">
+                    <span className="font-title-card text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                      {link.site}
+                    </span>
+                    {index === 0 && (
+                      <span className="inline-flex items-center self-start sm:self-auto px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0 whitespace-nowrap">
+                        Чаще доступно в вашем регионе
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <span className="material-symbols-outlined text-outline group-hover:text-primary text-[18px] shrink-0">
                   arrow_outward
@@ -272,6 +314,9 @@ export function WhereToWatch({
               </a>
             ))}
           </div>
+          <p className="font-body-xs text-[11px] text-outline/80 mt-1">
+            Порядок зависит от вашей страны. Доступность сервисов может отличаться
+          </p>
         </div>
       )}
 
