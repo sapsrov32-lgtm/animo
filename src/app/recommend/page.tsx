@@ -27,30 +27,42 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 300; // cache for 5 minutes
+export const dynamic = 'force-dynamic';
 
-export default async function RecommendPage() {
+export default async function RecommendPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
+  const params = await searchParams;
+  const initialMood = params.mood;
   const supabase = await createClient();
 
-  // Fetch top anime with genres for recommendation scoring (excluding 18+)
+  // Fetch candidate anime with genres for recommendation filtering (strictly excluding 18+)
   const { data: animeData, error } = await supabase
     .from('anime')
     .select('*, anime_genres(genres(*))')
     .eq('is_published', true)
     .eq('is_adult', false)
     .not('poster_url', 'is', null)
-    .in('format', ['ТВ Сериал', 'Фильм', 'OVA', 'ONA'])
-    .gte('score', 6.5)
+    .in('format', ['ТВ Сериал', 'Фильм', 'OVA', 'ONA', 'Спэшл', 'ТВ Короткометражка'])
     .order('popularity', { ascending: false, nullsFirst: false })
-    .limit(1500);
+    .limit(2500);
 
   if (error) {
     console.error('Error fetching recommendation anime:', error);
   }
 
   const allAnime = ((animeData as Anime[]) || []).filter((a) => {
-    const gSlugs = a.anime_genres?.map((ag: any) => ag.genres?.slug?.toLowerCase()) || [];
-    return !gSlugs.includes('hentai') && !gSlugs.includes('ecchi');
+    if (!a.poster_url || a.poster_url.trim() === '') return false;
+    if (a.is_adult) return false;
+    const gSlugs = a.anime_genres?.map((ag: any) => ag.genres?.slug?.toLowerCase()).filter(Boolean) || [];
+    const gNames = a.anime_genres?.map((ag: any) => ag.genres?.name_ru?.toLowerCase()).filter(Boolean) || [];
+    
+    // Strict exclusion of 18+, hentai, and ecchi
+    if (gSlugs.includes('hentai') || gSlugs.includes('ecchi')) return false;
+    if (gNames.some((name: string) => name.includes('хентай') || name.includes('этти'))) return false;
+    return true;
   });
 
   // Fetch user list if authenticated
@@ -103,6 +115,7 @@ export default async function RecommendPage() {
         allAnime={allAnime}
         userAnimeMap={userAnimeMap}
         isLoggedIn={Boolean(user)}
+        initialMood={initialMood}
       />
     </>
   );

@@ -4,22 +4,22 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Anime } from '@/types';
-import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
+import { getDisplayTitle, getSecondaryTitle, cleanDescription, isRussianText } from '@/lib/format';
 import { setAnimeWatchStatus } from '@/app/actions/tracker';
 import { useRouter } from 'next/navigation';
 
 interface RecommendCardProps {
   anime: Anime;
-  matchPercent: number;
-  reason: string;
+  matchedCriteriaText: string;
+  isExactMatch?: boolean;
   userStatus?: string | null;
   isLoggedIn?: boolean;
 }
 
 export function RecommendCard({
   anime,
-  matchPercent,
-  reason,
+  matchedCriteriaText,
+  isExactMatch = true,
   userStatus = null,
   isLoggedIn = false,
 }: RecommendCardProps) {
@@ -35,8 +35,18 @@ export function RecommendCard({
     anime.anime_genres?.map((ag: any) => ag.genres?.name_ru).filter(Boolean) ||
     []
   )
-    .slice(0, 2)
+    .slice(0, 3)
     .join(', ');
+
+  const hasRussianDesc = isRussianText(anime.description);
+  const cleanedDesc = hasRussianDesc ? cleanDescription(anime.description) : null;
+  const fallbackInfo = [
+    genresList,
+    anime.year ? `${anime.year} год` : null,
+    anime.episodes ? `${anime.episodes} серий` : anime.status === 'ongoing' ? 'Идёт показ' : null,
+  ]
+    .filter(Boolean)
+    .join(' • ');
 
   const handleToggleWatchlist = async () => {
     if (!isLoggedIn) {
@@ -88,8 +98,14 @@ export function RecommendCard({
           <span className="px-2.5 py-1 rounded-full bg-surface-container-lowest/80 backdrop-blur-md font-label-sm text-label-sm text-tertiary">
             {anime.format || 'ТВ'} {anime.episodes ? `• ${anime.episodes} ЭП.` : ''}
           </span>
-          <span className="px-2 py-1 rounded-full bg-primary/20 backdrop-blur-md text-primary font-label-sm text-label-sm font-bold border border-primary/30">
-            {matchPercent}% МАТЧ
+          <span
+            className={`px-2.5 py-1 rounded-full backdrop-blur-md font-label-sm text-label-sm font-semibold border ${
+              isExactMatch
+                ? 'bg-secondary-container/90 text-on-secondary-container border-secondary/40'
+                : 'bg-surface-container-high/90 text-on-surface-variant border-outline-variant/30'
+            }`}
+          >
+            {isExactMatch ? 'Точный матч' : 'Близкий матч'}
           </span>
         </div>
 
@@ -136,18 +152,18 @@ export function RecommendCard({
           )}
 
           <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mt-1">
-            {anime.description || 'Классическое произведение японской анимации.'}
+            {cleanedDesc || fallbackInfo || 'Информация о тайтле дополняется.'}
           </p>
         </div>
 
-        {/* Dynamic Match Rationale Box */}
+        {/* Real Match Rationale Box */}
         <div className="bg-surface-container rounded-xl p-3 flex flex-col gap-1 border border-outline-variant/10">
           <div className="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm uppercase tracking-wide">
-            <span className="material-symbols-outlined text-[16px]">verified</span>
-            <span>Почему это подходит вам:</span>
+            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+            <span className="font-bold">Совпало:</span>
           </div>
-          <p className="font-body-sm text-body-sm text-on-surface leading-snug">
-            {reason}
+          <p className="font-body-sm text-body-sm text-on-surface leading-snug font-medium">
+            {matchedCriteriaText}
           </p>
         </div>
 

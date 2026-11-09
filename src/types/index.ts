@@ -29,6 +29,8 @@ export interface Anime {
   score?: number | null;
   studio?: string | null;
   is_published?: boolean;
+  is_adult?: boolean;
+  popularity?: number | null;
   created_at?: string;
   updated_at?: string;
   genres?: Genre[];

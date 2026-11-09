@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Anime } from '@/types';
 import { RecommendCard } from './RecommendCard';
@@ -11,72 +10,85 @@ interface RecommendWorkspaceProps {
   allAnime: Anime[];
   userAnimeMap: Record<string, string>;
   isLoggedIn: boolean;
+  initialMood?: string;
 }
 
 // Step 1: Moods
-const MOOD_OPTIONS = [
+export const MOOD_OPTIONS = [
   {
-    id: 'mindgame',
-    title: '🧠 Майндгейм и майндфак',
-    desc: 'Хитрые интриги, тайны и шок',
-    genreSlugs: ['psychological', 'mystery', 'thriller'],
-  },
-  {
-    id: 'adrenalin',
+    id: 'adrenaline',
     title: '⚡ Адреналин и драйв',
-    desc: 'Бешеный экшен, напряжённые битвы',
+    desc: 'Бешеный экшен, напряжённые битвы и скорость',
     genreSlugs: ['action', 'sports', 'supernatural'],
   },
   {
-    id: 'melancholy',
+    id: 'cozy',
     title: '🌙 Меланхолия и уют',
-    desc: 'Ночные огни, тишина, задумчивость',
-    genreSlugs: ['slice-of-life', 'drama', 'music'],
+    desc: 'Ночные огни, тишина, задумчивость и тепло',
+    genreSlugs: ['slice-of-life', 'drama'],
+  },
+  {
+    id: 'mindgame',
+    title: '🧠 Майндгейм',
+    desc: 'Хитрые интриги, тайны, психологические дуэли',
+    genreSlugs: ['psychological', 'thriller', 'mystery'],
   },
   {
     id: 'romance',
     title: '🌸 Тёплая романтика',
-    desc: 'Искренние чувства, нежность и юмор',
-    genreSlugs: ['romance', 'comedy'],
+    desc: 'Искренние чувства, нежность и первая любовь',
+    genreSlugs: ['romance'],
   },
   {
-    id: 'adventure',
-    title: '⚔️ Эпическое приключение',
-    desc: 'Исследование новых миров и магия',
-    genreSlugs: ['adventure', 'fantasy'],
+    id: 'relax',
+    title: '🍃 Лёгкий отдых',
+    desc: 'Комедия, непринуждённый сюжет и улыбка',
+    genreSlugs: ['comedy', 'slice-of-life'],
   },
 ];
 
 // Step 2: Time Available
-const TIME_OPTIONS = [
+export const TIME_OPTIONS = [
   {
     id: 'short_season',
     title: '📦 Короткий сезон',
     desc: '10–13 серий на выходные дни',
-    match: (a: Anime) => (!a.format || a.format === 'ТВ Сериал') && (a.episodes ? a.episodes <= 14 : true),
+    match: (a: Anime) =>
+      a.format !== 'Фильм' &&
+      typeof a.episodes === 'number' &&
+      a.episodes >= 10 &&
+      a.episodes <= 13,
   },
   {
     id: 'movie',
     title: '🍿 Полнометражный фильм',
     desc: 'Около 2 часов цельной истории',
-    match: (a: Anime) => a.format === 'Фильм',
+    match: (a: Anime) =>
+      a.format === 'Фильм' || a.format === 'Movie' || a.format === 'MOVIE',
   },
   {
     id: 'saga',
     title: '🏰 Масштабная сага',
     desc: '24+ эпизодов с проработанным миром',
-    match: (a: Anime) => (a.episodes ? a.episodes >= 20 : a.status === 'ongoing'),
+    match: (a: Anime) =>
+      (typeof a.episodes === 'number' && a.episodes >= 24) ||
+      (a.status === 'ongoing' && (!a.episodes || a.episodes >= 24)),
   },
   {
     id: 'one_ep',
-    title: '☕ Одна серия / мини-формат',
-    desc: '20–30 минут прямо сейчас перед сном',
-    match: (a: Anime) => a.format === 'ONA' || a.format === 'Спэшл' || (a.episodes ? a.episodes <= 12 : false),
+    title: '☕ Мини-формат / спэшл',
+    desc: 'Короткометражка, OVA или ONA до 15 мин',
+    match: (a: Anime) =>
+      a.format === 'ONA' ||
+      a.format === 'OVA' ||
+      a.format === 'Спэшл' ||
+      a.format === 'ТВ Короткометражка' ||
+      (typeof a.episodes === 'number' && a.episodes >= 1 && a.episodes <= 6),
   },
 ];
 
 // Step 3: Setting
-const SETTING_OPTIONS = [
+export const SETTING_OPTIONS = [
   {
     id: 'cyberpunk',
     title: 'Киберпанк и нео-нуар',
@@ -87,120 +99,218 @@ const SETTING_OPTIONS = [
     id: 'dark_fantasy',
     title: 'Тёмное фэнтези',
     desc: 'Мрачные клинки, древние проклятия',
-    genreSlugs: ['fantasy', 'horror', 'action'],
+    genreSlugs: ['fantasy', 'horror', 'action', 'supernatural'],
   },
   {
     id: 'slice',
     title: 'Срез жизни / Дружба',
     desc: 'Реализм, школа, взросление и юмор',
-    genreSlugs: ['slice-of-life', 'comedy'],
+    genreSlugs: ['slice-of-life', 'comedy', 'drama'],
   },
   {
     id: 'scifi',
     title: 'Научная фантастика / Таймтревел',
-    desc: 'Петли времени, парадоксы, наука',
+    desc: 'Петли времени, космос, парадоксы, наука',
     genreSlugs: ['sci-fi', 'mystery'],
   },
 ];
+
+function normalizeMoodId(mood?: string | null): string {
+  if (!mood) return 'mindgame';
+  const m = mood.toLowerCase().trim();
+  if (m === 'adrenaline' || m === 'adrenalin') return 'adrenaline';
+  if (m === 'cozy' || m === 'melancholy') return 'cozy';
+  if (m === 'mindgame' || m === 'mindgames') return 'mindgame';
+  if (m === 'romance') return 'romance';
+  if (m === 'relax') return 'relax';
+  return 'mindgame';
+}
 
 export function RecommendWorkspace({
   allAnime,
   userAnimeMap,
   isLoggedIn,
+  initialMood,
 }: RecommendWorkspaceProps) {
   const router = useRouter();
 
-  // Selected state (defaults match design preview)
-  const [selectedMood, setSelectedMood] = useState<string>('mindgame');
+  // Selected criteria state (initialized from URL ?mood=)
+  const [selectedMood, setSelectedMood] = useState<string>(() =>
+    normalizeMoodId(initialMood)
+  );
   const [selectedTime, setSelectedTime] = useState<string>('short_season');
   const [selectedSetting, setSelectedSetting] = useState<string>('cyberpunk');
 
   const [addingAll, setAddingAll] = useState(false);
   const [addAllFeedback, setAddAllFeedback] = useState(false);
 
-  // 1. Calculate matching recommendations
-  const recommendations = useMemo(() => {
-    const currentMood = MOOD_OPTIONS.find((m) => m.id === selectedMood);
-    const currentTime = TIME_OPTIONS.find((t) => t.id === selectedTime);
-    const currentSetting = SETTING_OPTIONS.find((s) => s.id === selectedSetting);
+  // Sync state if initialMood changes
+  useEffect(() => {
+    if (initialMood) {
+      setSelectedMood(normalizeMoodId(initialMood));
+    }
+  }, [initialMood]);
 
-    const scored = allAnime.map((anime) => {
-      let scorePoints = (anime.score || 7.5) * 5; // Base 35-50 pts
+  const handleMoodSelect = (moodId: string) => {
+    setSelectedMood(moodId);
+    router.replace(`/recommend?mood=${moodId}`, { scroll: false });
+  };
 
-      const animeGenreSlugs =
-        anime.genres?.map((g) => g.slug) ||
-        anime.anime_genres?.map((ag: any) => ag.genres?.slug).filter(Boolean) ||
-        [];
+  // Real Filtering Logic with Graceful Fallback
+  const { recommendations, isExactMatches } = useMemo(() => {
+    const currentMood = MOOD_OPTIONS.find((m) => m.id === selectedMood) || MOOD_OPTIONS[0];
+    const currentTime = TIME_OPTIONS.find((t) => t.id === selectedTime) || TIME_OPTIONS[0];
+    const currentSetting = SETTING_OPTIONS.find((s) => s.id === selectedSetting) || SETTING_OPTIONS[0];
 
-      // Time match bonus
-      if (currentTime && currentTime.match(anime)) {
-        scorePoints += 30;
+    const getAnimeGenreSlugs = (anime: Anime): string[] => {
+      const fromGenres = anime.genres?.map((g) => g.slug?.toLowerCase()).filter(Boolean) || [];
+      const fromAg =
+        anime.anime_genres?.map((ag: any) => ag.genres?.slug?.toLowerCase()).filter(Boolean) || [];
+      return Array.from(new Set([...fromGenres, ...fromAg]));
+    };
+
+    const getAnimeGenreNames = (anime: Anime): string[] => {
+      const fromGenres = anime.genres?.map((g) => g.name_ru).filter(Boolean) || [];
+      const fromAg =
+        anime.anime_genres?.map((ag: any) => ag.genres?.name_ru).filter(Boolean) || [];
+      return Array.from(new Set([...fromGenres, ...fromAg]));
+    };
+
+    // Candidate pool matching both Mood and Time
+    const poolMoodAndTime = allAnime.filter((anime) => {
+      if (!anime.poster_url || anime.poster_url.trim() === '') return false;
+      if (anime.is_adult) return false;
+
+      // Must match selected Time
+      if (!currentTime.match(anime)) return false;
+
+      // Must match selected Mood genres
+      const slugs = getAnimeGenreSlugs(anime);
+      const matchesMood = currentMood.genreSlugs.some((s) => slugs.includes(s));
+      if (!matchesMood) return false;
+
+      // Cozy filter: exclude violent action or gore horror so cozy stays tranquil and warm
+      if (currentMood.id === 'cozy' && (slugs.includes('action') || slugs.includes('horror'))) {
+        return false;
       }
 
-      // Mood match bonus
-      if (currentMood) {
-        const moodMatches = currentMood.genreSlugs.filter((slug) =>
-          animeGenreSlugs.includes(slug)
-        ).length;
-        scorePoints += moodMatches * 15;
-      }
+      return true;
+    });
 
-      // Setting match bonus
-      if (currentSetting) {
-        const settingMatches = currentSetting.genreSlugs.filter((slug) =>
-          animeGenreSlugs.includes(slug)
-        ).length;
-        scorePoints += settingMatches * 15;
+    const deduplicateFranchise = (list: Anime[]): Anime[] => {
+      const seen = new Set<string>();
+      const result: Anime[] = [];
+      for (const a of list) {
+        const title = (a.title_en || a.title_ru || '').toLowerCase();
+        const baseKey = title
+          .replace(/(?:season|part|2nd|3rd|4th|final|коллаборация|сезон|фильм|\b\d+\b).*/gi, '')
+          .trim();
+        if (!seen.has(baseKey)) {
+          seen.add(baseKey);
+          result.push(a);
+        }
       }
+      return result;
+    };
 
-      // Generate context-aware reason
-      let reason = 'Высокий рейтинг сообщества и гармоничное попадание в выбранные параметры.';
-      if (selectedTime === 'movie' && anime.format === 'Фильм') {
-        reason = 'Идеальный полнометражный шедевр на вечер без необходимости растягивать просмотр на недели.';
-      } else if (selectedMood === 'mindgame') {
-        reason = 'Непревзойдённый психологический триллер с высокими ставками и шокирующими сюжетными твистами.';
-      } else if (selectedMood === 'adrenalin') {
-        reason = `Захватывающий драйв и эталонная анимация боевых сцен от студии ${anime.studio || 'ведущих мастеров'}.`;
-      } else if (selectedMood === 'melancholy') {
-        reason = 'Уютная, медитативная атмосфера для вечернего спокойного погружения.';
-      } else if (selectedMood === 'romance') {
-        reason = 'Трогательная и глубокая романтическая линия, получившая признание сообщества.';
-      } else if (selectedSetting === 'cyberpunk') {
-        reason = 'Атмосферный киберпанк с высокими технологиями и глубокой интригой.';
+    // Exact matches also matching Setting
+    const exactCandidatePool = poolMoodAndTime.filter((anime) => {
+      const slugs = getAnimeGenreSlugs(anime);
+      return currentSetting.genreSlugs.some((s) => slugs.includes(s));
+    });
+
+    exactCandidatePool.sort((a, b) => {
+      const scoreA = (a.score || 7.0) * 10 + (a.popularity || 0) / 10000;
+      const scoreB = (b.score || 7.0) * 10 + (b.popularity || 0) / 10000;
+      return scoreB - scoreA;
+    });
+
+    const exactMatches = deduplicateFranchise(exactCandidatePool);
+
+    let finalAnimeList: Anime[] = [];
+    let exact = true;
+
+    if (exactMatches.length >= 6) {
+      finalAnimeList = exactMatches.slice(0, 6);
+      exact = true;
+    } else {
+      // If less than 6 exact results, relax the setting criterion and show closest matches
+      exact = false;
+      const exactIds = new Set(exactMatches.map((a) => a.id));
+
+      const relaxedCandidates = poolMoodAndTime.filter((a) => !exactIds.has(a.id));
+      relaxedCandidates.sort((a, b) => {
+        const scoreA = (a.score || 7.0) * 10 + (a.popularity || 0) / 10000;
+        const scoreB = (b.score || 7.0) * 10 + (b.popularity || 0) / 10000;
+        return scoreB - scoreA;
+      });
+
+      const relaxedMatches = deduplicateFranchise(relaxedCandidates);
+      finalAnimeList = [...exactMatches, ...relaxedMatches.slice(0, 6 - exactMatches.length)];
+
+      // If still less than 6, expand to candidate pool matching mood
+      if (finalAnimeList.length < 6) {
+        const currentIds = new Set(finalAnimeList.map((a) => a.id));
+        const moodCandidates = allAnime.filter((a) => {
+          if (currentIds.has(a.id) || !a.poster_url || a.is_adult) return false;
+          const slugs = getAnimeGenreSlugs(a);
+          return currentMood.genreSlugs.some((s) => slugs.includes(s));
+        });
+        moodCandidates.sort((a, b) => (b.score || 7.0) - (a.score || 7.0));
+        const extraMood = deduplicateFranchise(moodCandidates);
+        finalAnimeList = [...finalAnimeList, ...extraMood.slice(0, 6 - finalAnimeList.length)];
       }
+    }
+
+    // Build real matched criteria description
+    const recs = finalAnimeList.map((anime) => {
+      const names = getAnimeGenreNames(anime);
+      const matchedGenreNames = names.slice(0, 2);
+
+      const timePart =
+        anime.format === 'Фильм'
+          ? 'Фильм'
+          : anime.episodes
+          ? `${anime.episodes} серий`
+          : anime.status === 'ongoing'
+          ? 'Идёт показ'
+          : anime.format || 'ТВ';
+
+      const ratingPart = anime.score ? `рейтинг ${anime.score.toFixed(1)}` : 'высокий рейтинг';
+      const matchedCriteriaText = [...matchedGenreNames, timePart, ratingPart]
+        .filter(Boolean)
+        .join(', ');
+
+      const isExact = exactMatches.some((em) => em.id === anime.id);
 
       return {
         anime,
-        scorePoints,
-        reason,
+        matchedCriteriaText,
+        isExact,
       };
     });
 
-    // Sort by computed points descending and take top 6
-    scored.sort((a, b) => b.scorePoints - a.scorePoints);
-    const top = scored.slice(0, 6);
-
-    // Normalize match percentage
-    return top.map((item, idx) => ({
-      ...item,
-      matchPercent: Math.max(92, Math.min(99, 99 - idx)),
-    }));
+    return {
+      recommendations: recs,
+      isExactMatches: exact,
+    };
   }, [allAnime, selectedMood, selectedTime, selectedSetting]);
 
-  // Insights calculations
+  // Real statistics calculated directly from shown recommendations
   const totalEpisodesCount = recommendations.reduce(
-    (acc, curr) => acc + (curr.anime.episodes || 1),
+    (acc, curr) => acc + (curr.anime.episodes || (curr.anime.format === 'Фильм' ? 1 : 12)),
     0
   );
   const averageScore =
     recommendations.length > 0
-      ? recommendations.reduce((acc, curr) => acc + (curr.anime.score || 8.0), 0) /
+      ? recommendations.reduce((acc, curr) => acc + (curr.anime.score || 7.5), 0) /
         recommendations.length
-      : 8.8;
+      : 8.0;
 
-  // Handlers
+  const progressPercent = isExactMatches ? 100 : 75;
+
   const handleRestart = () => {
-    setSelectedMood('mindgame');
+    handleMoodSelect('mindgame');
     setSelectedTime('short_season');
     setSelectedSetting('cyberpunk');
   };
@@ -210,11 +320,10 @@ export function RecommendWorkspace({
     const randomTime = TIME_OPTIONS[Math.floor(Math.random() * TIME_OPTIONS.length)].id;
     const randomSetting = SETTING_OPTIONS[Math.floor(Math.random() * SETTING_OPTIONS.length)].id;
 
-    setSelectedMood(randomMood);
+    handleMoodSelect(randomMood);
     setSelectedTime(randomTime);
     setSelectedSetting(randomSetting);
 
-    // Smooth scroll down to results
     const resultsEl = document.getElementById('recommendation-results');
     if (resultsEl) {
       resultsEl.scrollIntoView({ behavior: 'smooth' });
@@ -244,7 +353,6 @@ export function RecommendWorkspace({
   return (
     <div className="flex flex-col w-full pb-16">
       <div className="relative w-full max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-lg flex flex-col gap-space-xl">
-        
         {/* Ambient Glows */}
         <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-[720px] h-[340px] bg-primary-container/10 rounded-full blur-[140px] pointer-events-none -z-10" />
         <div className="absolute top-48 right-10 w-[420px] h-[320px] bg-secondary-container/10 rounded-full blur-[120px] pointer-events-none -z-10" />
@@ -255,20 +363,20 @@ export function RecommendWorkspace({
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm tracking-wide border border-primary/20">
                 <span className="material-symbols-outlined text-[14px]">psychology</span>
-                НЕЙРОПОДБОР 3.0
+                ИНТЕЛЛЕКТУАЛЬНЫЙ КОМПАС
               </span>
               <span className="font-body-sm text-body-sm text-outline">Без спойлеров и клише</span>
             </div>
 
             <h1 className="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface font-bold tracking-tight">
-              Интеллектуальный компас аниме
+              Что посмотреть? Персональный компас
             </h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
-              Ответьте на 3 простых вопроса, и алгоритм подберёт идеальный тайтл под ваше состояние и доступное время без спойлеров.
+              Выберите настроение, доступный формат и сеттинг — алгоритм сопоставит каталог с вашими предпочтениями и предложит подходящие тайтлы.
             </p>
           </div>
 
-          {/* Radial Indicator Box */}
+          {/* Radial Indicator Box (reflects real matching state) */}
           <div className="bg-surface-container-low p-space-md rounded-2xl flex items-center gap-4 shadow-xl border border-outline-variant/20 shrink-0">
             <div className="relative flex items-center justify-center w-14 h-14 rounded-full bg-surface-container-high text-secondary shrink-0">
               <svg className="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
@@ -284,15 +392,23 @@ export function RecommendWorkspace({
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   fill="none"
                   stroke="currentColor"
-                  strokeDasharray="100, 100"
+                  strokeDasharray={`${progressPercent}, 100`}
                   strokeWidth="3"
                 />
               </svg>
-              <span className="absolute font-badge-score text-badge-score text-on-surface">100%</span>
+              <span className="absolute font-badge-score text-badge-score text-on-surface">
+                {progressPercent}%
+              </span>
             </div>
             <div className="flex flex-col">
-              <span className="font-label-md text-label-md text-on-surface font-bold">Статус подбора</span>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">Все параметры учтены • Готово</span>
+              <span className="font-label-md text-label-md text-on-surface font-bold">
+                {isExactMatches ? 'Статус подбора 100%' : 'Статус подбора (близкие)'}
+              </span>
+              <span className="font-body-sm text-body-sm text-on-surface-variant">
+                {isExactMatches
+                  ? 'Все параметры учтены • Точные совпадения'
+                  : 'Мало точных совпадений, показаны близкие'}
+              </span>
             </div>
           </div>
         </section>
@@ -305,8 +421,12 @@ export function RecommendWorkspace({
                 1
               </span>
               <div className="flex flex-col min-w-0">
-                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Шаг 1</span>
-                <span className="font-title-card text-title-card text-on-surface truncate">Настроение</span>
+                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">
+                  Шаг 1
+                </span>
+                <span className="font-title-card text-title-card text-on-surface truncate">
+                  Настроение
+                </span>
               </div>
             </div>
 
@@ -315,7 +435,9 @@ export function RecommendWorkspace({
                 2
               </span>
               <div className="flex flex-col min-w-0">
-                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Шаг 2</span>
+                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">
+                  Шаг 2
+                </span>
                 <span className="font-title-card text-title-card text-on-surface truncate">Время</span>
               </div>
             </div>
@@ -325,8 +447,12 @@ export function RecommendWorkspace({
                 3
               </span>
               <div className="flex flex-col min-w-0">
-                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Шаг 3</span>
-                <span className="font-title-card text-title-card text-on-surface truncate">Сеттинг</span>
+                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">
+                  Шаг 3
+                </span>
+                <span className="font-title-card text-title-card text-on-surface truncate">
+                  Сеттинг
+                </span>
               </div>
             </div>
 
@@ -335,14 +461,21 @@ export function RecommendWorkspace({
                 ✓
               </span>
               <div className="flex flex-col min-w-0">
-                <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider">Финал</span>
-                <span className="font-title-card text-title-card text-primary font-bold truncate">Результат</span>
+                <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider">
+                  Финал
+                </span>
+                <span className="font-title-card text-title-card text-primary font-bold truncate">
+                  Результат
+                </span>
               </div>
             </div>
           </div>
 
           <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-secondary to-primary rounded-full w-full transition-all duration-500" />
+            <div
+              className="h-full bg-gradient-to-r from-secondary to-primary rounded-full transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
           </div>
         </div>
 
@@ -366,7 +499,7 @@ export function RecommendWorkspace({
             <div className="flex items-center justify-between">
               <span className="font-label-md text-label-md uppercase tracking-wider text-secondary flex items-center gap-1.5 font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                1. Ваше текущее состояние и настроение
+                1. Ваше текущее состояние и настроение (?mood=)
               </span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">
                 Активно:{' '}
@@ -383,7 +516,7 @@ export function RecommendWorkspace({
                   <button
                     key={mood.id}
                     type="button"
-                    onClick={() => setSelectedMood(mood.id)}
+                    onClick={() => handleMoodSelect(mood.id)}
                     className={`text-left p-3.5 rounded-xl transition-all flex flex-col gap-1.5 group cursor-pointer border ${
                       isActive
                         ? 'bg-surface-container-highest shadow-[0_0_20px_-2px_rgba(208,188,255,0.35)] border-primary/50'
@@ -392,7 +525,9 @@ export function RecommendWorkspace({
                   >
                     <span
                       className={`font-title-card text-title-card flex items-center justify-between transition-colors ${
-                        isActive ? 'text-primary font-bold' : 'text-on-surface group-hover:text-primary'
+                        isActive
+                          ? 'text-primary font-bold'
+                          : 'text-on-surface group-hover:text-primary'
                       }`}
                     >
                       <span>{mood.title}</span>
@@ -440,7 +575,9 @@ export function RecommendWorkspace({
                   >
                     <span
                       className={`font-title-card text-title-card flex items-center justify-between transition-colors ${
-                        isActive ? 'text-primary font-bold' : 'text-on-surface group-hover:text-primary'
+                        isActive
+                          ? 'text-primary font-bold'
+                          : 'text-on-surface group-hover:text-primary'
                       }`}
                     >
                       <span>{time.title}</span>
@@ -488,7 +625,9 @@ export function RecommendWorkspace({
                   >
                     <span
                       className={`font-title-card text-title-card flex items-center justify-between transition-colors ${
-                        isActive ? 'text-primary font-bold' : 'text-on-surface group-hover:text-primary'
+                        isActive
+                          ? 'text-primary font-bold'
+                          : 'text-on-surface group-hover:text-primary'
                       }`}
                     >
                       <span>{setting.title}</span>
@@ -520,7 +659,7 @@ export function RecommendWorkspace({
                 Результаты подбора для вас
               </h2>
               <p className="font-body-md text-body-md text-on-surface-variant">
-                {recommendations.length} тайтлов, показавших наивысший коэффициент совпадения по вашим ответам
+                {recommendations.length} тайтлов, соответствующих вашим критериям настроения и формата
               </p>
             </div>
 
@@ -557,14 +696,31 @@ export function RecommendWorkspace({
             </div>
           </div>
 
+          {/* Graceful Fallback Warning Banner if results are relaxed */}
+          {!isExactMatches && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-200 text-body-sm flex items-center gap-3">
+              <span className="material-symbols-outlined text-[22px] text-amber-400 shrink-0">
+                info
+              </span>
+              <div>
+                <span className="font-semibold block text-amber-300">
+                  Мало точных совпадений, показаны близкие
+                </span>
+                <span className="text-amber-200/80 text-xs">
+                  Точных тайтлов по всем 3 критериям оказалось меньше 6. Мы сохранили ваше настроение и хронометраж, расширив сеттинг.
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Recommendation Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
             {recommendations.map((rec) => (
               <RecommendCard
                 key={rec.anime.id}
                 anime={rec.anime}
-                matchPercent={rec.matchPercent}
-                reason={rec.reason}
+                matchedCriteriaText={rec.matchedCriteriaText}
+                isExactMatch={rec.isExact}
                 userStatus={userAnimeMap[rec.anime.id]}
                 isLoggedIn={isLoggedIn}
               />
@@ -572,7 +728,7 @@ export function RecommendWorkspace({
           </div>
         </section>
 
-        {/* Detailed Compatibility Breakdown & Insight Block */}
+        {/* Detailed Compatibility Breakdown & Insight Block (Calculated from shown anime) */}
         <section className="bg-surface-container-low rounded-2xl p-space-md md:p-space-lg flex flex-col md:flex-row items-center justify-between gap-space-lg shadow-lg border border-outline-variant/20">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shrink-0">
@@ -583,7 +739,7 @@ export function RecommendWorkspace({
                 Как сформирован этот персональный лист?
               </h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant max-w-2xl leading-relaxed">
-                Система сопоставила выбранные критерии со срезом каталога «Анимо», автоматически рассчитав баланс темпа повествования, хронометража и рейтинга зрителей.
+                Система сопоставила выбранные критерии с каталогом «Анимо», отобрав тайтлы с реальным совпадением жанров настроения, хронометража серий и сеттинга.
               </p>
             </div>
           </div>
@@ -591,23 +747,30 @@ export function RecommendWorkspace({
           <div className="flex items-center gap-6 shrink-0 text-center">
             <div className="flex flex-col">
               <span className="font-headline-md text-headline-md font-bold text-primary">0</span>
-              <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider">Спойлеров</span>
+              <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider">
+                Спойлеров
+              </span>
             </div>
             <div className="w-px h-8 bg-surface-container-highest" />
             <div className="flex flex-col">
-              <span className="font-headline-md text-headline-md font-bold text-secondary">{totalEpisodesCount}</span>
-              <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider">Серий суммарно</span>
+              <span className="font-headline-md text-headline-md font-bold text-secondary">
+                {totalEpisodesCount}
+              </span>
+              <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider">
+                Серий суммарно
+              </span>
             </div>
             <div className="w-px h-8 bg-surface-container-highest" />
             <div className="flex flex-col">
               <span className="font-headline-md text-headline-md font-bold text-tertiary">
                 {averageScore.toFixed(1)}
               </span>
-              <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider">Средний балл</span>
+              <span className="font-label-sm text-[10px] text-outline uppercase tracking-wider">
+                Средний балл
+              </span>
             </div>
           </div>
         </section>
-
       </div>
     </div>
   );
