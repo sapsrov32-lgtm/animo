@@ -23,6 +23,15 @@ export const metadata: Metadata = {
   },
   description:
     'Animo anime: каталог аниме с рейтингами, трекер серий и календарь выхода новых серий по вашему часовому поясу. Без пиратства.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
+      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   authors: [{ name: 'Анимо' }],
   creator: 'Анимо',
   openGraph: {
@@ -91,6 +100,9 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" href="/icon.png" sizes="192x192" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" sizes="180x180" />
       </head>
       <body className="bg-surface text-on-surface font-body-md antialiased min-h-screen selection:bg-secondary-container selection:text-on-secondary-container flex flex-col">
         <Navbar user={clientUser} profile={profile} />

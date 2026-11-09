@@ -33,32 +33,12 @@ export const metadata: Metadata = {
 
 const homeJsonLd = {
   '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'WebSite',
-      '@id': 'https://animo-virid.vercel.app/#website',
-      url: 'https://animo-virid.vercel.app',
-      name: 'Анимо',
-      alternateName: ['Animo', 'Анимо аниме'],
-      description: 'Каталог аниме, трекер серий и календарь релизов',
-      inLanguage: 'ru',
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: {
-          '@type': 'EntryPoint',
-          urlTemplate: 'https://animo-virid.vercel.app/catalog?q={search_term_string}',
-        },
-        'query-input': 'required name=search_term_string',
-      },
-    },
-    {
-      '@type': 'Organization',
-      '@id': 'https://animo-virid.vercel.app/#organization',
-      name: 'Анимо',
-      url: 'https://animo-virid.vercel.app',
-      logo: 'https://animo-virid.vercel.app/favicon.ico',
-    },
-  ],
+  '@type': 'WebSite',
+  name: 'Анимо',
+  alternateName: ['Animo', 'Animo anime', 'Анимо аниме'],
+  url: 'https://animo-virid.vercel.app/',
+  inLanguage: 'ru',
+  description: 'Каталог аниме, трекер серий и календарь релизов',
 };
 
 export default async function HomePage() {
