@@ -484,7 +484,7 @@ export function RecommendWorkspace({
             </div>
 
             <h1 className="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface font-bold tracking-tight">
-              Что посмотреть? Персональный компас
+              Что посмотреть аниме по настроению
             </h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
               Выберите настроение, доступный формат и сеттинг — алгоритм сопоставит каталог с вашими предпочтениями и предложит подходящие тайтлы.

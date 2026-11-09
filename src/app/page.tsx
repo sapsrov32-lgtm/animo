@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { HomeView } from '@/components/home/HomeView';
 import { fetchHomeAiringSchedule } from '@/lib/anilist';
@@ -6,6 +7,29 @@ import { Anime } from '@/types';
 import { applyPublicAnimeFilter } from '@/lib/anime-filter';
 
 export const revalidate = 60; // Cache for 60 seconds
+
+export const metadata: Metadata = {
+  title: {
+    absolute: 'Анимо: каталог аниме, трекер серий и календарь релизов',
+  },
+  description:
+    'Animo anime: каталог аниме с рейтингами, трекер серий и календарь выхода новых серий по вашему часовому поясу. Без пиратства.',
+  openGraph: {
+    title: 'Анимо: каталог аниме, трекер серий и календарь релизов',
+    description:
+      'Animo anime: каталог аниме с рейтингами, трекер серий и календарь выхода новых серий по вашему часовому поясу. Без пиратства.',
+    url: 'https://animo-virid.vercel.app',
+    siteName: 'Анимо',
+    locale: 'ru_RU',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Анимо: каталог аниме, трекер серий и календарь релизов',
+    description:
+      'Animo anime: каталог аниме с рейтингами, трекер серий и календарь выхода новых серий по вашему часовому поясу. Без пиратства.',
+  },
+};
 
 const homeJsonLd = {
   '@context': 'https://schema.org',

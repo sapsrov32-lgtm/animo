@@ -22,7 +22,7 @@ export function Footer() {
               <span className="font-headline-sm text-headline-sm font-bold text-on-surface">АНИМО</span>
             </div>
             <p className="font-body-md text-body-md text-on-surface-variant mb-space-sm">
-              Каталог аниме, трекер серий и календарь релизов.
+              Анимо (Animo anime): каталог аниме, трекер аниме и календарь релизов.
             </p>
             <p className="font-body-sm text-body-sm text-outline">
               Анимо не размещает и не воспроизводит видео. Ссылки ведут на официальные сервисы. Данные: AniList.
@@ -65,7 +65,7 @@ export function Footer() {
 
         <div className="pt-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm text-outline font-body-sm text-body-sm">
           <span>© {currentYear} АНИМО. Все права защищены.</span>
-          <span>Каталог, персональный трекер и календарь релизов.</span>
+          <span>Официальные источники и расписание японской анимации.</span>
         </div>
       </div>
     </footer>

@@ -340,7 +340,7 @@ export function CatalogView({
             Каталог аниме
           </h1>
           <p className="font-body-md text-body-md text-on-surface-variant max-w-xl mt-1">
-            Исследуйте полную коллекцию из {stats.total} тайтлов, фильтруйте по жанрам, форматам и оценкам.
+            Каталог аниме: рейтинг, жанры, число серий и статус. Фильтруйте по жанру, году и формату.
           </p>
         </div>
 

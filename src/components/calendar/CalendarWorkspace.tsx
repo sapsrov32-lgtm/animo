@@ -275,10 +275,10 @@ export function CalendarWorkspace({
                 </div>
 
                 <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
-                  Календарь выхода серий
+                  Календарь выхода аниме
                 </h1>
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Точное расписание трансляций онгоингов в Японии с автоматическим пересчётом на ваше местное время{mounted && userTimezone ? ` (${userTimezone})` : ''}. Никаких пиратских плееров — только проверенное расписание.
+                  Следите за расписанием выхода новых эпизодов по дням недели с автоматическим пересчётом на ваш часовой пояс. Узнавайте точные номера серий и добавляйте тайтлы в планы, чтобы не пропустить свежие премьеры.
                 </p>
               </div>
 
