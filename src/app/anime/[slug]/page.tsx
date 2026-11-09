@@ -48,47 +48,58 @@ const getAnime = cache(async (slug: string) => {
 
 function extractSeoDescription(anime: any, title: string): string {
   const cleaned = cleanDescription(anime.description);
-  if (cleaned && cleaned.length >= 25) {
+  if (cleaned && cleaned.length >= 25 && isRussianText(cleaned)) {
     const singleLine = cleaned.replace(/\s+/g, ' ').trim();
-    if (singleLine.length >= 140 && singleLine.length <= 160) {
-      return singleLine;
-    }
     if (singleLine.length > 160) {
       const slice = singleLine.slice(0, 157);
       const lastSpace = slice.lastIndexOf(' ');
       const trimmed = lastSpace > 120 ? slice.slice(0, lastSpace) : slice;
       return `${trimmed}...`;
     }
-    const yearPart = anime.year ? ` (${anime.year})` : '';
-    const combined = `${title}${yearPart}: ${singleLine}. Информация, серии и рейтинг на Анимо.`;
-    return combined.slice(0, 160);
+    return singleLine;
   }
 
-  const yearPart = anime.year ? ` (${anime.year})` : '';
-  const fallback = `Смотреть аниме «${title}»${yearPart}: описание сюжета, официальный рейтинг, расписание серий и где смотреть онлайн в хорошем качестве на Анимо.`;
-  return fallback.slice(0, 160);
+  // Fallback as requested: «{Название}: жанры, рейтинг, число серий»
+  const rawGenres: Genre[] = anime.anime_genres?.map((ag: any) => ag.genres).filter(Boolean) || [];
+  const sortedNames = sortAndFormatGenres(rawGenres.map((g) => g.name_ru), 3);
+  const genresStr = sortedNames.length > 0 ? sortedNames.join(', ') : 'аниме';
+  const scoreStr = anime.score ? anime.score.toFixed(1) : '—';
+  const episodesStr =
+    anime.format === 'Фильм'
+      ? 'Фильм'
+      : typeof anime.episodes === 'number' && anime.episodes > 0
+      ? `${anime.episodes} серий`
+      : anime.status === 'ongoing' || anime.status === 'RELEASING'
+      ? 'идёт показ'
+      : '—';
+
+  return `${title}: ${genresStr}, рейтинг ${scoreStr}, ${episodesStr}`;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const anime = await getAnime(slug);
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://animo-virid.vercel.app';
+  const canonicalUrl = `https://animo-virid.vercel.app/anime/${slug}`;
 
   if (!anime) {
-    return { title: 'Тайтл не найден — Анимо' };
+    return {
+      title: 'Тайтл не найден — Анимо',
+      alternates: {
+        canonical: canonicalUrl,
+      },
+    };
   }
 
   const title = getDisplayTitle(anime);
   // Title format: «{Название} — описание, рейтинг, серии | Анимо»
   const seoTitle = `${title} — описание, рейтинг, серии | Анимо`;
   const seoDescription = extractSeoDescription(anime, title);
-  const pageUrl = `${baseUrl}/anime/${anime.slug || anime.id}`;
   const poster = anime.poster_url || anime.banner_url || '';
   const posterAbsoluteUrl = poster
     ? poster.startsWith('http')
       ? poster
-      : `${baseUrl}${poster}`
-    : undefined;
+      : `https://animo-virid.vercel.app${poster}`
+    : 'https://animo-virid.vercel.app/og-image.jpg';
 
   return {
     title: {
@@ -96,31 +107,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     description: seoDescription,
     alternates: {
-      canonical: pageUrl,
+      canonical: canonicalUrl,
     },
     openGraph: {
       title: seoTitle,
       description: seoDescription,
-      url: pageUrl,
+      url: canonicalUrl,
       siteName: 'Анимо',
       locale: 'ru_RU',
       type: 'website',
-      images: posterAbsoluteUrl
-        ? [
-            {
-              url: posterAbsoluteUrl,
-              width: 1200,
-              height: 630,
-              alt: title,
-            },
-          ]
-        : [],
+      images: [
+        {
+          url: posterAbsoluteUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: seoTitle,
       description: seoDescription,
-      images: posterAbsoluteUrl ? [posterAbsoluteUrl] : [],
+      images: [posterAbsoluteUrl],
     },
   };
 }
@@ -163,8 +172,8 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
   ]);
 
   const userAnimeRecord = recordRes.data;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://animo-virid.vercel.app';
-  const pageUrl = `${baseUrl}/anime/${anime.slug || anime.id}`;
+  const baseUrl = 'https://animo-virid.vercel.app';
+  const pageUrl = `${baseUrl}/anime/${slug}`;
 
   const cleanedSynopsis = cleanDescription(anime.description);
   const hasRussianDescription = isRussianText(cleanedSynopsis);

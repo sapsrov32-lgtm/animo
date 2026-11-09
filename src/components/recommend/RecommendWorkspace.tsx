@@ -76,12 +76,13 @@ export const TIME_OPTIONS = [
   },
   {
     id: 'one_ep',
-    title: '☕ Мини-формат / спэшл',
+    title: '☕ Мини-формат / спешл',
     desc: 'Короткометражка, OVA или ONA до 15 мин',
     match: (a: Anime) =>
       a.format === 'ONA' ||
       a.format === 'OVA' ||
       a.format === 'Спэшл' ||
+      a.format === 'Спешл' ||
       a.format === 'ТВ Короткометражка' ||
       (typeof a.episodes === 'number' && a.episodes >= 1 && a.episodes <= 6),
   },
@@ -93,25 +94,71 @@ export const SETTING_OPTIONS = [
     id: 'cyberpunk',
     title: 'Киберпанк и нео-нуар',
     desc: 'Синдикаты, ИИ, дождливый мегаполис',
-    genreSlugs: ['sci-fi', 'thriller', 'mystery'],
+    badgeName: 'Киберпанк',
+    matches: (anime: Anime, slugs: string[], names: string[], text: string) => {
+      return (
+        slugs.includes('cyberpunk') ||
+        slugs.includes('sci-fi') ||
+        names.includes('киберпанк') ||
+        names.includes('фантастика') ||
+        text.includes('киберпанк') ||
+        text.includes('cyberpunk') ||
+        text.includes('дистопи') ||
+        text.includes('dystopi')
+      );
+    },
   },
   {
     id: 'dark_fantasy',
     title: 'Тёмное фэнтези',
     desc: 'Мрачные клинки, древние проклятия',
-    genreSlugs: ['fantasy', 'horror', 'action', 'supernatural'],
+    badgeName: 'Тёмное фэнтези',
+    matches: (anime: Anime, slugs: string[], names: string[], text: string) => {
+      const hasFantasy = slugs.includes('fantasy') || names.includes('фэнтези');
+      const isDark =
+        slugs.includes('horror') ||
+        slugs.includes('supernatural') ||
+        slugs.includes('thriller') ||
+        names.includes('ужасы') ||
+        names.includes('сверхъестественное') ||
+        names.includes('триллер') ||
+        text.includes('тёмное фэнтези') ||
+        text.includes('dark fantasy') ||
+        text.includes('демон');
+      return (hasFantasy && isDark) || text.includes('тёмное фэнтези') || text.includes('dark fantasy');
+    },
   },
   {
     id: 'slice',
     title: 'Срез жизни / Дружба',
     desc: 'Реализм, школа, взросление и юмор',
-    genreSlugs: ['slice-of-life', 'comedy', 'drama'],
+    badgeName: 'Срез жизни',
+    matches: (anime: Anime, slugs: string[], names: string[], text: string) => {
+      return (
+        slugs.includes('slice-of-life') ||
+        names.includes('повседневность') ||
+        text.includes('повседневность') ||
+        text.includes('slice of life')
+      );
+    },
   },
   {
     id: 'scifi',
     title: 'Научная фантастика / Таймтревел',
     desc: 'Петли времени, космос, парадоксы, наука',
-    genreSlugs: ['sci-fi', 'mystery'],
+    badgeName: 'Научная фантастика',
+    matches: (anime: Anime, slugs: string[], names: string[], text: string) => {
+      return (
+        slugs.includes('sci-fi') ||
+        names.includes('фантастика') ||
+        text.includes('научная фантастика') ||
+        text.includes('таймтревел') ||
+        text.includes('time travel') ||
+        text.includes('петл') ||
+        text.includes('космос') ||
+        text.includes('space')
+      );
+    },
   },
 ];
 
@@ -134,12 +181,12 @@ export function RecommendWorkspace({
 }: RecommendWorkspaceProps) {
   const router = useRouter();
 
-  // Selected criteria state (initialized from URL ?mood=)
+  // Selected criteria state (initialized from URL ?mood=; time and setting are NOT pre-selected)
   const [selectedMood, setSelectedMood] = useState<string>(() =>
     normalizeMoodId(initialMood)
   );
-  const [selectedTime, setSelectedTime] = useState<string>('short_season');
-  const [selectedSetting, setSelectedSetting] = useState<string>('cyberpunk');
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedSetting, setSelectedSetting] = useState<string | null>(null);
 
   const [addingAll, setAddingAll] = useState(false);
   const [addAllFeedback, setAddAllFeedback] = useState(false);
@@ -159,8 +206,8 @@ export function RecommendWorkspace({
   // Real Filtering Logic with Graceful Fallback
   const { recommendations, isExactMatches } = useMemo(() => {
     const currentMood = MOOD_OPTIONS.find((m) => m.id === selectedMood) || MOOD_OPTIONS[0];
-    const currentTime = TIME_OPTIONS.find((t) => t.id === selectedTime) || TIME_OPTIONS[0];
-    const currentSetting = SETTING_OPTIONS.find((s) => s.id === selectedSetting) || SETTING_OPTIONS[0];
+    const currentTime = selectedTime ? TIME_OPTIONS.find((t) => t.id === selectedTime) : null;
+    const currentSetting = selectedSetting ? SETTING_OPTIONS.find((s) => s.id === selectedSetting) : null;
 
     const getAnimeGenreSlugs = (anime: Anime): string[] => {
       const fromGenres = anime.genres?.map((g) => g.slug?.toLowerCase()).filter(Boolean) || [];
@@ -176,15 +223,15 @@ export function RecommendWorkspace({
       return Array.from(new Set([...fromGenres, ...fromAg]));
     };
 
-    // Candidate pool matching both Mood and Time
-    const poolMoodAndTime = allAnime.filter((anime) => {
+    // Filter candidate pool matching Mood and (if chosen) Time
+    const pool = allAnime.filter((anime) => {
       if (!anime.poster_url || anime.poster_url.trim() === '') return false;
       if (anime.is_adult) return false;
 
-      // Must match selected Time
-      if (!currentTime.match(anime)) return false;
+      // Time filter (only if selected)
+      if (currentTime && !currentTime.match(anime)) return false;
 
-      // Must match selected Mood genres
+      // Mood filter
       const slugs = getAnimeGenreSlugs(anime);
       const matchesMood = currentMood.genreSlugs.some((s) => slugs.includes(s));
       if (!matchesMood) return false;
@@ -213,19 +260,26 @@ export function RecommendWorkspace({
       return result;
     };
 
-    // Exact matches also matching Setting
-    const exactCandidatePool = poolMoodAndTime.filter((anime) => {
-      const slugs = getAnimeGenreSlugs(anime);
-      return currentSetting.genreSlugs.some((s) => slugs.includes(s));
-    });
+    // Setting filter (only if setting is selected)
+    let exactCandidates: Anime[] = [];
+    if (currentSetting) {
+      exactCandidates = pool.filter((anime) => {
+        const slugs = getAnimeGenreSlugs(anime);
+        const names = getAnimeGenreNames(anime).map((n) => n.toLowerCase());
+        const text = `${anime.title_ru || ''} ${anime.title_en || ''} ${anime.description || ''}`.toLowerCase();
+        return currentSetting.matches(anime, slugs, names, text);
+      });
+    } else {
+      exactCandidates = pool;
+    }
 
-    exactCandidatePool.sort((a, b) => {
+    exactCandidates.sort((a, b) => {
       const scoreA = (a.score || 7.0) * 10 + (a.popularity || 0) / 10000;
       const scoreB = (b.score || 7.0) * 10 + (b.popularity || 0) / 10000;
       return scoreB - scoreA;
     });
 
-    const exactMatches = deduplicateFranchise(exactCandidatePool);
+    const exactMatches = deduplicateFranchise(exactCandidates);
 
     let finalAnimeList: Anime[] = [];
     let exact = true;
@@ -238,7 +292,7 @@ export function RecommendWorkspace({
       exact = false;
       const exactIds = new Set(exactMatches.map((a) => a.id));
 
-      const relaxedCandidates = poolMoodAndTime.filter((a) => !exactIds.has(a.id));
+      const relaxedCandidates = pool.filter((a) => !exactIds.has(a.id));
       relaxedCandidates.sort((a, b) => {
         const scoreA = (a.score || 7.0) * 10 + (a.popularity || 0) / 10000;
         const scoreB = (b.score || 7.0) * 10 + (b.popularity || 0) / 10000;
@@ -262,30 +316,75 @@ export function RecommendWorkspace({
       }
     }
 
-    // Build real matched criteria description
+    // Build real matched criteria description: only include what truly matched!
     const recs = finalAnimeList.map((anime) => {
+      const slugs = getAnimeGenreSlugs(anime);
       const names = getAnimeGenreNames(anime);
-      const matchedGenreNames = names.slice(0, 2);
+      const text = `${anime.title_ru || ''} ${anime.title_en || ''} ${anime.description || ''}`.toLowerCase();
 
-      const timePart =
-        anime.format === 'Фильм'
-          ? 'Фильм'
-          : anime.episodes
-          ? `${anime.episodes} серий`
-          : anime.status === 'ongoing'
-          ? 'Идёт показ'
-          : anime.format || 'ТВ';
+      const matchedParts: string[] = [];
 
-      const ratingPart = anime.score ? `рейтинг ${anime.score.toFixed(1)}` : 'высокий рейтинг';
-      const matchedCriteriaText = [...matchedGenreNames, timePart, ratingPart]
-        .filter(Boolean)
-        .join(', ');
+      // 1. Mood genres that actually matched
+      const matchedMoodGenres = names.filter((name) => {
+        const tr = name.toLowerCase();
+        return currentMood.genreSlugs.some((s) => {
+          if (s === 'action') return tr.includes('экшен') || tr.includes('боевик');
+          if (s === 'sports') return tr.includes('спорт');
+          if (s === 'supernatural') return tr.includes('сверхъестествен') || tr.includes('мистик');
+          if (s === 'slice-of-life') return tr.includes('повседневн');
+          if (s === 'drama') return tr.includes('драм');
+          if (s === 'psychological') return tr.includes('психолог');
+          if (s === 'thriller') return tr.includes('триллер');
+          if (s === 'mystery') return tr.includes('детектив') || tr.includes('тайн');
+          if (s === 'romance') return tr.includes('романтик');
+          if (s === 'comedy') return tr.includes('комед');
+          return false;
+        });
+      });
 
-      const isExact = exactMatches.some((em) => em.id === anime.id);
+      if (matchedMoodGenres.length > 0) {
+        matchedParts.push(matchedMoodGenres.slice(0, 2).join(', '));
+      } else if (names[0]) {
+        matchedParts.push(names[0]);
+      }
+
+      // 2. Setting match (ONLY if setting was selected AND truly matched)
+      let matchesSetting = true;
+      if (currentSetting) {
+        matchesSetting = currentSetting.matches(anime, slugs, names.map((n) => n.toLowerCase()), text);
+        if (matchesSetting) {
+          matchedParts.push(currentSetting.badgeName);
+        }
+      }
+
+      // 3. Time match (ONLY if time was selected AND truly matched)
+      let matchesTime = true;
+      if (currentTime) {
+        matchesTime = currentTime.match(anime);
+        if (matchesTime) {
+          const timeLabel =
+            anime.format === 'Фильм'
+              ? 'Фильм'
+              : anime.episodes
+              ? `${anime.episodes} серий`
+              : anime.status === 'ongoing'
+              ? 'Идёт показ'
+              : anime.format || 'Серии';
+          matchedParts.push(timeLabel);
+        }
+      }
+
+      // 4. Rating
+      if (anime.score) {
+        matchedParts.push(`рейтинг ${anime.score.toFixed(1)}`);
+      }
+
+      // Exact match means it matches all selected criteria
+      const isExact = matchesSetting && matchesTime;
 
       return {
         anime,
-        matchedCriteriaText,
+        matchedCriteriaText: matchedParts.join(', '),
         isExact,
       };
     });
@@ -307,22 +406,20 @@ export function RecommendWorkspace({
         recommendations.length
       : 8.0;
 
-  const progressPercent = isExactMatches ? 100 : 75;
+  const selectedCount = 1 + (selectedTime ? 1 : 0) + (selectedSetting ? 1 : 0);
+  const progressPercent = selectedCount === 1 ? 33 : selectedCount === 2 ? 67 : 100;
 
   const handleRestart = () => {
     handleMoodSelect('mindgame');
-    setSelectedTime('short_season');
-    setSelectedSetting('cyberpunk');
+    setSelectedTime(null);
+    setSelectedSetting(null);
   };
 
   const handleRandomPick = () => {
     const randomMood = MOOD_OPTIONS[Math.floor(Math.random() * MOOD_OPTIONS.length)].id;
-    const randomTime = TIME_OPTIONS[Math.floor(Math.random() * TIME_OPTIONS.length)].id;
-    const randomSetting = SETTING_OPTIONS[Math.floor(Math.random() * SETTING_OPTIONS.length)].id;
-
     handleMoodSelect(randomMood);
-    setSelectedTime(randomTime);
-    setSelectedSetting(randomSetting);
+    setSelectedTime(null);
+    setSelectedSetting(null);
 
     const resultsEl = document.getElementById('recommendation-results');
     if (resultsEl) {
@@ -397,15 +494,23 @@ export function RecommendWorkspace({
                 />
               </svg>
               <span className="absolute font-badge-score text-badge-score text-on-surface">
-                {progressPercent}%
+                {selectedCount}/3
               </span>
             </div>
             <div className="flex flex-col">
               <span className="font-label-md text-label-md text-on-surface font-bold">
-                {isExactMatches ? 'Статус подбора 100%' : 'Статус подбора (близкие)'}
+                {selectedCount === 3
+                  ? isExactMatches
+                    ? 'Статус подбора 3/3 (100%)'
+                    : 'Статус подбора 3/3 (близкие)'
+                  : `Статус подбора ${selectedCount}/3`}
               </span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">
-                {isExactMatches
+                {selectedCount === 1
+                  ? 'Выбран 1 из 3 параметров (Настроение)'
+                  : selectedCount === 2
+                  ? 'Выбрано 2 из 3 параметров'
+                  : isExactMatches
                   ? 'Все параметры учтены • Точные совпадения'
                   : 'Мало точных совпадений, показаны близкие'}
               </span>
@@ -499,7 +604,7 @@ export function RecommendWorkspace({
             <div className="flex items-center justify-between">
               <span className="font-label-md text-label-md uppercase tracking-wider text-secondary flex items-center gap-1.5 font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                1. Ваше текущее состояние и настроение (?mood=)
+                1. Ваше текущее состояние и настроение
               </span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">
                 Активно:{' '}
@@ -554,7 +659,9 @@ export function RecommendWorkspace({
               <span className="font-body-sm text-body-sm text-on-surface-variant">
                 Активно:{' '}
                 <strong className="text-on-surface">
-                  {TIME_OPTIONS.find((t) => t.id === selectedTime)?.title}
+                  {selectedTime
+                    ? TIME_OPTIONS.find((t) => t.id === selectedTime)?.title
+                    : 'Все форматы (не выбрано)'}
                 </strong>
               </span>
             </div>
@@ -566,7 +673,7 @@ export function RecommendWorkspace({
                   <button
                     key={time.id}
                     type="button"
-                    onClick={() => setSelectedTime(time.id)}
+                    onClick={() => setSelectedTime(selectedTime === time.id ? null : time.id)}
                     className={`text-left p-3.5 rounded-xl transition-all flex flex-col gap-1 group cursor-pointer border ${
                       isActive
                         ? 'bg-surface-container-highest shadow-[0_0_20px_-2px_rgba(208,188,255,0.35)] border-primary/50'
@@ -604,7 +711,9 @@ export function RecommendWorkspace({
               <span className="font-body-sm text-body-sm text-on-surface-variant">
                 Активно:{' '}
                 <strong className="text-on-surface">
-                  {SETTING_OPTIONS.find((s) => s.id === selectedSetting)?.title}
+                  {selectedSetting
+                    ? SETTING_OPTIONS.find((s) => s.id === selectedSetting)?.title
+                    : 'Все сеттинги (не выбрано)'}
                 </strong>
               </span>
             </div>
@@ -616,7 +725,7 @@ export function RecommendWorkspace({
                   <button
                     key={setting.id}
                     type="button"
-                    onClick={() => setSelectedSetting(setting.id)}
+                    onClick={() => setSelectedSetting(selectedSetting === setting.id ? null : setting.id)}
                     className={`text-left p-3.5 rounded-xl transition-all flex flex-col gap-1 group cursor-pointer border ${
                       isActive
                         ? 'bg-surface-container-highest shadow-[0_0_20px_-2px_rgba(208,188,255,0.35)] border-primary/50'

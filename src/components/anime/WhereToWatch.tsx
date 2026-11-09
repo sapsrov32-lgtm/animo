@@ -53,7 +53,9 @@ export function WhereToWatch({
       if (isMounted) {
         setLoading(false);
       }
-      controller.abort();
+      try {
+        controller.abort();
+      } catch {}
     }, 3000);
 
     async function fetchLegalData() {

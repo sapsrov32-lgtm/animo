@@ -105,7 +105,7 @@ export function RecommendCard({
                 : 'bg-surface-container-high/90 text-on-surface-variant border-outline-variant/30'
             }`}
           >
-            {isExactMatch ? 'Точный матч' : 'Близкий матч'}
+            {isExactMatch ? 'Точный матч' : 'Частичное совпадение'}
           </span>
         </div>
 
