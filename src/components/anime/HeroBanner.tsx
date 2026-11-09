@@ -85,10 +85,12 @@ export function HeroBanner({ anime }: HeroBannerProps) {
     [];
 
   return (
-    <section className="relative w-full overflow-hidden bg-surface-container-lowest -mt-16 pt-24 pb-16 lg:pb-24">
-      {/* Ambient Atmospheric Glows */}
-      <div className="absolute -top-32 left-1/4 w-[600px] h-[500px] bg-primary/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/3 -right-20 w-[550px] h-[550px] bg-secondary/10 rounded-full blur-[160px] pointer-events-none" />
+    <section className="relative w-full bg-surface-container-lowest -mt-16 pt-24 pb-16 lg:pb-24">
+      {/* Ambient Atmospheric Glows Frame */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-32 left-1/4 w-[600px] h-[500px] bg-primary/10 rounded-full blur-[140px]" />
+        <div className="absolute top-1/3 -right-20 w-[550px] h-[550px] bg-secondary/10 rounded-full blur-[160px]" />
+      </div>
 
       {/* Backdrop Visual Frame */}
       <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity">
@@ -202,49 +204,90 @@ export function HeroBanner({ anime }: HeroBannerProps) {
                 </span>
                 <span>{currentStatus || 'Добавить в список'}</span>
                 <span className="material-symbols-outlined text-[16px] text-outline">
-                  expand_more
+                  {dropdownOpen ? 'expand_less' : 'expand_more'}
                 </span>
               </button>
 
               {/* Quick Selection Floating Dropdown */}
               {dropdownOpen && state === 'user' && (
-                <div className="absolute left-0 top-full mt-2 w-48 p-1.5 rounded-xl bg-surface-container-highest shadow-2xl z-30 animate-fadeIn">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectStatus('plan', 'В планах')}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-tertiary" />
-                      В планах
-                    </span>
-                    <span className="text-xs text-outline">Хочу</span>
-                  </button>
+                <>
+                  {/* Click-outside backdrop */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setDropdownOpen(false)}
+                  />
 
-                  <button
-                    type="button"
-                    onClick={() => handleSelectStatus('now', 'Смотрю')}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-secondary" />
-                      Смотрю
-                    </span>
-                    <span className="text-xs text-outline">В процессе</span>
-                  </button>
+                  <div className="absolute left-0 top-full mt-2 w-64 p-2 rounded-2xl bg-[#1e1b29] border border-outline-variant/50 shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_24px_rgba(160,120,255,0.2)] z-50 flex flex-col gap-1 animate-scaleUp">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectStatus('plan', 'В планах')}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                        currentStatus === 'В планах'
+                          ? 'bg-tertiary/20 text-on-surface border border-tertiary/40'
+                          : 'text-on-surface hover:bg-surface-container-highest/90'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-lg bg-tertiary/20 text-tertiary flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px]">bookmark</span>
+                        </span>
+                        <div className="flex flex-col text-left">
+                          <span className="font-label-md text-sm font-bold text-on-surface">В планах</span>
+                          <span className="text-xs text-outline font-normal">Хочу посмотреть</span>
+                        </div>
+                      </div>
+                      {currentStatus === 'В планах' && (
+                        <span className="material-symbols-outlined text-tertiary text-[18px]">check</span>
+                      )}
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleSelectStatus('done', 'Просмотрено')}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-primary" />
-                      Просмотрено
-                    </span>
-                    <span className="material-symbols-outlined text-xs text-primary">done</span>
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectStatus('now', 'Смотрю')}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                        currentStatus === 'Смотрю'
+                          ? 'bg-secondary/20 text-on-surface border border-secondary/40'
+                          : 'text-on-surface hover:bg-surface-container-highest/90'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-lg bg-secondary/20 text-secondary flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                        </span>
+                        <div className="flex flex-col text-left">
+                          <span className="font-label-md text-sm font-bold text-on-surface">Смотрю</span>
+                          <span className="text-xs text-outline font-normal">В процессе просмотра</span>
+                        </div>
+                      </div>
+                      {currentStatus === 'Смотрю' && (
+                        <span className="material-symbols-outlined text-secondary text-[18px]">check</span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectStatus('done', 'Просмотрено')}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                        currentStatus === 'Просмотрено'
+                          ? 'bg-primary/20 text-on-surface border border-primary/40'
+                          : 'text-on-surface hover:bg-surface-container-highest/90'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px]">done_all</span>
+                        </span>
+                        <div className="flex flex-col text-left">
+                          <span className="font-label-md text-sm font-bold text-on-surface">Просмотрено</span>
+                          <span className="text-xs text-outline font-normal">Завершил просмотр</span>
+                        </div>
+                      </div>
+                      {currentStatus === 'Просмотрено' && (
+                        <span className="material-symbols-outlined text-primary text-[18px]">check</span>
+                      )}
+                    </button>
+                  </div>
+                </>
               )}
             </div>
 
