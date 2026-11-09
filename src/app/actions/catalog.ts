@@ -2,6 +2,12 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { Anime, Genre } from '@/types';
+import {
+  applyPublicAnimeFilter,
+  isAdultSearchQuery,
+  ADULT_GENRE_SLUGS,
+  EXCLUDED_FORMATS,
+} from '@/lib/anime-filter';
 
 export interface CatalogFilterParams {
   query?: string;
@@ -16,25 +22,22 @@ export interface CatalogFilterParams {
   perPage?: number;
 }
 
-const EXCLUDED_FORMATS = [
-  'Музыка',
-  'Music',
-  'MUSIC',
-  'Спэшл',
-  'Special',
-  'SPECIAL',
-  'ТВ Короткометражка',
-  'Short',
-  'SHORT',
-  'UNKNOWN',
-];
-
 export async function fetchCatalogAnime(params: CatalogFilterParams) {
   const supabase = await createClient();
   const page = params.page || 1;
   const perPage = params.perPage || 24;
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
+
+  // Strict check: if requested genre is adult (e.g. ecchi), return empty
+  if (params.genre && (ADULT_GENRE_SLUGS as readonly string[]).includes(params.genre.toLowerCase())) {
+    return { items: [], total: 0 };
+  }
+
+  // Strict check: if search query is an adult keyword, return empty to prevent leaks
+  if (params.query && isAdultSearchQuery(params.query)) {
+    return { items: [], total: 0 };
+  }
 
   const hasGenreFilter = Boolean(params.genre && params.genre !== 'all');
 
@@ -44,11 +47,10 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
 
   let queryBuilder = supabase
     .from('anime')
-    .select(selectQuery, { count: 'exact' })
-    .eq('is_published', true)
-    .eq('is_adult', false)
-    .not('poster_url', 'is', null)
-    .neq('poster_url', '');
+    .select(selectQuery, { count: 'exact' });
+
+  // Apply unified public filter (is_published=true, is_adult=false, poster valid, format valid)
+  queryBuilder = applyPublicAnimeFilter(queryBuilder);
 
   if (hasGenreFilter) {
     queryBuilder = queryBuilder.eq('anime_genres.genres.slug', params.genre);
@@ -57,9 +59,6 @@ export async function fetchCatalogAnime(params: CatalogFilterParams) {
   // Format filter
   if (params.format && params.format !== 'all') {
     queryBuilder = queryBuilder.eq('format', params.format);
-  } else {
-    // Exclude music PV / CM, specials, and short formats by default
-    queryBuilder = queryBuilder.not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`);
   }
 
   // Search by title (ru, en, jp) - accelerated by GIN trigram indexes
@@ -134,27 +133,31 @@ export async function fetchAllGenres(): Promise<Genre[]> {
     console.error('Error fetching genres:', error);
     return [];
   }
-  return data || [];
+
+  // Strict suppression of 18+ / ecchi / adult genres from public catalog
+  return (data || []).filter(
+    (g: Genre) =>
+      !(ADULT_GENRE_SLUGS as readonly string[]).includes(g.slug.toLowerCase()) &&
+      !g.name_ru.toLowerCase().includes('этти') &&
+      !g.name_ru.toLowerCase().includes('хентай')
+  );
 }
 
 export async function fetchCatalogStats() {
   const supabase = await createClient();
-  const { count: totalCount } = await supabase
-    .from('anime')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_published', true)
-    .not('poster_url', 'is', null)
-    .neq('poster_url', '')
-    .not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`);
 
-  const { count: ongoingCount } = await supabase
-    .from('anime')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_published', true)
-    .eq('status', 'ongoing')
-    .not('poster_url', 'is', null)
-    .neq('poster_url', '')
-    .not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`);
+  const totalQuery = applyPublicAnimeFilter(
+    supabase.from('anime').select('*', { count: 'exact', head: true })
+  );
+  const { count: totalCount } = await totalQuery;
+
+  const ongoingQuery = applyPublicAnimeFilter(
+    supabase
+      .from('anime')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'ongoing')
+  );
+  const { count: ongoingCount } = await ongoingQuery;
 
   return {
     total: totalCount || 0,
@@ -178,20 +181,24 @@ export async function quickSearchAnime(query: string, limit = 5): Promise<QuickS
   const sanitized = (query || '').replace(/[,()]/g, ' ').trim();
   if (sanitized.length < 2) return [];
 
+  // Adult keyword suppression: searches like "hentai", "хента", "ecchi", "18+" return empty
+  if (isAdultSearchQuery(sanitized)) {
+    return [];
+  }
+
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let queryBuilder = supabase
     .from('anime')
-    .select('id, slug, title_ru, title_en, format, year, score, poster_url, status')
-    .eq('is_published', true)
-    .eq('is_adult', false)
-    .not('poster_url', 'is', null)
-    .neq('poster_url', '')
-    .not('format', 'in', `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`)
+    .select('id, slug, title_ru, title_en, format, year, score, poster_url, status');
+
+  queryBuilder = applyPublicAnimeFilter(queryBuilder)
     .or(`title_ru.ilike.%${sanitized}%,title_en.ilike.%${sanitized}%,title_jp.ilike.%${sanitized}%`)
     .order('popularity', { ascending: false, nullsFirst: false })
     .order('score', { ascending: false, nullsFirst: false })
     .limit(limit);
+
+  const { data, error } = await queryBuilder;
 
   if (error) {
     console.error('Error in quickSearchAnime:', error);
@@ -200,4 +207,3 @@ export async function quickSearchAnime(query: string, limit = 5): Promise<QuickS
 
   return (data as QuickSearchResult[]) || [];
 }
-

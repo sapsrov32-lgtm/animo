@@ -7,6 +7,7 @@ import {
   BotSyncResult,
   checkAndTriggerScheduledSync,
 } from '@/lib/sync/release-bot';
+import { applyPublicAnimeFilter, EXCLUDED_FORMATS } from '@/lib/anime-filter';
 
 export async function verifyAdmin() {
   const supabase = await createClient();
@@ -125,14 +126,8 @@ export async function getAdminOverviewData(
       .lt('created_at', currentPeriodStart),
     // Total in database
     supabase.from('anime').select('*', { count: 'exact', head: true }),
-    // Published on website (matches public catalog exactly)
-    supabase
-      .from('anime')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_published', true)
-      .not('poster_url', 'is', null)
-      .neq('poster_url', '')
-      .not('format', 'in', excludedFormatsFilter),
+    // Published on website (matches public catalog exactly with unified filter)
+    applyPublicAnimeFilter(supabase.from('anime').select('*', { count: 'exact', head: true })),
     supabase
       .from('anime')
       .select('*', { count: 'exact', head: true })
@@ -147,15 +142,13 @@ export async function getAdminOverviewData(
       .from('anime')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'ongoing'),
-    // Published ongoings on website (matches public catalog exactly)
-    supabase
-      .from('anime')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'ongoing')
-      .eq('is_published', true)
-      .not('poster_url', 'is', null)
-      .neq('poster_url', '')
-      .not('format', 'in', excludedFormatsFilter),
+    // Published ongoings on website (matches public catalog exactly with unified filter)
+    applyPublicAnimeFilter(
+      supabase
+        .from('anime')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ongoing')
+    ),
     supabase
       .from('anime')
       .select('*', { count: 'exact', head: true })
@@ -443,7 +436,7 @@ export async function fetchAdminCatalog(params: {
 
   let query = supabase
     .from('anime')
-    .select('id, slug, title_ru, title_en, title_jp, format, episodes, year, status, score, popularity, poster_url, is_published, created_at, anime_genres(genres(*))', {
+    .select('id, slug, title_ru, title_en, title_jp, format, episodes, year, status, score, popularity, poster_url, is_published, is_adult, created_at, anime_genres(genres(*))', {
       count: 'exact',
     });
 

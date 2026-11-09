@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { RecommendWorkspace } from '@/components/recommend/RecommendWorkspace';
 import { Anime } from '@/types';
+import { applyPublicAnimeFilter, isPublicAnime } from '@/lib/anime-filter';
 
 export const metadata: Metadata = {
   title: 'Что посмотреть? Интеллектуальный компас',
@@ -40,31 +41,21 @@ export default async function RecommendPage({
   const supabase = await createClient();
 
   // Fetch candidate anime with genres for recommendation filtering (strictly excluding 18+)
-  const { data: animeData, error } = await supabase
+  let queryBuilder = supabase
     .from('anime')
-    .select('*, anime_genres(genres(*))')
-    .eq('is_published', true)
-    .eq('is_adult', false)
-    .not('poster_url', 'is', null)
-    .in('format', ['ТВ Сериал', 'Фильм', 'OVA', 'ONA', 'Спэшл', 'ТВ Короткометражка'])
+    .select('*, anime_genres(genres(*))');
+
+  queryBuilder = applyPublicAnimeFilter(queryBuilder)
     .order('popularity', { ascending: false, nullsFirst: false })
     .limit(2500);
+
+  const { data: animeData, error } = await queryBuilder;
 
   if (error) {
     console.error('Error fetching recommendation anime:', error);
   }
 
-  const allAnime = ((animeData as Anime[]) || []).filter((a) => {
-    if (!a.poster_url || a.poster_url.trim() === '') return false;
-    if (a.is_adult) return false;
-    const gSlugs = a.anime_genres?.map((ag: any) => ag.genres?.slug?.toLowerCase()).filter(Boolean) || [];
-    const gNames = a.anime_genres?.map((ag: any) => ag.genres?.name_ru?.toLowerCase()).filter(Boolean) || [];
-    
-    // Strict exclusion of 18+, hentai, and ecchi
-    if (gSlugs.includes('hentai') || gSlugs.includes('ecchi')) return false;
-    if (gNames.some((name: string) => name.includes('хентай') || name.includes('этти'))) return false;
-    return true;
-  });
+  const allAnime = ((animeData as Anime[]) || []).filter((a) => isPublicAnime(a));
 
   // Fetch user list if authenticated
   const {

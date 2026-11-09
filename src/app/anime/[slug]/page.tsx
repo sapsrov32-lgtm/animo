@@ -13,6 +13,7 @@ import { WatchStatusTracker } from '@/components/anime/WatchStatusTracker';
 import { WhereToWatch } from '@/components/anime/WhereToWatch';
 import { ShareButton } from '@/components/anime/ShareButton';
 import { fetchSimilarAnime } from '@/lib/anilist';
+import { applyPublicAnimeFilter, isPublicAnime } from '@/lib/anime-filter';
 
 export const revalidate = 3600; // Кеширование страниц аниме на Vercel Edge на 1 час (ISR)
 
@@ -28,9 +29,9 @@ const getAnime = cache(async (slug: string) => {
   const isUuid = isUuidRegex.test(slug);
   let query = supabase
     .from('anime')
-    .select('*, anime_genres(genres(*))')
-    .eq('is_published', true)
-    .eq('is_adult', false);
+    .select('*, anime_genres(genres(*))');
+
+  query = applyPublicAnimeFilter(query);
 
   if (isUuid) {
     query = query.or(`slug.eq.${slug},id.eq.${slug}`);
@@ -38,10 +39,8 @@ const getAnime = cache(async (slug: string) => {
     query = query.eq('slug', slug);
   }
   const { data } = await query.maybeSingle();
-  if (data) {
-    if (data.is_adult) return null;
-    const genreSlugs = data.anime_genres?.map((ag: any) => ag.genres?.slug?.toLowerCase()) || [];
-    if (genreSlugs.includes('hentai')) return null;
+  if (!data || !isPublicAnime(data)) {
+    return null;
   }
   return data;
 });

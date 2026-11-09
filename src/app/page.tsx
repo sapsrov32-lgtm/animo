@@ -3,6 +3,7 @@ import { HomeView } from '@/components/home/HomeView';
 import { fetchHomeAiringSchedule } from '@/lib/anilist';
 import { HERO_ANIME, POPULAR_ANIME, SEASON_ANIME } from '@/data/mockAnime';
 import { Anime } from '@/types';
+import { applyPublicAnimeFilter } from '@/lib/anime-filter';
 
 export const revalidate = 60; // Cache for 60 seconds
 
@@ -20,29 +21,27 @@ export default async function HomePage() {
     userRes,
   ] = await Promise.all([
     // Hero Anime: Masterpiece TV series or major movie with verified poster and Russian description
-    supabase
-      .from('anime')
-      .select('*, anime_genres(genres(*))')
-      .eq('is_published', true)
-      .eq('is_adult', false)
-      .in('format', ['ТВ Сериал', 'Фильм'])
-      .not('poster_url', 'is', null)
-      .not('description', 'is', null)
-      .gte('popularity', 500000)
+    applyPublicAnimeFilter(
+      supabase
+        .from('anime')
+        .select('*, anime_genres(genres(*))')
+        .in('format', ['ТВ Сериал', 'Фильм'])
+        .not('description', 'is', null)
+        .gte('popularity', 500000)
+    )
       .order('popularity', { ascending: false, nullsFirst: false })
       .limit(5),
 
     // Popular Now: Top released masterworks, strictly non-adult, sorted by AniList popularity
-    supabase
-      .from('anime')
-      .select('*, anime_genres(genres(*))')
-      .eq('is_published', true)
-      .eq('is_adult', false)
-      .in('status', ['finished', 'ongoing'])
-      .in('format', MAIN_FORMATS)
-      .not('poster_url', 'is', null)
-      .or('episodes.gt.1,format.eq.Фильм')
-      .gte('popularity', 1000)
+    applyPublicAnimeFilter(
+      supabase
+        .from('anime')
+        .select('*, anime_genres(genres(*))')
+        .in('status', ['finished', 'ongoing'])
+        .in('format', MAIN_FORMATS)
+        .or('episodes.gt.1,format.eq.Фильм')
+        .gte('popularity', 1000)
+    )
       .order('popularity', { ascending: false, nullsFirst: false })
       .range(0, 14),
 
@@ -50,16 +49,15 @@ export default async function HomePage() {
     fetchHomeAiringSchedule(5000, 12),
 
     // Seasonal: Hits of recent years sorted by popularity
-    supabase
-      .from('anime')
-      .select('*, anime_genres(genres(*))')
-      .eq('is_published', true)
-      .eq('is_adult', false)
-      .in('status', ['finished', 'ongoing'])
-      .in('format', MAIN_FORMATS)
-      .not('poster_url', 'is', null)
-      .gte('year', 2022)
-      .gte('popularity', 1000)
+    applyPublicAnimeFilter(
+      supabase
+        .from('anime')
+        .select('*, anime_genres(genres(*))')
+        .in('status', ['finished', 'ongoing'])
+        .in('format', MAIN_FORMATS)
+        .gte('year', 2022)
+        .gte('popularity', 1000)
+    )
       .order('year', { ascending: false, nullsFirst: false })
       .order('popularity', { ascending: false, nullsFirst: false })
       .limit(12),

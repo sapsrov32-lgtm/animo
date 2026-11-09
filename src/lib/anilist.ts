@@ -1,6 +1,7 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { translateGenre, sortAndFormatGenres } from './genres';
 import { sanitizeRussianTitle } from './format';
+import { applyPublicAnimeFilter, isPublicAnime } from './anime-filter';
 
 const ANILIST_GRAPHQL_ENDPOINT = 'https://graphql.anilist.co';
 
@@ -426,14 +427,12 @@ export async function fetchSimilarAnime(
         if (anilistIds.length > 0) {
           const supabase = getPublicSupabaseClient();
           const { data: dbMatches } = supabase
-            ? await supabase
-                .from('anime')
-                .select('*, anime_genres(genres(*))')
-                .in('anilist_id', anilistIds)
-                .eq('is_published', true)
-                .eq('is_adult', false)
-                .not('poster_url', 'is', null)
-                .neq('poster_url', '')
+            ? await applyPublicAnimeFilter(
+                supabase
+                  .from('anime')
+                  .select('*, anime_genres(genres(*))')
+                  .in('anilist_id', anilistIds)
+              )
             : { data: null };
 
           const dbMap = new Map<number, any>();
@@ -489,11 +488,9 @@ export async function fetchSimilarAnime(
     if (supabase) {
       let fbQuery = supabase
         .from('anime')
-        .select('*, anime_genres!inner(genre_id, genres!inner(*))')
-        .eq('is_published', true)
-        .eq('is_adult', false)
-        .not('poster_url', 'is', null)
-        .neq('poster_url', '')
+        .select('*, anime_genres!inner(genre_id, genres!inner(*))');
+
+      fbQuery = applyPublicAnimeFilter(fbQuery)
         .not('id', 'in', `(${Array.from(seenIds).map((id) => `"${id}"`).join(',')})`);
 
       if (rawGenreIds.length > 0) {

@@ -1895,12 +1895,18 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                                 type="button"
                                 onClick={() => handleTogglePublish(item)}
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 ${
-                                  item.is_published
+                                  item.is_adult
+                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                    : item.is_published
                                     ? 'bg-emerald-500/15 text-emerald-600'
                                     : 'bg-rose-500/15 text-rose-600'
                                 }`}
                               >
-                                {item.is_published ? (
+                                {item.is_adult ? (
+                                  <>
+                                    <ShieldAlert className="w-3 h-3 text-rose-400" /> Скрыт (18+)
+                                  </>
+                                ) : item.is_published ? (
                                   <>
                                     <Eye className="w-3 h-3" /> Опубликован
                                   </>

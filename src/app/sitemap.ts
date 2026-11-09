@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { applyPublicAnimeFilter } from '@/lib/anime-filter';
 
 export const revalidate = 86400; // Кэшировать на 24 часа для мгновенной отдачи роботам Яндекса и Google
 
@@ -60,14 +61,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     );
 
-    // Выгружаем слаги всех опубликованных тайтлов (исключая 18+ и неопубликованные)
-    const { data: animeList, error } = await supabase
+    // Выгружаем слаги всех опубликованных тайтлов (исключая 18+, без постера, форматы PV/спешл и неопубликованные)
+    let animeQuery = supabase
       .from('anime')
-      .select('slug, updated_at')
-      .eq('is_published', true)
-      .eq('is_adult', false)
+      .select('slug, updated_at');
+
+    animeQuery = applyPublicAnimeFilter(animeQuery)
       .order('popularity', { ascending: false, nullsFirst: false })
       .limit(45000);
+
+    const { data: animeList, error } = await animeQuery;
 
     if (error) {
       console.error('Supabase sitemap error:', error);
