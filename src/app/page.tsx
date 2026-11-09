@@ -7,6 +7,36 @@ import { applyPublicAnimeFilter } from '@/lib/anime-filter';
 
 export const revalidate = 60; // Cache for 60 seconds
 
+const homeJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': 'https://animo-virid.vercel.app/#website',
+      url: 'https://animo-virid.vercel.app',
+      name: 'Анимо',
+      alternateName: ['Animo', 'Анимо аниме'],
+      description: 'Каталог аниме, трекер серий и календарь релизов',
+      inLanguage: 'ru',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: 'https://animo-virid.vercel.app/catalog?q={search_term_string}',
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@type': 'Organization',
+      '@id': 'https://animo-virid.vercel.app/#organization',
+      name: 'Анимо',
+      url: 'https://animo-virid.vercel.app',
+      logo: 'https://animo-virid.vercel.app/favicon.ico',
+    },
+  ],
+};
+
 export default async function HomePage() {
   const supabase = await createClient();
 
@@ -175,13 +205,19 @@ export default async function HomePage() {
     seasonalData && seasonalData.length > 0 ? (seasonalData as Anime[]) : SEASON_ANIME;
 
   return (
-    <HomeView
-      heroAnime={heroCandidate as Anime}
-      popularAnime={popularAnime}
-      ongoingAnime={ongoingAnime}
-      seasonalAnime={seasonalAnime}
-      isLoggedIn={Boolean(user)}
-      userStats={userStats}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+      />
+      <HomeView
+        heroAnime={heroCandidate as Anime}
+        popularAnime={popularAnime}
+        ongoingAnime={ongoingAnime}
+        seasonalAnime={seasonalAnime}
+        isLoggedIn={Boolean(user)}
+        userStats={userStats}
+      />
+    </>
   );
 }

@@ -85,7 +85,7 @@ export function HeroBanner({ anime }: HeroBannerProps) {
     [];
 
   return (
-    <section className="relative w-full bg-surface-container-lowest -mt-16 pt-24 pb-16 lg:pb-24">
+    <section className="relative z-20 w-full bg-surface-container-lowest -mt-16 pt-24 pb-20 lg:pb-24">
       {/* Ambient Atmospheric Glows Frame */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-32 left-1/4 w-[600px] h-[500px] bg-primary/10 rounded-full blur-[140px]" />
@@ -217,27 +217,27 @@ export function HeroBanner({ anime }: HeroBannerProps) {
                     onClick={() => setDropdownOpen(false)}
                   />
 
-                  <div className="absolute left-0 top-full mt-2 w-64 p-2 rounded-2xl bg-[#1e1b29] border border-outline-variant/50 shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_24px_rgba(160,120,255,0.2)] z-50 flex flex-col gap-1 animate-scaleUp">
+                  <div className="absolute left-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] p-2.5 rounded-2xl bg-[#1c1829] border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_24px_rgba(160,120,255,0.25)] ring-1 ring-white/10 z-50 flex flex-col gap-1.5 animate-scaleUp">
                     <button
                       type="button"
                       onClick={() => handleSelectStatus('plan', 'В планах')}
                       className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
                         currentStatus === 'В планах'
-                          ? 'bg-tertiary/20 text-on-surface border border-tertiary/40'
-                          : 'text-on-surface hover:bg-surface-container-highest/90'
+                          ? 'bg-tertiary/25 text-white border border-tertiary/50 shadow-[0_0_12px_rgba(77,224,215,0.2)]'
+                          : 'text-white hover:bg-white/10 active:bg-white/15'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-lg bg-tertiary/20 text-tertiary flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px]">bookmark</span>
+                        <span className="w-9 h-9 rounded-xl bg-tertiary/20 text-tertiary flex items-center justify-center shrink-0 border border-tertiary/30">
+                          <span className="material-symbols-outlined text-[20px]">bookmark</span>
                         </span>
                         <div className="flex flex-col text-left">
-                          <span className="font-label-md text-sm font-bold text-on-surface">В планах</span>
-                          <span className="text-xs text-outline font-normal">Хочу посмотреть</span>
+                          <span className="font-label-md text-sm font-bold text-white leading-tight">В планах</span>
+                          <span className="text-xs text-white/70 font-normal">Хочу посмотреть</span>
                         </div>
                       </div>
                       {currentStatus === 'В планах' && (
-                        <span className="material-symbols-outlined text-tertiary text-[18px]">check</span>
+                        <span className="material-symbols-outlined text-tertiary text-[20px] font-bold">check</span>
                       )}
                     </button>
 
@@ -246,21 +246,21 @@ export function HeroBanner({ anime }: HeroBannerProps) {
                       onClick={() => handleSelectStatus('now', 'Смотрю')}
                       className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
                         currentStatus === 'Смотрю'
-                          ? 'bg-secondary/20 text-on-surface border border-secondary/40'
-                          : 'text-on-surface hover:bg-surface-container-highest/90'
+                          ? 'bg-secondary/25 text-white border border-secondary/50 shadow-[0_0_12px_rgba(255,176,205,0.2)]'
+                          : 'text-white hover:bg-white/10 active:bg-white/15'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-lg bg-secondary/20 text-secondary flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                        <span className="w-9 h-9 rounded-xl bg-secondary/20 text-secondary flex items-center justify-center shrink-0 border border-secondary/30">
+                          <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
                         </span>
                         <div className="flex flex-col text-left">
-                          <span className="font-label-md text-sm font-bold text-on-surface">Смотрю</span>
-                          <span className="text-xs text-outline font-normal">В процессе просмотра</span>
+                          <span className="font-label-md text-sm font-bold text-white leading-tight">Смотрю</span>
+                          <span className="text-xs text-white/70 font-normal">В процессе просмотра</span>
                         </div>
                       </div>
                       {currentStatus === 'Смотрю' && (
-                        <span className="material-symbols-outlined text-secondary text-[18px]">check</span>
+                        <span className="material-symbols-outlined text-secondary text-[20px] font-bold">check</span>
                       )}
                     </button>
 
@@ -269,21 +269,21 @@ export function HeroBanner({ anime }: HeroBannerProps) {
                       onClick={() => handleSelectStatus('done', 'Просмотрено')}
                       className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
                         currentStatus === 'Просмотрено'
-                          ? 'bg-primary/20 text-on-surface border border-primary/40'
-                          : 'text-on-surface hover:bg-surface-container-highest/90'
+                          ? 'bg-primary/25 text-white border border-primary/50 shadow-[0_0_12px_rgba(160,120,255,0.2)]'
+                          : 'text-white hover:bg-white/10 active:bg-white/15'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px]">done_all</span>
+                        <span className="w-9 h-9 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0 border border-primary/30">
+                          <span className="material-symbols-outlined text-[20px]">done_all</span>
                         </span>
                         <div className="flex flex-col text-left">
-                          <span className="font-label-md text-sm font-bold text-on-surface">Просмотрено</span>
-                          <span className="text-xs text-outline font-normal">Завершил просмотр</span>
+                          <span className="font-label-md text-sm font-bold text-white leading-tight">Просмотрено</span>
+                          <span className="text-xs text-white/70 font-normal">Завершил просмотр</span>
                         </div>
                       </div>
                       {currentStatus === 'Просмотрено' && (
-                        <span className="material-symbols-outlined text-primary text-[18px]">check</span>
+                        <span className="material-symbols-outlined text-primary text-[20px] font-bold">check</span>
                       )}
                     </button>
                   </div>
