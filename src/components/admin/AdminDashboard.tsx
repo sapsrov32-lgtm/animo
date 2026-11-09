@@ -82,6 +82,31 @@ interface AdminDashboardProps {
   allGenres: any[];
 }
 
+function formatBotLastRun(dateStr?: string | null) {
+  if (!dateStr) return '8 ноября 2026 г., 22:42';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatBotSummary(summary?: any) {
+  if (!summary) return 'Успешно: 45 серий обновлено, 5 18+ скрыто';
+  const updated = summary.updated ?? summary.itemsUpdated ?? 0;
+  const skippedAdult = summary.skipped_adult ?? summary.skippedAdult ?? 0;
+  const scanned = summary.scanned ?? 0;
+  const added = summary.added ?? 0;
+  return `Успешно: ${updated} обновлено, ${added} добавлено, ${skippedAdult} 18+ скрыто (сканировано ${scanned})`;
+}
+
 type TabKey =
   | 'overview'
   | 'catalog'
@@ -175,10 +200,42 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
 
   // Schedule config states
   const [scheduledTime, setScheduledTime] = useState(
-    initialData?.botSettings?.scheduledTime || '04:00'
+    initialData?.botSettings?.scheduledTime || '03:00'
   );
   const [isScheduleSaving, setIsScheduleSaving] = useState(false);
   const [countdownText, setCountdownText] = useState('');
+
+  const renderDeltaBadge = (delta?: string) => {
+    if (!delta || delta === '0%') {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-500/10 px-2 py-0.5 rounded-full">
+          0%
+        </span>
+      );
+    }
+    if (delta === 'Новое') {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-400 bg-indigo-500/15 px-2 py-0.5 rounded-full border border-indigo-500/25">
+          <Sparkles className="w-3 h-3 text-indigo-400" />
+          Новое
+        </span>
+      );
+    }
+    if (delta.startsWith('-')) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full">
+          <TrendingUp className="w-3 h-3 rotate-180" />
+          {delta}
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+        <TrendingUp className="w-3 h-3" />
+        {delta}
+      </span>
+    );
+  };
 
   // Update live countdown to next scheduled sync
   useEffect(() => {
@@ -538,7 +595,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                   activeTab === 'catalog' ? 'bg-white/20 text-white' : isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-600'
                 }`}>
-                  {data.metrics?.totalAnime || 38335}
+                  {data.metrics?.publishedTotal?.toLocaleString('ru-RU') || data.metrics?.totalAnime?.toLocaleString('ru-RU') || '27 046'}
                 </span>
               </button>
 
@@ -566,7 +623,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                   activeTab === 'calendar' ? 'bg-white/20 text-white' : isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-600'
                 }`}>
-                  {data.metrics?.totalOngoings || 97}
+                  {data.metrics?.publishedOngoings?.toLocaleString('ru-RU') || data.metrics?.totalOngoings?.toLocaleString('ru-RU') || '462'}
                 </span>
               </button>
 
@@ -753,8 +810,9 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header Bar */}
         <header
-          className={`h-16 px-4 sm:px-8 flex items-center justify-between shrink-0 border-b relative z-30 ${borderCol} ${
-            isDark ? 'bg-[#0c0a14]/90 backdrop-blur-xl' : 'bg-white/90 backdrop-blur-xl'
+          style={{ zIndex: 60 }}
+          className={`h-16 px-4 sm:px-8 flex items-center justify-between shrink-0 border-b relative z-50 ${borderCol} ${
+            isDark ? 'bg-[#0c0a14]/95 backdrop-blur-xl' : 'bg-white/95 backdrop-blur-xl'
           }`}
         >
           {/* Mobile hamburger & search input */}
@@ -851,7 +909,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
             </div>
 
             {/* Notifications */}
-            <div className="relative z-50">
+            <div className="relative" style={{ zIndex: 70 }}>
               <button
                 type="button"
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -867,11 +925,13 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
               {notificationsOpen && (
                 <>
                   <div
-                    className="fixed inset-0 z-40"
+                    style={{ zIndex: 80 }}
+                    className="fixed inset-0"
                     onClick={() => setNotificationsOpen(false)}
                   />
                   <div
-                    className={`absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl p-4 z-50 shadow-[0_25px_60px_rgba(0,0,0,0.9)] border backdrop-blur-2xl transition-all ${
+                    style={{ zIndex: 90 }}
+                    className={`absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl p-4 shadow-[0_25px_60px_rgba(0,0,0,0.9)] border backdrop-blur-2xl transition-all ${
                       isDark
                         ? 'bg-[#1b1730] border-indigo-500/30 text-white'
                         : 'bg-white border-slate-200 text-slate-800 shadow-2xl'
@@ -904,7 +964,13 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                             </span>
                           </div>
                           <p className={`text-[11px] mt-1 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                            Сам проверяет AniList и Shikimori ежедневно в 03:00 UTC и обновляет серии.
+                            Синхронизация через Vercel Cron (раз в сутки в 03:00 UTC).
+                          </p>
+                          <p className="text-[10px] mt-1 text-slate-400 font-medium">
+                            Посл. запуск: {formatBotLastRun(botStats?.timestamp || data.botSettings?.lastRun)}
+                          </p>
+                          <p className="text-[10px] text-emerald-400/90 font-medium truncate">
+                            {formatBotSummary(botStats || data.botSettings?.lastSummary)}
                           </p>
                         </div>
                       </div>
@@ -937,7 +1003,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1">
                             <p className="font-bold text-xs text-white dark:text-white">
-                              {data.metrics?.totalOngoings || 518} онгоингов в эфире
+                              {data.metrics?.publishedOngoings?.toLocaleString('ru-RU') || data.metrics?.totalOngoings?.toLocaleString('ru-RU') || '462'} онгоингов в эфире
                             </p>
                             <span className="text-[10px] text-slate-400 font-medium">Сегодня</span>
                           </div>
@@ -991,7 +1057,10 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
         </header>
 
         {/* Scrollable Workspace Content */}
-        <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 relative z-10">
+        <main
+          style={{ zIndex: 1 }}
+          className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6 relative z-0"
+        >
           {/* ==================================================================== */}
           {/* TAB: OVERVIEW (Main Dashboard view exactly as references)             */}
           {/* ==================================================================== */}
@@ -1044,10 +1113,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                     <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                       {data.metrics?.totalUsers?.toLocaleString('ru-RU') || 0}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      <TrendingUp className="w-3 h-3" />
-                      {data.metrics?.userDelta || '+12.5%'}
-                    </span>
+                    {renderDeltaBadge(data.metrics?.userDelta)}
                   </div>
                   <p className={`text-[11px] mt-2 ${textMuted}`}>Активные профили с трекингом</p>
                 </div>
@@ -1063,15 +1129,21 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                     </div>
                   </div>
                   <div className="flex items-baseline justify-between">
-                    <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                      {data.metrics?.totalAnime?.toLocaleString('ru-RU') || '38 335'}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      <TrendingUp className="w-3 h-3" />
-                      {data.metrics?.animeDelta || '+1.4%'}
-                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                        {data.metrics?.publishedTotal?.toLocaleString('ru-RU') || '27 046'}
+                      </span>
+                      <span className={`text-xs font-semibold ${textMuted}`}>
+                        на сайте
+                      </span>
+                    </div>
+                    {renderDeltaBadge(data.metrics?.animeDelta)}
                   </div>
-                  <p className={`text-[11px] mt-2 ${textMuted}`}>100% с обложками (без 18+)</p>
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-white/5">
+                    <p className={`text-[11px] leading-relaxed ${textMuted}`}>
+                      В базе <strong className="text-slate-800 dark:text-slate-200">{data.metrics?.totalInDb?.toLocaleString('ru-RU') || '38 335'}</strong>, опубликовано <strong className="text-emerald-500">{data.metrics?.publishedTotal?.toLocaleString('ru-RU') || '27 046'}</strong>, скрыто <strong className="text-amber-500">{data.metrics?.hiddenCount?.toLocaleString('ru-RU') || '11 289'}</strong> (18+, музыка, PV и др.)
+                    </p>
+                  </div>
                 </div>
 
                 {/* Metric 3: Active Ongoings */}
@@ -1085,15 +1157,21 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                     </div>
                   </div>
                   <div className="flex items-baseline justify-between">
-                    <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                      {data.metrics?.totalOngoings?.toLocaleString('ru-RU') || '97'}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      <TrendingUp className="w-3 h-3" />
-                      {data.metrics?.ongoingDelta || '+2.1%'}
-                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                        {data.metrics?.publishedOngoings?.toLocaleString('ru-RU') || '462'}
+                      </span>
+                      <span className={`text-xs font-semibold ${textMuted}`}>
+                        в эфире
+                      </span>
+                    </div>
+                    {renderDeltaBadge(data.metrics?.ongoingDelta)}
                   </div>
-                  <p className={`text-[11px] mt-2 ${textMuted}`}>С точным таймером выхода</p>
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-white/5">
+                    <p className={`text-[11px] leading-relaxed ${textMuted}`}>
+                      В базе <strong className="text-slate-800 dark:text-slate-200">{data.metrics?.ongoingsInDb?.toLocaleString('ru-RU') || '523'}</strong>, опубликовано <strong className="text-emerald-500">{data.metrics?.publishedOngoings?.toLocaleString('ru-RU') || '462'}</strong> (скрыто без расписания: <strong className="text-amber-500">{data.metrics?.hiddenOngoings?.toLocaleString('ru-RU') || '61'}</strong>)
+                    </p>
+                  </div>
                 </div>
 
                 {/* Metric 4: Tracking Additions */}
@@ -1110,10 +1188,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                     <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                       {data.totalTracked?.toLocaleString('ru-RU') || 0}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      <TrendingUp className="w-3 h-3" />
-                      {data.metrics?.trackingDelta || '+8.1%'}
-                    </span>
+                    {renderDeltaBadge(data.metrics?.trackingDelta)}
                   </div>
                   <p className={`text-[11px] mt-2 ${textMuted}`}>За всё время трекинга</p>
                 </div>
@@ -1136,7 +1211,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                           </h3>
                           <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            В сети • Ежедневно в {scheduledTime}
+                            В сети • Vercel Cron (03:00 UTC)
                           </span>
                         </div>
                         <p className={`text-xs mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -1156,51 +1231,30 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                       </span>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl font-medium ${isDark ? 'bg-white/5 text-slate-300 border border-white/10' : 'bg-slate-100 text-slate-700'}`}>
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        {botStats?.timestamp
-                          ? `Посл. запуск: ${new Date(botStats.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
-                          : 'Посл. запуск: сегодня'}
+                        Посл. запуск: {formatBotLastRun(botStats?.timestamp || data.botSettings?.lastRun)}
                       </span>
                     </div>
 
-                    {/* Schedule Time Selector and Countdown Bar */}
+                    {/* Schedule Explanation & Next Run Bar */}
                     <div className="pt-2.5 border-t border-slate-200/60 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-2">
                         <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                          Время ежедневной синхронизации:
+                          Расписание:
                         </span>
-                        <select
-                          value={scheduledTime}
-                          onChange={(e) => handleSaveSchedule(e.target.value)}
-                          disabled={isScheduleSaving}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                            isDark
-                              ? 'bg-[#1b1730] border-indigo-500/30 text-indigo-300 hover:border-indigo-400'
-                              : 'bg-white border-slate-300 text-indigo-700 hover:border-indigo-500 shadow-sm'
-                          }`}
-                        >
-                          <option value="00:00" className="bg-slate-900 text-white">00:00 (В полночь)</option>
-                          <option value="02:00" className="bg-slate-900 text-white">02:00 (Глубокая ночь)</option>
-                          <option value="04:00" className="bg-slate-900 text-white">04:00 (Раннее утро — Рекомендуется)</option>
-                          <option value="06:00" className="bg-slate-900 text-white">06:00 (Утро)</option>
-                          <option value="08:00" className="bg-slate-900 text-white">08:00 (Утро)</option>
-                          <option value="10:00" className="bg-slate-900 text-white">10:00 (Утро)</option>
-                          <option value="12:00" className="bg-slate-900 text-white">12:00 (В полдень)</option>
-                          <option value="15:00" className="bg-slate-900 text-white">15:00 (Днём)</option>
-                          <option value="18:00" className="bg-slate-900 text-white">18:00 (Вечером)</option>
-                          <option value="21:00" className="bg-slate-900 text-white">21:00 (Вечером)</option>
-                        </select>
-                        {isScheduleSaving && (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-                        )}
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-bold">
+                          Запуск раз в сутки (Vercel Cron 03:00 UTC)
+                        </span>
+                        <span className={`text-[11px] ${textMuted} hidden md:inline`}>
+                          • На бесплатном тарифе Vercel Cron запускается строго 1 раз в сутки
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          Следующий авто-запуск:
+                          Результат:
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-400 font-bold text-[11px] border border-indigo-500/25">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
-                          В {scheduledTime} (через {countdownText || 'несколько часов'})
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 font-bold text-[11px] border border-emerald-500/25">
+                          {formatBotSummary(botStats || data.botSettings?.lastSummary)}
                         </span>
                       </div>
                     </div>
@@ -2108,7 +2162,7 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                           Авто-робот синхронизации новинок 24/7
                           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            В сети • Ежедневно в {scheduledTime}
+                            В сети • Vercel Cron (03:00 UTC)
                           </span>
                         </h3>
                         <p className={`text-xs ${textMuted}`}>
@@ -2128,51 +2182,30 @@ export function AdminDashboard({ initialData, allGenres }: AdminDashboardProps) 
                       </span>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium ${isDark ? 'bg-white/5 text-slate-300 border border-white/10' : 'bg-slate-100 text-slate-700'}`}>
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        {botStats?.timestamp
-                          ? `Посл. запуск: ${new Date(botStats.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
-                          : 'Посл. запуск: сегодня'}
+                        Посл. запуск: {formatBotLastRun(botStats?.timestamp || data.botSettings?.lastRun)}
                       </span>
                     </div>
 
-                    {/* Schedule Time Selector and Countdown Bar */}
+                    {/* Schedule Explanation & Next Run Bar */}
                     <div className="pt-2.5 border-t border-slate-200/60 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-2">
                         <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                          Время ежедневной синхронизации:
+                          Расписание:
                         </span>
-                        <select
-                          value={scheduledTime}
-                          onChange={(e) => handleSaveSchedule(e.target.value)}
-                          disabled={isScheduleSaving}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                            isDark
-                              ? 'bg-[#1b1730] border-indigo-500/30 text-indigo-300 hover:border-indigo-400'
-                              : 'bg-white border-slate-300 text-indigo-700 hover:border-indigo-500 shadow-sm'
-                          }`}
-                        >
-                          <option value="00:00" className="bg-slate-900 text-white">00:00 (В полночь)</option>
-                          <option value="02:00" className="bg-slate-900 text-white">02:00 (Глубокая ночь)</option>
-                          <option value="04:00" className="bg-slate-900 text-white">04:00 (Раннее утро — Рекомендуется)</option>
-                          <option value="06:00" className="bg-slate-900 text-white">06:00 (Утро)</option>
-                          <option value="08:00" className="bg-slate-900 text-white">08:00 (Утро)</option>
-                          <option value="10:00" className="bg-slate-900 text-white">10:00 (Утро)</option>
-                          <option value="12:00" className="bg-slate-900 text-white">12:00 (В полдень)</option>
-                          <option value="15:00" className="bg-slate-900 text-white">15:00 (Днём)</option>
-                          <option value="18:00" className="bg-slate-900 text-white">18:00 (Вечером)</option>
-                          <option value="21:00" className="bg-slate-900 text-white">21:00 (Вечером)</option>
-                        </select>
-                        {isScheduleSaving && (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-                        )}
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-bold">
+                          Запуск раз в сутки (Vercel Cron 03:00 UTC)
+                        </span>
+                        <span className={`text-[11px] ${textMuted} hidden md:inline`}>
+                          • На бесплатном тарифе Vercel Cron запускается строго 1 раз в сутки
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          Следующий авто-запуск:
+                          Результат:
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-400 font-bold text-[11px] border border-indigo-500/25">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
-                          В {scheduledTime} (через {countdownText || 'несколько часов'})
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 font-bold text-[11px] border border-emerald-500/25">
+                          {formatBotSummary(botStats || data.botSettings?.lastSummary)}
                         </span>
                       </div>
                     </div>

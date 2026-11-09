@@ -44,8 +44,8 @@ async function verifyStaff() {
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'editor')) {
-    return { error: 'Forbidden: требуются права администратора или редактора' };
+  if (!profile || profile.role !== 'admin') {
+    return { error: 'Forbidden: требуются права администратора' };
   }
 
   return { supabase, user, profile };

@@ -6,25 +6,19 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60s for batch sync
 
 function isAuthorized(req: NextRequest, isAdminUser: boolean): boolean {
-  // 1. Vercel cron header
+  // 1. Vercel cron header (sent securely by Vercel Cron service)
   if (req.headers.get('x-vercel-cron')) {
     return true;
   }
 
-  // 2. CRON_SECRET token via Authorization header
+  // 2. CRON_SECRET token via Authorization header (strict check, no insecure hardcoded fallback)
+  const cronSecret = process.env.CRON_SECRET;
   const authHeader = req.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET || 'animo_auto_sync_secret_2026';
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
+  if (cronSecret && authHeader && authHeader === `Bearer ${cronSecret}`) {
     return true;
   }
 
-  // 3. Query param token
-  const url = new URL(req.url);
-  if (url.searchParams.get('key') === cronSecret) {
-    return true;
-  }
-
-  // 4. Authenticated admin user
+  // 3. Authenticated admin user (strictly role === 'admin')
   if (isAdminUser) {
     return true;
   }
@@ -54,7 +48,7 @@ async function handleSync(req: NextRequest) {
           .select('role')
           .eq('id', user.id)
           .maybeSingle();
-        if (profile?.role === 'admin' || profile?.role === 'editor') {
+        if (profile?.role === 'admin') {
           isAdminUser = true;
         }
       }

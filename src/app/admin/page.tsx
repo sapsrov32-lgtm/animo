@@ -7,10 +7,19 @@ import { Genre } from '@/types';
 
 export const metadata: Metadata = {
   title: 'Админ-панель — Управление каталогом',
-  description: 'Панель редактора и администратора каталога Анимо.',
+  description: 'Панель управления каталогом Анимо.',
   robots: {
     index: false,
     follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'none',
+      'max-snippet': -1,
+    },
   },
 };
 

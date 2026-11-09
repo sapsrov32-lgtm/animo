@@ -24,7 +24,7 @@ export async function verifyAdmin() {
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'editor')) {
+  if (!profile || profile.role !== 'admin') {
     return { error: 'forbidden', user, profile };
   }
 
@@ -73,13 +73,34 @@ export async function getAdminOverviewData(
   const currentPeriodStart = new Date(now - msInPeriod).toISOString();
   const previousPeriodStart = new Date(now - msInPeriod * 2).toISOString();
 
+  // Public catalog exclusion filter for 100% accurate published counts
+  const EXCLUDED_FORMATS = [
+    'Музыка',
+    'Music',
+    'MUSIC',
+    'Спэшл',
+    'Special',
+    'SPECIAL',
+    'ТВ Короткометражка',
+    'Short',
+    'SHORT',
+    'UNKNOWN',
+  ];
+  const excludedFormatsFilter = `(${EXCLUDED_FORMATS.map((f) => `"${f}"`).join(',')})`;
+
   // 2. Query core stats in parallel
   const [
     { count: totalUsers },
     { count: usersInCurrentPeriod },
     { count: usersInPrevPeriod },
-    { count: totalAnime },
-    { count: totalOngoings },
+    { count: totalInDb },
+    { count: totalPublished },
+    { count: animeInCurrentPeriod },
+    { count: animeInPrevPeriod },
+    { count: ongoingsInDb },
+    { count: ongoingsPublished },
+    { count: ongoingsInCurrentPeriod },
+    { count: ongoingsInPrevPeriod },
     { count: totalTrackingRows },
     { count: trackingInCurrentPeriod },
     { count: trackingInPrevPeriod },
@@ -88,6 +109,7 @@ export async function getAdminOverviewData(
     { data: upcomingAiring },
     { data: topAnimePopular },
     { data: auditLogs },
+    { data: latestBotLogs },
     { data: qualityIssues },
     { data: genreDistribution },
   ] = await Promise.all([
@@ -101,17 +123,50 @@ export async function getAdminOverviewData(
       .select('*', { count: 'exact', head: true })
       .gte('created_at', previousPeriodStart)
       .lt('created_at', currentPeriodStart),
+    // Total in database
+    supabase.from('anime').select('*', { count: 'exact', head: true }),
+    // Published on website (matches public catalog exactly)
     supabase
       .from('anime')
       .select('*', { count: 'exact', head: true })
       .eq('is_published', true)
-      .eq('is_adult', false),
+      .not('poster_url', 'is', null)
+      .neq('poster_url', '')
+      .not('format', 'in', excludedFormatsFilter),
+    supabase
+      .from('anime')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', currentPeriodStart),
+    supabase
+      .from('anime')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', previousPeriodStart)
+      .lt('created_at', currentPeriodStart),
+    // Total ongoings in database
+    supabase
+      .from('anime')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'ongoing'),
+    // Published ongoings on website (matches public catalog exactly)
     supabase
       .from('anime')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'ongoing')
       .eq('is_published', true)
-      .eq('is_adult', false),
+      .not('poster_url', 'is', null)
+      .neq('poster_url', '')
+      .not('format', 'in', excludedFormatsFilter),
+    supabase
+      .from('anime')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'ongoing')
+      .gte('created_at', currentPeriodStart),
+    supabase
+      .from('anime')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'ongoing')
+      .gte('created_at', previousPeriodStart)
+      .lt('created_at', currentPeriodStart),
     supabase.from('user_anime').select('*', { count: 'exact', head: true }),
     supabase
       .from('user_anime')
@@ -150,6 +205,12 @@ export async function getAdminOverviewData(
       .select('*')
       .order('created_at', { ascending: false })
       .limit(6),
+    supabase
+      .from('admin_audit_logs')
+      .select('*')
+      .in('action', ['auto_sync_releases', 'bot_sync'])
+      .order('created_at', { ascending: false })
+      .limit(1),
     supabase
       .from('anime')
       .select('id, slug, title_ru, title_en, poster_url, description, is_published, status, next_episode_at')
@@ -204,14 +265,16 @@ export async function getAdminOverviewData(
     },
   ];
 
-  // 4. Calculate dynamic percentage deltas
+  // 4. Calculate dynamic percentage deltas from real period comparison
   const calcDelta = (curr: number, prev: number) => {
-    if (prev === 0) return curr > 0 ? '+100%' : '0%';
+    if (prev === 0) return curr > 0 ? 'Новое' : '0%';
     const pct = Math.round(((curr - prev) / prev) * 100);
     return `${pct >= 0 ? '+' : ''}${pct}%`;
   };
 
   const userDelta = calcDelta(usersInCurrentPeriod || 0, usersInPrevPeriod || 0);
+  const animeDelta = calcDelta(animeInCurrentPeriod || 0, animeInPrevPeriod || 0);
+  const ongoingDelta = calcDelta(ongoingsInCurrentPeriod || 0, ongoingsInPrevPeriod || 0);
   const trackingDelta = calcDelta(trackingInCurrentPeriod || 0, trackingInPrevPeriod || 0);
 
   // 5. Build dynamic chart points for the selected period
@@ -281,7 +344,7 @@ export async function getAdminOverviewData(
     { name: 'Романтика', count: 510, percent: 12, color: '#F59E0B' },
   ];
 
-  // 8. Bot settings & background smart check
+  // 8. Bot settings & actual run logs
   checkAndTriggerScheduledSync().catch(() => {});
 
   const { data: botSettingsRows } = await supabase
@@ -290,34 +353,61 @@ export async function getAdminOverviewData(
     .in('key', ['release_bot_settings', 'release_bot_stats']);
 
   const botSettings = {
-    scheduledTime: '04:00',
+    scheduledTime: '03:00',
     enabled: true,
     timezone: 'Asia/Bishkek',
+    cronSchedule: '0 3 * * *',
+    cronNote: 'Запуск раз в сутки (Vercel Cron 03:00 UTC)',
     lastRun: null as string | null,
     lastSummary: null as any,
+    lastStatus: 'success' as 'success' | 'error' | 'idle',
   };
 
   botSettingsRows?.forEach((row) => {
     if (row.key === 'release_bot_settings' && row.value) {
-      botSettings.scheduledTime = row.value.scheduledTime || '04:00';
+      botSettings.scheduledTime = row.value.scheduledTime || '03:00';
       botSettings.enabled = row.value.enabled ?? true;
       botSettings.timezone = row.value.timezone || 'Asia/Bishkek';
     } else if (row.key === 'release_bot_stats' && row.value) {
       botSettings.lastRun = row.value.last_run || null;
       botSettings.lastSummary = row.value.summary || null;
+      botSettings.lastStatus = row.value.status || 'success';
     }
   });
+
+  const latestBotLog = latestBotLogs?.[0];
+  if (latestBotLog) {
+    if (!botSettings.lastRun || new Date(latestBotLog.created_at) > new Date(botSettings.lastRun)) {
+      botSettings.lastRun = latestBotLog.created_at;
+      botSettings.lastSummary = latestBotLog.details || null;
+      botSettings.lastStatus = (latestBotLog.details?.errors_count || 0) > 0 ? 'error' : 'success';
+    }
+  }
+
+  const totalInDbCount = totalInDb || 0;
+  const publishedAnimeCount = totalPublished || 0;
+  const hiddenAnimeCount = Math.max(0, totalInDbCount - publishedAnimeCount);
+
+  const ongoingsInDbCount = ongoingsInDb || 0;
+  const publishedOngoingsCount = ongoingsPublished || 0;
+  const hiddenOngoingsCount = Math.max(0, ongoingsInDbCount - publishedOngoingsCount);
 
   return {
     currentUser: profile,
     metrics: {
       totalUsers: totalUsers || 0,
-      totalAnime: totalAnime || 0,
-      totalOngoings: totalOngoings || 0,
+      totalInDb: totalInDbCount,
+      publishedTotal: publishedAnimeCount,
+      hiddenCount: hiddenAnimeCount,
+      ongoingsInDb: ongoingsInDbCount,
+      publishedOngoings: publishedOngoingsCount,
+      hiddenOngoings: hiddenOngoingsCount,
+      totalAnime: publishedAnimeCount, // backward compatibility
+      totalOngoings: publishedOngoingsCount, // backward compatibility
       totalTrackingRows: totalTrackingRows || 0,
       userDelta,
-      animeDelta: '+1.4%',
-      ongoingDelta: '+2.1%',
+      animeDelta,
+      ongoingDelta,
       trackingDelta,
     },
     statusBreakdown,
