@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const decoded = decodeURIComponent(username);
 
   return {
-    title: `Профиль @${decoded} — списки и статистика аниме | Анимо`,
+    title: `Профиль @${decoded} — списки и статистика аниме`,
     description: `Публичный аниме-трекер, список просмотренного, любимые жанры и персональные оценки пользователя @${decoded} на Анимо.`,
   };
 }

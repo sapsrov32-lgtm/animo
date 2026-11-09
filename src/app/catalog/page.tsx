@@ -3,10 +3,10 @@ import { CatalogView } from '@/components/catalog/CatalogView';
 import { fetchCatalogAnime, fetchAllGenres, fetchCatalogStats } from '@/app/actions/catalog';
 
 export const metadata: Metadata = {
-  title: 'Каталог аниме — Анимо',
+  title: 'Каталог аниме',
   description: 'Полный каталог аниме на русском языке: поиск, фильтры по жанрам, годам и статусу, честные рейтинги без пиратства.',
   openGraph: {
-    title: 'Каталог аниме — Анимо',
+    title: 'Каталог аниме | Анимо',
     description: 'Полный каталог аниме на русском языке: поиск, фильтры по жанрам, годам и статусу, честные рейтинги без пиратства.',
     url: 'https://animo-virid.vercel.app/catalog',
     siteName: 'Анимо',
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Каталог аниме — Анимо',
+    title: 'Каталог аниме | Анимо',
     description: 'Полный каталог аниме на русском языке: поиск, фильтры по жанрам, годам и статусу, честные рейтинги без пиратства.',
   },
   alternates: {

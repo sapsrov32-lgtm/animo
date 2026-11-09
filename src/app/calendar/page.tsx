@@ -4,11 +4,11 @@ import { CalendarWorkspace } from '@/components/calendar/CalendarWorkspace';
 import { fetchCalendarAiringSchedule } from '@/lib/anilist';
 
 export const metadata: Metadata = {
-  title: 'Календарь выхода серий — Анимо',
+  title: 'Календарь выхода серий',
   description:
     'Точное интерактивное расписание выхода серий аниме-онгоингов по дням недели с автоматическим пересчётом на местное время зрителя.',
   openGraph: {
-    title: 'Календарь выхода серий — Анимо',
+    title: 'Календарь выхода серий | Анимо',
     description:
       'Точное интерактивное расписание выхода серий аниме-онгоингов по дням недели с автоматическим пересчётом на местное время зрителя.',
     url: 'https://animo-virid.vercel.app/calendar',
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Календарь выхода серий — Анимо',
+    title: 'Календарь выхода серий | Анимо',
     description:
       'Точное интерактивное расписание выхода серий аниме-онгоингов по дням недели с автоматическим пересчётом на местное время зрителя.',
   },

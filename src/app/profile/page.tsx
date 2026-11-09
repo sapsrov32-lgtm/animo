@@ -4,7 +4,7 @@ import { ProfileWorkspace } from '@/components/profile/ProfileWorkspace';
 import { UserProfile, UserAnime } from '@/types';
 
 export const metadata: Metadata = {
-  title: 'Моё аниме — персональный трекер | Анимо',
+  title: 'Моё аниме — персональный трекер',
   description: 'Личные списки аниме, отслеживание просмотренных серий, персональная статистика и карточка итогов года.',
 };
 

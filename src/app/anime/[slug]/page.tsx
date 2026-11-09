@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { Anime, Genre } from '@/types';
-import { getDisplayTitle, getSecondaryTitle } from '@/lib/format';
+import { getDisplayTitle, getSecondaryTitle, cleanDescription, isRussianText } from '@/lib/format';
 import { sortAndFormatGenres } from '@/lib/genres';
 import { AnimeCard } from '@/components/anime/AnimeCard';
 import { AiringCountdown } from '@/components/anime/AiringCountdown';
@@ -46,6 +46,29 @@ const getAnime = cache(async (slug: string) => {
   return data;
 });
 
+function extractSeoDescription(anime: any, title: string): string {
+  const cleaned = cleanDescription(anime.description);
+  if (cleaned && cleaned.length >= 25) {
+    const singleLine = cleaned.replace(/\s+/g, ' ').trim();
+    if (singleLine.length >= 140 && singleLine.length <= 160) {
+      return singleLine;
+    }
+    if (singleLine.length > 160) {
+      const slice = singleLine.slice(0, 157);
+      const lastSpace = slice.lastIndexOf(' ');
+      const trimmed = lastSpace > 120 ? slice.slice(0, lastSpace) : slice;
+      return `${trimmed}...`;
+    }
+    const yearPart = anime.year ? ` (${anime.year})` : '';
+    const combined = `${title}${yearPart}: ${singleLine}. Информация, серии и рейтинг на Анимо.`;
+    return combined.slice(0, 160);
+  }
+
+  const yearPart = anime.year ? ` (${anime.year})` : '';
+  const fallback = `Смотреть аниме «${title}»${yearPart}: описание сюжета, официальный рейтинг, расписание серий и где смотреть онлайн в хорошем качестве на Анимо.`;
+  return fallback.slice(0, 160);
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const anime = await getAnime(slug);
@@ -56,11 +79,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const title = getDisplayTitle(anime);
-  const seoTitle = `${title}: описание, рейтинг, серии | Анимо`;
-  const yearStr = anime.year ? `(${anime.year})` : '';
-  const seoDescription = `${title} ${yearStr} — подробное описание сюжета, официальный рейтинг сообщества, список персонажей и расписание выхода серий в каталоге Анимо. ${anime.description?.slice(0, 100) || ''}`.trim();
+  // Title format: «{Название} — описание, рейтинг, серии | Анимо»
+  const seoTitle = `${title} — описание, рейтинг, серии | Анимо`;
+  const seoDescription = extractSeoDescription(anime, title);
   const pageUrl = `${baseUrl}/anime/${anime.slug || anime.id}`;
   const poster = anime.poster_url || anime.banner_url || '';
+  const posterAbsoluteUrl = poster
+    ? poster.startsWith('http')
+      ? poster
+      : `${baseUrl}${poster}`
+    : undefined;
 
   return {
     title: {
@@ -77,10 +105,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       siteName: 'Анимо',
       locale: 'ru_RU',
       type: 'website',
-      images: poster
+      images: posterAbsoluteUrl
         ? [
             {
-              url: poster,
+              url: posterAbsoluteUrl,
               width: 1200,
               height: 630,
               alt: title,
@@ -92,7 +120,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: 'summary_large_image',
       title: seoTitle,
       description: seoDescription,
-      images: poster ? [poster] : [],
+      images: posterAbsoluteUrl ? [posterAbsoluteUrl] : [],
     },
   };
 }
@@ -138,6 +166,12 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://animo-virid.vercel.app';
   const pageUrl = `${baseUrl}/anime/${anime.slug || anime.id}`;
 
+  const cleanedSynopsis = cleanDescription(anime.description);
+  const hasRussianDescription = isRussianText(cleanedSynopsis);
+  const anilistUrl = anime.anilist_id
+    ? `https://anilist.co/anime/${anime.anilist_id}`
+    : `https://anilist.co/search/anime?search=${encodeURIComponent(anime.title_en || displayTitle)}`;
+
   const isMovieFormat =
     anime.format === 'Фильм' ||
     anime.format === 'Movie' ||
@@ -151,7 +185,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
     : undefined;
 
   return (
-    <div className="flex flex-col w-full pb-28 sm:pb-32">
+    <div className="flex flex-col w-full pb-[calc(80px+env(safe-area-inset-bottom))] lg:pb-32">
       {/* Schema.org JSON-LD Structured Data for Search Engine Rich Snippets (Breadcrumbs & Media with AggregateRating) */}
       <script
         type="application/ld+json"
@@ -164,7 +198,7 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                 '@id': `${pageUrl}#media`,
                 name: displayTitle,
                 alternateName: secondaryTitle || undefined,
-                description: anime.description || `${displayTitle} — описание сюжета, рейтинг сообщества и график выхода серий на Анимо`,
+                description: extractSeoDescription(anime, displayTitle),
                 image: posterAbsoluteUrl,
                 url: pageUrl,
                 datePublished: anime.year ? `${anime.year}-01-01` : undefined,
@@ -256,29 +290,38 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
         </div>
 
         {/* Breadcrumbs - positioned at top safely below header, never overlapped by poster */}
-        <div className="absolute top-0 inset-x-0 pt-20 px-margin md:px-margin-tablet lg:px-margin-desktop max-w-[1440px] mx-auto z-20">
-          <nav className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-xs sm:text-body-sm overflow-x-auto whitespace-nowrap py-1 scrollbar-none">
-            <Link href="/" className="hover:text-primary transition-colors flex items-center gap-1 shrink-0">
+        <div className="absolute top-0 inset-x-0 pt-20 px-4 sm:px-margin md:px-margin-tablet lg:px-margin-desktop max-w-[1440px] mx-auto z-20 pointer-events-auto">
+          <nav
+            aria-label="Навигация"
+            className="flex items-center gap-1 text-on-surface-variant font-body-sm text-xs sm:text-body-sm overflow-x-auto whitespace-nowrap py-1 scrollbar-none touch-pan-x"
+          >
+            <Link
+              href="/"
+              className="hover:text-primary transition-colors flex items-center gap-1 shrink-0 min-h-[36px] py-1 px-1 touch-manipulation"
+            >
               <span className="material-symbols-outlined text-[15px]">home</span>
-              Главная
+              <span>Главная</span>
             </Link>
-            <span className="text-outline shrink-0">/</span>
-            <Link href="/catalog" className="hover:text-primary transition-colors shrink-0">
-              Каталог
+            <span className="text-outline shrink-0 select-none">/</span>
+            <Link
+              href="/catalog"
+              className="hover:text-primary transition-colors shrink-0 min-h-[36px] flex items-center py-1 px-1 touch-manipulation"
+            >
+              <span>Каталог</span>
             </Link>
             {genres[0] && (
               <>
-                <span className="text-outline shrink-0">/</span>
+                <span className="text-outline shrink-0 select-none">/</span>
                 <Link
                   href={`/catalog?genre=${genres[0].slug}`}
-                  className="hover:text-primary transition-colors shrink-0"
+                  className="hover:text-primary transition-colors shrink-0 min-h-[36px] flex items-center py-1 px-1 touch-manipulation"
                 >
-                  {genres[0].name_ru}
+                  <span>{genres[0].name_ru}</span>
                 </Link>
               </>
             )}
-            <span className="text-outline shrink-0">/</span>
-            <span className="text-primary truncate max-w-[160px] sm:max-w-xs md:max-w-md shrink-0">
+            <span className="text-outline shrink-0 select-none">/</span>
+            <span className="text-primary font-medium shrink-0 max-w-[180px] sm:max-w-xs truncate py-1 px-1">
               {displayTitle}
             </span>
           </nav>
@@ -374,8 +417,8 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                 <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">
                   Серий
                 </span>
-                <span className="font-headline-sm text-headline-sm font-bold text-on-surface mt-1">
-                  {anime.episodes || '?'}
+                <span className={`font-bold text-on-surface mt-1 ${anime.episodes ? 'font-headline-sm text-headline-sm' : 'text-base sm:text-headline-sm'}`}>
+                  {anime.episodes ? anime.episodes : anime.status === 'ongoing' ? 'Идёт показ' : '—'}
                 </span>
                 <span className="font-body-sm text-body-sm text-tertiary mt-0.5">
                   {anime.status === 'ongoing' ? 'Онгоинг' : 'Полный сезон'}
@@ -442,7 +485,11 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
               </div>
               <div className="px-3 py-1.5 rounded-xl bg-surface-container-high font-label-md text-label-md flex items-center gap-1.5 border border-outline-variant/20">
                 <span className="material-symbols-outlined text-outline text-[16px]">layers</span>
-                {anime.episodes ? `${anime.episodes} серий` : 'Серии уточняются'}
+                {anime.episodes
+                  ? `${anime.episodes} серий`
+                  : anime.status === 'ongoing'
+                  ? 'Идёт показ'
+                  : '—'}
               </div>
               <div className="px-3 py-1.5 rounded-xl bg-secondary-container/40 text-on-secondary-container font-label-md text-label-md flex items-center gap-1.5 border border-secondary/30">
                 <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
@@ -513,9 +560,26 @@ export default async function AnimeDetailsPage({ params }: PageProps) {
                 <span className="material-symbols-outlined text-primary text-[20px]">subject</span>
                 Синопсис
               </div>
-              <p className="font-body-lg text-body-lg text-on-surface-variant leading-relaxed whitespace-pre-line">
-                {anime.description || 'Описание этого тайтла ещё дополняется редакторами каталога.'}
-              </p>
+              {hasRussianDescription ? (
+                <p className="font-body-lg text-body-lg text-on-surface-variant leading-relaxed whitespace-pre-line">
+                  {cleanedSynopsis}
+                </p>
+              ) : (
+                <div className="flex flex-col items-start gap-4 py-2">
+                  <p className="font-body-lg text-body-lg text-on-surface-variant italic">
+                    Описание на русском пока нет
+                  </p>
+                  <a
+                    href={anilistUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-surface-container-high hover:bg-surface-bright text-primary hover:text-primary-fixed border border-outline-variant/30 font-label-md text-label-md transition-all active:scale-95 shadow-sm"
+                  >
+                    <span>Читать оригинал на AniList</span>
+                    <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                  </a>
+                </div>
+              )}
             </section>
 
             {/* Official Legal Streaming & Trailers */}

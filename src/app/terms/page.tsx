@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Правила сервиса — Анимо',
+  title: 'Правила сервиса',
   description: 'Пользовательское соглашение и правила использования каталога и трекера Анимо.',
 };
 

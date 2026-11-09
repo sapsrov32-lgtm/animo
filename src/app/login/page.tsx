@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { AuthForm } from '@/components/auth/AuthForm';
 
 export const metadata: Metadata = {
-  title: 'Вход и регистрация — Анимо',
+  title: 'Вход и регистрация',
   description: 'Авторизуйтесь в Анимо, чтобы сохранять личные списки, вести историю просмотров и выгружать карточку года.',
 };
 

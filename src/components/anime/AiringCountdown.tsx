@@ -79,6 +79,8 @@ export function AiringCountdown({
       <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
         {status.isPast
           ? status.text
+          : formatted?.isHiatus
+          ? formatted.hiatusText
           : formatted
           ? `Выходит в ${formatted.dayName.toLowerCase()} в ${formatted.timeStr} (по вашему времени)`
           : status.text}

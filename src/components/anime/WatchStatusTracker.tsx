@@ -289,7 +289,7 @@ export function WatchStatusTracker({
             <div className="flex flex-col">
               <span className="font-label-sm text-label-sm text-outline">Прогресс серий</span>
               <span className="font-title-card text-title-card font-bold text-on-surface">
-                {progress} / {totalEpisodes || '?'} серий
+                {progress} / {totalEpisodes ? `${totalEpisodes} серий` : 'идёт показ'}
               </span>
             </div>
           </div>

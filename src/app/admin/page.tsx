@@ -6,7 +6,7 @@ import { getAdminOverviewData } from '@/app/actions/admin-dashboard';
 import { Genre } from '@/types';
 
 export const metadata: Metadata = {
-  title: 'Админ-панель — Управление каталогом | Анимо',
+  title: 'Админ-панель — Управление каталогом',
   description: 'Панель редактора и администратора каталога Анимо.',
   robots: {
     index: false,

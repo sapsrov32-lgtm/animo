@@ -57,11 +57,24 @@ export function getSecondaryTitle(anime: {
   return null;
 }
 
+export function isRussianText(text: string | null | undefined): boolean {
+  if (!text) return false;
+  const cyrillicMatches = text.match(/[а-яА-ЯёЁ]/g);
+  return Boolean(cyrillicMatches && cyrillicMatches.length >= 10);
+}
+
 export function cleanDescription(desc: string | null | undefined): string {
-  if (!desc) return 'Описание этого тайтла ещё дополняется редакторами каталога.';
+  if (!desc) return '';
   return desc
-    .replace(/\s*\((?:Source|written by):[^)]*\)/gi, '')
-    .replace(/\s*\[(?:Written by|Source):[^\]]*\]/gi, '')
+    // 1. Remove special episodes / specials list
+    .replace(/(?:(?:\*|\n)?\s*(?:This includes the following special episodes|Included specials|Special episodes|Специальные эпизоды|Спешлы):[\s\S]*)/gi, '')
+    // 2. Remove (Source: ...) or [Source: ...] or (Written by: ...) or (Примечание: ...)
+    .replace(/\s*[\(\[](?:Source|Written by|Примечание|Источник):?[^\)\]]*[\)\]]/gi, '')
+    // 3. Remove standalone Source: or Источник: or Note: lines
+    .replace(/\s*(?:Source|Источник):.*$/gim, '')
+    .replace(/\s*(?:Note|Примечание):.*$/gim, '')
+    .replace(/\s*\*Note:[^\n]*/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
@@ -70,6 +83,9 @@ export function formatAiringTime(isoDate: string | null | undefined): {
   timeStr: string;
   remainingStr: string;
   isPast: boolean;
+  days: number;
+  isHiatus: boolean;
+  hiatusText: string;
 } {
   if (!isoDate) {
     return {
@@ -77,6 +93,9 @@ export function formatAiringTime(isoDate: string | null | undefined): {
       timeStr: '',
       remainingStr: 'Дата не объявлена',
       isPast: true,
+      days: 0,
+      isHiatus: false,
+      hiatusText: '',
     };
   }
 
@@ -90,6 +109,9 @@ export function formatAiringTime(isoDate: string | null | undefined): {
       timeStr: targetDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
       remainingStr: 'Серия уже вышла',
       isPast: true,
+      days: 0,
+      isHiatus: false,
+      hiatusText: '',
     };
   }
 
@@ -110,11 +132,26 @@ export function formatAiringTime(isoDate: string | null | undefined): {
   const dayName = targetDate.toLocaleDateString('ru-RU', { weekday: 'long' });
   const timeStr = targetDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
+  // Format date in Russian: e.g. "3 января 2027"
+  const formattedDate = targetDate
+    .toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      ...(targetDate.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}),
+    })
+    .replace(/\s*г\.?$/, '');
+
+  const isHiatus = days > 14;
+  const hiatusText = `Перерыв в показе, следующая серия ${formattedDate}`;
+
   return {
     dayName: dayName.charAt(0).toUpperCase() + dayName.slice(1),
     timeStr,
     remainingStr,
     isPast: false,
+    days,
+    isHiatus,
+    hiatusText,
   };
 }
 
@@ -207,6 +244,11 @@ export function getEpisodeStatusBadge(
   }
 
   // FUTURE:
+  const daysInFuture = Math.floor(diffMs / (86400 * 1000));
+  if (daysInFuture > 14) {
+    return { text: 'Перерыв в показе', isPast: false, isToday: false };
+  }
+
   if (isToday) {
     if (mode === 'home') {
       return { text: `Сегодня ${timeStr}`, isPast: false, isToday: true };

@@ -46,6 +46,15 @@ export function WhereToWatch({
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
+
+    // 3-second hard timeout so "Поиск..." never hangs
+    const hardTimeout = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+      controller.abort();
+    }, 3000);
 
     async function fetchLegalData() {
       try {
@@ -78,6 +87,7 @@ export function WhereToWatch({
           variables.search = titleEn || titleRu;
         } else {
           setLoading(false);
+          clearTimeout(hardTimeout);
           return;
         }
 
@@ -85,6 +95,7 @@ export function WhereToWatch({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query, variables }),
+          signal: controller.signal,
         });
 
         if (!res.ok) {
@@ -116,9 +127,12 @@ export function WhereToWatch({
             setLinks(streaming);
           }
         }
-      } catch (err) {
-        console.error('Failed to load legal streaming data:', err);
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          console.error('Failed to load legal streaming data:', err);
+        }
       } finally {
+        clearTimeout(hardTimeout);
         if (isMounted) setLoading(false);
       }
     }
@@ -127,6 +141,8 @@ export function WhereToWatch({
 
     return () => {
       isMounted = false;
+      clearTimeout(hardTimeout);
+      controller.abort();
     };
   }, [anilistId, shikimoriId, titleEn, titleRu]);
 

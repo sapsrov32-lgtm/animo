@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Политика конфиденциальности — Анимо',
+  title: 'Политика конфиденциальности',
   description: 'Политика обработки персональных данных и защиты конфиденциальности пользователей Анимо.',
 };
 
