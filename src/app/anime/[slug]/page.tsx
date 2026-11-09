@@ -81,12 +81,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canonicalUrl = `https://animo-virid.vercel.app/anime/${slug}`;
 
   if (!anime) {
-    return {
-      title: 'Тайтл не найден — Анимо',
-      alternates: {
-        canonical: canonicalUrl,
-      },
-    };
+    notFound();
   }
 
   const title = getDisplayTitle(anime);
