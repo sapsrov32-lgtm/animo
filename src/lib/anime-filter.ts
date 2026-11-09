@@ -13,6 +13,7 @@ export const EXCLUDED_FORMATS = [
   'Музыка',
   'Music',
   'MUSIC',
+  'Спешл',
   'Спэшл',
   'Special',
   'SPECIAL',
@@ -49,9 +50,7 @@ export const ADULT_SEARCH_KEYWORDS = [
 export function isAdultSearchQuery(query: string): boolean {
   const q = (query || '').toLowerCase().trim();
   if (!q) return false;
-  return ADULT_SEARCH_KEYWORDS.some(
-    (kw) => q === kw || q.startsWith(`${kw} `) || q.endsWith(` ${kw}`) || q.includes(` ${kw} `)
-  );
+  return ADULT_SEARCH_KEYWORDS.some((kw) => q.includes(kw));
 }
 
 /**

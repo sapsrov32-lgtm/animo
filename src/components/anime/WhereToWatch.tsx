@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { WatchStatus } from '@/types';
 import { setAnimeWatchStatus } from '@/app/actions/tracker';
 import { sortStreamingLinksByCountry } from '@/lib/watch-providers';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 export interface StreamingLink {
   id: number;
@@ -38,6 +40,8 @@ export function WhereToWatch({
   isLoggedIn = false,
   initialWatchStatus = null,
 }: WhereToWatchProps) {
+  const { state } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [rawLinks, setRawLinks] = useState<StreamingLink[]>([]);
   const [links, setLinks] = useState<StreamingLink[]>([]);
   const [userCountry, setUserCountry] = useState<string | null>(null);
@@ -184,14 +188,21 @@ export function WhereToWatch({
   }, [anilistId, shikimoriId, titleEn, titleRu]);
 
   const handleAddToPlan = async () => {
-    if (!isLoggedIn) {
-      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+    if (state === 'loading') {
+      return;
+    }
+    if (state === 'guest') {
+      setAuthModalOpen(true);
       return;
     }
     setPlanLoading(true);
     const nextStatus: WatchStatus = inPlan ? 'now' : 'plan';
     try {
       const res = await setAnimeWatchStatus(animeId, nextStatus);
+      if (res?.error === 'unauthorized') {
+        setAuthModalOpen(true);
+        return;
+      }
       if (!res?.error) {
         setInPlan(!inPlan);
       }
@@ -339,6 +350,11 @@ export function WhereToWatch({
           </div>
         </div>
       )}
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
     </section>
   );
 }

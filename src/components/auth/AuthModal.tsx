@@ -14,11 +14,14 @@ export function AuthModal({
   isOpen,
   onClose,
   title = 'Войдите, чтобы сохранить',
-  description = 'Чтобы добавлять аниме в персональные списки, отмечать просмотренные серии и ставить оценки, войдите в свой аккаунт.',
+  description = 'Чтобы добавлять аниме в персональные списки, отмечать серии и ставить оценки, войдите в свой аккаунт.',
 }: AuthModalProps) {
   if (!isOpen) return null;
 
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const currentPath =
+    typeof window !== 'undefined'
+      ? `${window.location.pathname}${window.location.search || ''}`
+      : '/';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -58,16 +61,16 @@ export function AuthModal({
         {/* Actions */}
         <div className="flex flex-col w-full gap-2.5 pt-2">
           <Link
-            href={`/login?redirect=${encodeURIComponent(currentPath)}`}
+            href={`/login?next=${encodeURIComponent(currentPath)}`}
             className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-primary text-on-primary font-label-md text-sm font-bold flex items-center justify-center shadow-md hover:brightness-110 active:scale-95 transition-all"
           >
-            Войти в аккаунт
+            Войти
           </Link>
           <Link
-            href={`/login?tab=signup&redirect=${encodeURIComponent(currentPath)}`}
+            href={`/register?next=${encodeURIComponent(currentPath)}`}
             className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-surface-container-high text-on-surface font-label-md text-sm font-semibold flex items-center justify-center border border-outline-variant/30 hover:bg-surface-bright active:scale-95 transition-all"
           >
-            Зарегистрироваться
+            Регистрация
           </Link>
         </div>
       </div>

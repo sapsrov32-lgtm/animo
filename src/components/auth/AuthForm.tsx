@@ -7,13 +7,20 @@ import { createClient } from '@/lib/supabase/client';
 
 type Tab = 'login' | 'register';
 
-export function AuthForm() {
+interface AuthFormProps {
+  defaultTab?: Tab;
+}
+
+export function AuthForm({ defaultTab = 'login' }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('redirect') || searchParams.get('next') || '/';
   const urlError = searchParams.get('error');
 
-  const [activeTab, setActiveTab] = useState<Tab>('login');
+  const tabParam = searchParams.get('tab');
+  const initialTab: Tab =
+    tabParam === 'signup' || tabParam === 'register' ? 'register' : defaultTab;
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -34,6 +41,23 @@ export function AuthForm() {
   }, [urlError]);
 
   const supabase = createClient();
+
+  // If already authenticated, redirect immediately to /profile (or next/redirect target)
+  useEffect(() => {
+    supabase.auth.getSession().then((res: any) => {
+      const session = res?.data?.session;
+      if (session?.user) {
+        const dest =
+          redirectPath &&
+          redirectPath !== '/' &&
+          !redirectPath.startsWith('/login') &&
+          !redirectPath.startsWith('/register')
+            ? redirectPath
+            : '/profile';
+        router.replace(dest);
+      }
+    });
+  }, [router, redirectPath, supabase.auth]);
 
   const handleGoogleSignIn = async () => {
     setError(null);

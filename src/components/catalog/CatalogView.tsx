@@ -19,7 +19,7 @@ const FORMAT_OPTIONS = [
   { id: 'Фильм', label: 'Фильм' },
   { id: 'OVA', label: 'OVA' },
   { id: 'ONA', label: 'ONA' },
-  { id: 'Спэшл', label: 'Спэшл' },
+  { id: 'Спешл', label: 'Спешл' },
 ];
 
 export function CatalogView({
@@ -494,17 +494,22 @@ export function CatalogView({
 
         {/* Catalog Media Grid */}
         <section className="lg:col-span-9 flex flex-col gap-space-lg">
-          {/* Results Summary Bar */}
-          <div className="flex items-center justify-between text-outline font-body-sm text-body-sm">
+          {/* Results Summary Bar with reserved space for indicator to eliminate mobile reflow/jitter */}
+          <div className="flex items-center justify-between min-h-[28px] text-outline font-body-sm text-body-sm">
             <span>
               Найдено: <strong className="text-on-surface">{total}</strong> тайтлов
             </span>
-            {isPending && (
-              <span className="flex items-center gap-1.5 text-secondary animate-pulse">
+            <div className="flex items-center min-w-[120px] justify-end min-h-[24px]">
+              <span
+                className={`flex items-center gap-1.5 text-secondary transition-opacity duration-200 ${
+                  isPending ? 'opacity-100 animate-pulse' : 'opacity-0 pointer-events-none'
+                }`}
+                aria-hidden={!isPending}
+              >
                 <span className="material-symbols-outlined text-[16px]">sync</span>
                 Обновление...
               </span>
-            )}
+            </div>
           </div>
 
           {/* Cards Grid */}

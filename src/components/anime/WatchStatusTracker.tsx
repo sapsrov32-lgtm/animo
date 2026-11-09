@@ -6,6 +6,7 @@ import { WatchStatus } from '@/types';
 import { setAnimeWatchStatus, setAnimeScore, setAnimeProgress } from '@/app/actions/tracker';
 import { createClient } from '@/lib/supabase/client';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { useAuth } from '@/hooks/useAuth';
 
 interface WatchStatusTrackerProps {
   animeId: string;
@@ -25,50 +26,40 @@ export function WatchStatusTracker({
   isLoggedIn = false,
 }: WatchStatusTrackerProps) {
   const router = useRouter();
+  const { state, user } = useAuth();
   const [status, setStatus] = useState<WatchStatus | null>(initialStatus);
   const [score, setScore] = useState<number | null>(initialScore);
   const [progress, setProgress] = useState<number>(initialProgress);
   const [isSaving, setIsSaving] = useState(false);
-  const [userLoggedIn, setUserLoggedIn] = useState(isLoggedIn);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  // Синхронизация сессии на клиенте (устраняет ложные запросы авторизации)
+  // Synchronize status from client Supabase when user is logged in
   useEffect(() => {
-    setUserLoggedIn(isLoggedIn);
+    if (state !== 'user' || !user) return;
+    let isMounted = true;
     const supabase = createClient();
-    supabase.auth.getUser().then(async (res: any) => {
-      const data = res?.data;
-      if (data?.user) {
-        setUserLoggedIn(true);
-        // Если при SSR статус не был подгружен, подгружаем актуальный статус пользователя
-        if (!initialStatus && !initialScore) {
-          const { data: record } = await supabase
-            .from('user_anime')
-            .select('status, score, progress')
-            .eq('user_id', data.user.id)
-            .eq('anime_id', animeId)
-            .maybeSingle();
+    supabase
+      .from('user_anime')
+      .select('status, score, progress')
+      .eq('user_id', user.id)
+      .eq('anime_id', animeId)
+      .maybeSingle()
+      .then((res: any) => {
+        const record = res?.data;
+        if (!isMounted || !record) return;
+        setStatus(record.status as WatchStatus);
+        setScore(record.score);
+        setProgress(record.progress || 0);
+      });
 
-          if (record) {
-            setStatus(record.status as WatchStatus);
-            setScore(record.score);
-            setProgress(record.progress || 0);
-          }
-        }
-      }
-    });
-  }, [animeId, isLoggedIn, initialStatus, initialScore]);
+    return () => {
+      isMounted = false;
+    };
+  }, [animeId, state, user]);
 
-  const ensureAuthenticated = useCallback(async (): Promise<boolean> => {
-    if (userLoggedIn) return true;
-    const supabase = createClient();
-    const { data } = await supabase.auth.getUser();
-    if (data?.user) {
-      setUserLoggedIn(true);
-      return true;
-    }
-    return false;
-  }, [userLoggedIn]);
+  const ensureAuthenticated = useCallback((): boolean => {
+    return state === 'user' && Boolean(user);
+  }, [state, user]);
 
   const handleStatusChange = async (newStatus: WatchStatus) => {
     const authed = await ensureAuthenticated();

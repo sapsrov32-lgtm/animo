@@ -608,7 +608,7 @@ export function AdminWorkspace({ initialAnimeList, allGenres }: AdminWorkspacePr
                     <option value="Фильм">Фильм</option>
                     <option value="OVA">OVA</option>
                     <option value="ONA">ONA</option>
-                    <option value="Спэшл">Спэшл</option>
+                    <option value="Спешл">Спешл</option>
                     <option value="Клип">Клип</option>
                   </select>
                 </div>
@@ -1007,13 +1007,19 @@ export function AdminWorkspace({ initialAnimeList, allGenres }: AdminWorkspacePr
                                 type="button"
                                 onClick={() => handleTogglePublish(anime)}
                                 className={`px-2.5 py-1 rounded-full font-label-sm text-[11px] font-bold transition-all ${
-                                  anime.is_published
+                                  anime.is_adult
+                                    ? 'bg-error/20 text-error border border-error/30'
+                                    : anime.is_published
                                     ? 'bg-primary-container text-on-primary-container hover:brightness-110'
                                     : 'bg-surface-container-highest text-outline hover:text-on-surface'
                                 }`}
-                                title="Нажмите для переключения видимости в каталоге"
+                                title={
+                                  anime.is_adult
+                                    ? 'Тайтл скрыт как 18+'
+                                    : 'Нажмите для переключения видимости в каталоге'
+                                }
                               >
-                                {anime.is_published ? 'Да' : 'Скрыт'}
+                                {anime.is_adult ? 'Скрыт (18+)' : anime.is_published ? 'Да' : 'Скрыт'}
                               </button>
                             </td>
 

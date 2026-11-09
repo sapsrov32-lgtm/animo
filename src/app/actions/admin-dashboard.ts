@@ -79,7 +79,7 @@ export async function getAdminOverviewData(
     'Музыка',
     'Music',
     'MUSIC',
-    'Спэшл',
+    'Спешл',
     'Special',
     'SPECIAL',
     'ТВ Короткометражка',

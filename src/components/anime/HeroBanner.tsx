@@ -1,29 +1,82 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Anime } from '@/types';
+import { useState, useEffect } from 'react';
+import { Anime, WatchStatus } from '@/types';
 import { getDisplayTitle, getSecondaryTitle, cleanDescription } from '@/lib/format';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { setAnimeWatchStatus } from '@/app/actions/tracker';
+import { createClient } from '@/lib/supabase/client';
 
 interface HeroBannerProps {
   anime: Anime;
-  isLoggedIn?: boolean;
+  isLoggedIn?: boolean; // legacy optional prop, ignored in favor of client useAuth()
 }
 
-export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
+export function HeroBanner({ anime }: HeroBannerProps) {
+  const { state, user } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const displayTitle = getDisplayTitle(anime);
   const secondaryTitle = getSecondaryTitle(anime);
 
-  const handleSelectStatus = (statusName: string) => {
-    if (!isLoggedIn) {
-      window.location.href = '/login';
+  // Load existing status on client when user is logged in
+  useEffect(() => {
+    if (state !== 'user' || !user) return;
+    let isMounted = true;
+    const supabase = createClient();
+    supabase
+      .from('user_anime')
+      .select('status')
+      .eq('user_id', user.id)
+      .eq('anime_id', anime.id)
+      .maybeSingle()
+      .then((res: any) => {
+        const data = res?.data;
+        if (!isMounted || !data) return;
+        if (data.status === 'plan') setCurrentStatus('В планах');
+        else if (data.status === 'now') setCurrentStatus('Смотрю');
+        else if (data.status === 'done') setCurrentStatus('Просмотрено');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [state, user, anime.id]);
+
+  const handleTriggerClick = () => {
+    if (state === 'loading') {
+      return; // Do nothing while auth is resolving (no redirect)
+    }
+    if (state === 'guest') {
+      setAuthModalOpen(true);
       return;
     }
-    setCurrentStatus(statusName);
+    setDropdownOpen(!dropdownOpen);
+  };
+
+  const handleSelectStatus = async (statusKey: WatchStatus, label: string) => {
+    if (state === 'guest') {
+      setAuthModalOpen(true);
+      return;
+    }
+    if (state !== 'user') return;
+
     setDropdownOpen(false);
+    setCurrentStatus(label);
+    setIsSaving(true);
+
+    try {
+      await setAnimeWatchStatus(anime.id, statusKey);
+    } catch (err) {
+      console.error('Failed to save anime status:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const genres =
@@ -52,7 +105,6 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
       {/* Hero Content Container */}
       <div className="relative z-10 max-w-[1440px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop">
         <div className="max-w-3xl flex flex-col gap-space-md">
-          
           {/* Meta Pills & Badges */}
           <div className="flex flex-wrap items-center gap-space-xs sm:gap-space-sm pt-4">
             {anime.score && (
@@ -141,14 +193,9 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
-                  if (!isLoggedIn) {
-                    window.location.href = '/login';
-                  } else {
-                    setDropdownOpen(!dropdownOpen);
-                  }
-                }}
-                className="flex items-center gap-2 px-5 h-11 rounded-full bg-surface-container-high/90 hover:bg-surface-bright text-on-surface font-label-md text-label-md shadow-sm transition-all"
+                onClick={handleTriggerClick}
+                disabled={state === 'loading' || isSaving}
+                className="flex items-center gap-2 px-5 h-11 rounded-full bg-surface-container-high/90 hover:bg-surface-bright text-on-surface font-label-md text-label-md shadow-sm transition-all disabled:opacity-60"
               >
                 <span className="material-symbols-outlined text-secondary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   bookmark
@@ -160,11 +207,11 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
               </button>
 
               {/* Quick Selection Floating Dropdown */}
-              {dropdownOpen && (
-                <div className="absolute left-0 top-full mt-2 w-48 p-1.5 rounded-xl bg-surface-container-highest shadow-2xl z-30">
+              {dropdownOpen && state === 'user' && (
+                <div className="absolute left-0 top-full mt-2 w-48 p-1.5 rounded-xl bg-surface-container-highest shadow-2xl z-30 animate-fadeIn">
                   <button
                     type="button"
-                    onClick={() => handleSelectStatus('В планах')}
+                    onClick={() => handleSelectStatus('plan', 'В планах')}
                     className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors"
                   >
                     <span className="flex items-center gap-2">
@@ -176,7 +223,7 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
 
                   <button
                     type="button"
-                    onClick={() => handleSelectStatus('Смотрю')}
+                    onClick={() => handleSelectStatus('now', 'Смотрю')}
                     className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors"
                   >
                     <span className="flex items-center gap-2">
@@ -188,7 +235,7 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
 
                   <button
                     type="button"
-                    onClick={() => handleSelectStatus('Просмотрено')}
+                    onClick={() => handleSelectStatus('done', 'Просмотрено')}
                     className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors"
                   >
                     <span className="flex items-center gap-2">
@@ -207,9 +254,15 @@ export function HeroBanner({ anime, isLoggedIn = false }: HeroBannerProps) {
               <span>Без пиратства и рекламы</span>
             </div>
           </div>
-
         </div>
       </div>
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        title="Войдите, чтобы сохранить"
+        description="Чтобы добавлять аниме в персональные списки, отмечать просмотренные серии и ставить оценки, войдите в свой аккаунт."
+      />
     </section>
   );
 }

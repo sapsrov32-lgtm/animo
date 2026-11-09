@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Anime } from '@/types';
 import { RecommendCard } from './RecommendCard';
 import { setAnimeWatchStatus } from '@/app/actions/tracker';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 interface RecommendWorkspaceProps {
   allAnime: Anime[];
@@ -81,6 +83,7 @@ export const TIME_OPTIONS = [
     match: (a: Anime) =>
       a.format === 'ONA' ||
       a.format === 'OVA' ||
+      a.format === 'Спешл' ||
       a.format === 'Спэшл' ||
       a.format === 'Спешл' ||
       a.format === 'ТВ Короткометражка' ||
@@ -181,6 +184,8 @@ export function RecommendWorkspace({
 }: RecommendWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { state } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Selected criteria state (initialized from URL ?mood=; time and setting are NOT pre-selected)
   const [selectedMood, setSelectedMood] = useState<string>(() => {
@@ -438,8 +443,11 @@ export function RecommendWorkspace({
   };
 
   const handleAddAll = async () => {
-    if (!isLoggedIn) {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+    if (state === 'loading') {
+      return;
+    }
+    if (state === 'guest') {
+      setAuthModalOpen(true);
       return;
     }
 
@@ -891,6 +899,11 @@ export function RecommendWorkspace({
           </div>
         </section>
       </div>
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
     </div>
   );
 }

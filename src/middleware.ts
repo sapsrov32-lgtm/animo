@@ -13,8 +13,11 @@ export async function middleware(request: NextRequest) {
     request.headers.get('x-real-ip') ||
     '127.0.0.1';
 
-  // 1. Rate Limiting: 120 requests per minute per IP
-  const rateLimit = checkRateLimit(ip, 120, 60000);
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
+
+  // 1. Rate Limiting: 60 requests/min on public API endpoints, 120 req/min overall
+  const limit = isApiRoute ? 60 : 120;
+  const rateLimit = checkRateLimit(ip, limit, 60000);
   if (!rateLimit.success) {
     return new NextResponse(
       JSON.stringify({
@@ -34,7 +37,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // 2. CORS Handling for /api/ routes
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
   const origin = request.headers.get('origin');
   const isAllowedOrigin =
     !origin ||
